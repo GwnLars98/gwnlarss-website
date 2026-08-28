@@ -125,18 +125,24 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const now = ctx.currentTime;
-            for (const [freq, start, duur] of [[880, now, 0.12], [1318.51, now + 0.11, 0.16]]) {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0, start);
-                gain.gain.linearRampToValueAtTime(0.3, start + 0.015);
-                gain.gain.exponentialRampToValueAtTime(0.001, start + duur);
-                osc.connect(gain).connect(ctx.destination);
-                osc.start(start);
-                osc.stop(start + duur + 0.02);
-            }
+            // Opwaarts belletje-arpeggio (C6-E6-G6-C7), met een zachte boventoon per noot voor
+            // een klokkerige klank i.p.v. een kale sinustoon — de klassieke "messenger-ding"-vibe.
+            [1046.50, 1318.51, 1567.98, 2093.00].forEach((freq, i) => {
+                const start = now + i * 0.07;
+                const duur = 0.22;
+                for (const [ratio, piek] of [[1, 0.28], [2, 0.09]]) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq * ratio;
+                    gain.gain.setValueAtTime(0, start);
+                    gain.gain.linearRampToValueAtTime(piek, start + 0.008);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + duur);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + duur + 0.02);
+                }
+            });
         } catch { /* Web Audio niet beschikbaar, dan maar geen geluid */ }
     }
 
