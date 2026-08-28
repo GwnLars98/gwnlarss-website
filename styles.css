@@ -211,6 +211,7 @@ a { color: inherit; text-decoration: none; }
     transition: transform 0.15s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
 }
 .btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn--primary {
     background: linear-gradient(100deg, var(--purple), var(--pink));
@@ -362,6 +363,95 @@ a { color: inherit; text-decoration: none; }
 .footer__links a { color: var(--text-dim); font-size: 0.88rem; font-weight: 500; transition: color 0.2s; }
 .footer__links a:hover { color: var(--text); }
 .footer__copy { color: var(--text-dim); font-size: 0.8rem; margin: 0; opacity: 0.7; }
+
+/* ---------- Showcases ---------- */
+.showcase-intro { color: var(--text-dim); font-size: 1.02rem; max-width: 62ch; margin: 0 0 24px; }
+
+.showcase-frame {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+    max-width: 640px;
+}
+
+.showcase-canvas {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    background:
+        radial-gradient(120% 90% at 20% 10%, rgba(145, 70, 255, 0.14), transparent 60%),
+        var(--bg-soft);
+}
+.showcase-canvas::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    pointer-events: none;
+}
+.showcase-canvas__label {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.showcase-replay { margin-top: 18px; }
+
+/* MSN Messenger-achtig toastje — zelfde stijl/markup als public/alerts.html, hier ter demonstratie */
+.msn-toast {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    width: min(280px, 78%);
+    font-family: Tahoma, 'Segoe UI', sans-serif;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px -8px rgba(0, 0, 0, 0.65);
+    transform: translateY(calc(100% + 16px));
+    transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.msn-toast.is-visible { transform: translateY(0); }
+.msn-toast__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(180deg, #6ea8fb, #1958c9);
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.82rem;
+}
+.msn-toast__body { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.msn-toast__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #eef3fc;
+    border: 1px solid #c9d9f2;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.msn-toast__text { min-width: 0; }
+.msn-toast__name { margin: 0 0 2px; font-weight: bold; font-size: 0.86rem; color: #1958c9; }
+.msn-toast__message { margin: 0; font-size: 0.8rem; color: #333; }
+
+@media (prefers-reduced-motion: reduce) {
+    .msn-toast { transition: none; }
+}
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {

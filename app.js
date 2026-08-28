@@ -110,3 +110,27 @@ checkContent();
 setInterval(checkContent, CONTENT_POLL_MS);
 
 document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+// ---------- Showcase: MSN-toastje ("eerste chat van de stream") ----------
+(() => {
+    const toast = document.getElementById('msn-toast');
+    const replayBtn = document.getElementById('showcase-replay');
+    if (!toast || !replayBtn) return;
+
+    let timer1 = null, timer2 = null;
+
+    function play() {
+        replayBtn.disabled = true;
+        clearTimeout(timer1); clearTimeout(timer2);
+        toast.classList.remove('is-visible');
+        void toast.offsetWidth; // forceer reflow zodat de transitie altijd opnieuw start
+        requestAnimationFrame(() => toast.classList.add('is-visible'));
+        timer1 = setTimeout(() => {
+            toast.classList.remove('is-visible');
+            timer2 = setTimeout(() => { replayBtn.disabled = false; }, 450);
+        }, 5000);
+    }
+
+    replayBtn.addEventListener('click', play);
+    setTimeout(play, 600);
+})();
