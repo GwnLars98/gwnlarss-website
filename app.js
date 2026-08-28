@@ -119,11 +119,33 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
 
     let timer1 = null, timer2 = null;
 
+    // Klassiek MSN-"ding"-geluidje, zelf gesynthetiseerd — geen audiobestand nodig, en werkt dus
+    // ook op deze statische showcase-pagina zonder eigen backend.
+    function speelMsnDing() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = ctx.currentTime;
+            for (const [freq, start, duur] of [[880, now, 0.12], [1318.51, now + 0.11, 0.16]]) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, start);
+                gain.gain.linearRampToValueAtTime(0.3, start + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.001, start + duur);
+                osc.connect(gain).connect(ctx.destination);
+                osc.start(start);
+                osc.stop(start + duur + 0.02);
+            }
+        } catch { /* Web Audio niet beschikbaar, dan maar geen geluid */ }
+    }
+
     function play() {
         replayBtn.disabled = true;
         clearTimeout(timer1); clearTimeout(timer2);
         toast.classList.remove('is-visible');
         void toast.offsetWidth; // forceer reflow zodat de transitie altijd opnieuw start
+        speelMsnDing();
         requestAnimationFrame(() => toast.classList.add('is-visible'));
         timer1 = setTimeout(() => {
             toast.classList.remove('is-visible');
