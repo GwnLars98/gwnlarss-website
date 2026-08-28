@@ -1,3 +1,9 @@
+// Deze site is een statische Netlify-deploy zonder eigen backend — /api/live en /api/content
+// draaien op de bot-server zelf (Home Assistant-box). Daarom hier, anders dan in de kopie die
+// same-origin op die bot-server draait, een absolute cross-origin URL nodig i.p.v. een relatief
+// pad. Vereist dat api.gwnlarss.nl (Cloudflare Tunnel o.i.d.) naar die box wijst.
+const API_BASE = 'https://api.gwnlarss.nl';
+
 const POLL_MS = 20_000;
 const CONTENT_POLL_MS = 60_000;
 
@@ -75,7 +81,7 @@ function render(data) {
 
 async function checkLive() {
     try {
-        const res = await fetch('/api/live', { cache: 'no-store' });
+        const res = await fetch(`${API_BASE}/api/live`, { cache: 'no-store' });
         render(await res.json());
     } catch {
         els.badgeText.textContent = 'Live-status kon niet geladen worden';
@@ -97,7 +103,7 @@ function renderPostCard(container, data, emptyText) {
 
 async function checkContent() {
     try {
-        const res = await fetch('/api/content', { cache: 'no-store' });
+        const res = await fetch(`${API_BASE}/api/content`, { cache: 'no-store' });
         const data = await res.json();
         renderPostCard(document.getElementById('schema-card'), data.schema, 'Nog geen schema geplaatst, check het schema-kanaal op Discord.');
         renderPostCard(document.getElementById('updates-card'), data.update, 'Nog geen berennieuws, check het updates-kanaal op Discord.');
