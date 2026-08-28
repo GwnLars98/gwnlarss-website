@@ -115,13 +115,32 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
 (() => {
     const toast = document.getElementById('msn-toast');
     const replayBtn = document.getElementById('showcase-replay');
-    if (!toast || !replayBtn) return;
+    const muteBtn = document.getElementById('showcase-mute');
+    if (!toast || !replayBtn || !muteBtn) return;
 
     let timer1 = null, timer2 = null;
+
+    // Onthouden per bezoeker (niet gedeeld, niet gelezen door ons) zodat de voorkeur blijft
+    // staan als iemand de pagina later nog eens bezoekt.
+    let gedempt = false;
+    try { gedempt = localStorage.getItem('gwnlarss-showcase-gedempt') === '1'; } catch { /* privénavigatie o.i.d. */ }
+
+    function updateMuteKnop() {
+        muteBtn.textContent = gedempt ? '🔇 Geluid uit' : '🔊 Geluid aan';
+        muteBtn.setAttribute('aria-pressed', String(gedempt));
+    }
+    updateMuteKnop();
+
+    muteBtn.addEventListener('click', () => {
+        gedempt = !gedempt;
+        updateMuteKnop();
+        try { localStorage.setItem('gwnlarss-showcase-gedempt', gedempt ? '1' : '0'); } catch { /* privénavigatie o.i.d. */ }
+    });
 
     // Klassiek MSN-"ding"-geluidje, zelf gesynthetiseerd — geen audiobestand nodig, en werkt dus
     // ook op deze statische showcase-pagina zonder eigen backend.
     function speelMsnDing() {
+        if (gedempt) return;
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const now = ctx.currentTime;

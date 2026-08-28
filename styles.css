@@ -405,7 +405,8 @@ a { color: inherit; text-decoration: none; }
     color: rgba(255, 255, 255, 0.3);
 }
 
-.showcase-replay { margin-top: 18px; }
+.showcase-controls { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.showcase-mute[aria-pressed="true"] { border-color: var(--purple); background: rgba(145, 70, 255, 0.1); }
 
 /* MSN Messenger-achtig toastje — zelfde stijl/markup als public/alerts.html, hier ter demonstratie */
 .msn-toast {
