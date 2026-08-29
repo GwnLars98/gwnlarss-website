@@ -304,6 +304,16 @@ a { color: inherit; text-decoration: none; }
 }
 
 .about p { color: var(--text-dim); font-size: 1.02rem; max-width: 70ch; }
+.about__tagline {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+.about__tagline span { color: var(--pink); margin: 0 4px; }
+.about a { color: var(--pink); text-decoration: underline; text-underline-offset: 3px; }
+.about a:hover { color: #fff; }
 
 .updates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
 .updates-grid > div { display: flex; flex-direction: column; }

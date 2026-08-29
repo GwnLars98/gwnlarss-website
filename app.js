@@ -1,11 +1,10 @@
-// Deze site is een statische Netlify-deploy zonder eigen backend — /api/live en /api/content
-// draaien op de bot-server zelf (Home Assistant-box). Daarom hier, anders dan in de kopie die
-// same-origin op die bot-server draait, een absolute cross-origin URL nodig i.p.v. een relatief
-// pad. Vereist dat api.gwnlarss.nl (Cloudflare Tunnel o.i.d.) naar die box wijst.
+// Deze site is een statische Netlify-deploy zonder eigen backend — /api/live draait op de
+// bot-server zelf (Home Assistant-box). Daarom hier, anders dan in de kopie die same-origin
+// op die bot-server draait, een absolute cross-origin URL nodig i.p.v. een relatief pad.
+// Vereist dat api.gwnlarss.nl (Cloudflare Tunnel o.i.d.) naar die box wijst.
 const API_BASE = 'https://api.gwnlarss.nl';
 
 const POLL_MS = 20_000;
-const CONTENT_POLL_MS = 60_000;
 
 const els = {
     navDot: document.getElementById('nav-dot'),
@@ -20,12 +19,6 @@ const els = {
     previewName: document.getElementById('preview-name'),
     previewSub: document.getElementById('preview-sub'),
 };
-
-function escapeHtml(str) {
-    return String(str ?? '').replace(/[&<>"']/g, c => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    }[c]));
-}
 
 function mountTwitchEmbed(login) {
     if (els.embedContainer.dataset.mounted === login) return;
@@ -88,32 +81,8 @@ async function checkLive() {
     }
 }
 
-function renderPostCard(container, data, emptyText) {
-    if (!data) {
-        container.innerHTML = `<p class="post-card__empty">${escapeHtml(emptyText)}</p>`;
-        return;
-    }
-    container.innerHTML = `
-        <p class="post-card__title">${escapeHtml(data.titel)}</p>
-        <p class="post-card__body">${escapeHtml(data.beschrijving)}</p>
-        ${data.afbeelding ? `<img src="${escapeHtml(data.afbeelding)}" alt="">` : ''}
-        <p class="post-card__meta">Geplaatst door ${escapeHtml(data.auteur)} · ${new Date(data.tijdstip).toLocaleString('nl-NL')}</p>
-    `;
-}
-
-async function checkContent() {
-    try {
-        const res = await fetch(`${API_BASE}/api/content`, { cache: 'no-store' });
-        const data = await res.json();
-        renderPostCard(document.getElementById('schema-card'), data.schema, 'Nog geen schema geplaatst, check het schema-kanaal op Discord.');
-        renderPostCard(document.getElementById('updates-card'), data.update, 'Nog geen berennieuws, check het updates-kanaal op Discord.');
-    } catch { /* laat de bestaande inhoud gewoon staan */ }
-}
-
 checkLive();
 setInterval(checkLive, POLL_MS);
-checkContent();
-setInterval(checkContent, CONTENT_POLL_MS);
 
 document.getElementById('footer-year').textContent = new Date().getFullYear();
 
