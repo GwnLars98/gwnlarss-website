@@ -16,7 +16,7 @@
 <div class="theme-picker" id="theme-picker">
     <button type="button" class="theme-picker__toggle" id="theme-picker-toggle" aria-expanded="false" aria-label="Kies een kleur voor de site">🎨</button>
     <div class="theme-picker__panel" id="theme-picker-panel" hidden>
-        <p class="theme-picker__label">Kies je kleur (alleen voor jou, blijft bewaard)</p>
+        <p class="theme-picker__label">Personaliseer de site (alleen voor jou, blijft bewaard)</p>
         <div class="theme-picker__swatches">
             <button type="button" class="theme-swatch" data-purple="#9146ff" data-pink="#ff3ea5" style="background: linear-gradient(135deg, #9146ff, #ff3ea5);" aria-label="Paars/roze (standaard)"></button>
             <button type="button" class="theme-swatch" data-purple="#3b82f6" data-pink="#22d3ee" style="background: linear-gradient(135deg, #3b82f6, #22d3ee);" aria-label="Blauw/cyaan"></button>
@@ -28,7 +28,11 @@
             Eigen kleur
             <input type="color" id="theme-picker-custom" value="#9146ff">
         </label>
-        <button type="button" class="btn btn--ghost theme-picker__reset" id="theme-picker-reset">↻ Standaardkleuren</button>
+        <label class="theme-picker__naam">
+            Jouw naam op de site
+            <input type="text" id="theme-picker-naam" placeholder="GwnLarss" maxlength="24">
+        </label>
+        <button type="button" class="btn btn--ghost theme-picker__reset" id="theme-picker-reset">↻ Standaard (kleur + naam)</button>
     </div>
 </div>
 
@@ -127,7 +131,7 @@
                         <div class="cam-demo__frame"></div>
                         <div class="cam-demo__badge">
                             <span class="cam-demo__dot"></span>
-                            <span>GwnLarss</span>
+                            <span class="brand-name">GwnLarss</span>
                         </div>
                     </div>
                 </div>
@@ -140,7 +144,7 @@
                         <div class="cam-demo__frame"></div>
                         <div class="cam-demo__badge">
                             <span class="cam-demo__dot"></span>
-                            <span>GwnLarss</span>
+                            <span class="brand-name">GwnLarss</span>
                         </div>
                     </div>
                 </div>

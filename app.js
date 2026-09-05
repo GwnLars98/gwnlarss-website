@@ -195,11 +195,36 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
 // niemand anders ziet dit en wij slaan het nergens gedeeld op. ----------
 (() => {
     const STORAGE_KEY = 'gwnlarss-accentkleur';
+    const NAAM_KEY = 'gwnlarss-eigen-naam';
+    const STANDAARD_NAAM = 'GwnLarss';
     const toggle = document.getElementById('theme-picker-toggle');
     const panel = document.getElementById('theme-picker-panel');
     const customInput = document.getElementById('theme-picker-custom');
+    const naamInput = document.getElementById('theme-picker-naam');
     const resetBtn = document.getElementById('theme-picker-reset');
     if (!toggle || !panel || !customInput || !resetBtn) return;
+
+    // Puur de "GwnLarss"-badge in de cam-border-showcase, niet de rest van de site (logo,
+    // hero-titel, live-status) — die blijven altijd echt.
+    function pasNaamToe(naam) {
+        document.querySelectorAll('.brand-name').forEach(el => { el.textContent = naam || STANDAARD_NAAM; });
+    }
+    function bewaarNaam(naam) {
+        try {
+            if (naam) localStorage.setItem(NAAM_KEY, naam);
+            else localStorage.removeItem(NAAM_KEY);
+        } catch { /* privénavigatie o.i.d. */ }
+    }
+    if (naamInput) {
+        try {
+            const opgeslagenNaam = localStorage.getItem(NAAM_KEY);
+            if (opgeslagenNaam) { pasNaamToe(opgeslagenNaam); naamInput.value = opgeslagenNaam; }
+        } catch { /* geen geldige opgeslagen naam */ }
+        naamInput.addEventListener('input', () => {
+            pasNaamToe(naamInput.value.trim());
+            bewaarNaam(naamInput.value.trim());
+        });
+    }
 
     const STANDAARD = { purple: '#9146ff', pink: '#ff3ea5' };
 
@@ -282,5 +307,11 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
         pasToe(STANDAARD.purple, STANDAARD.pink);
         customInput.value = STANDAARD.purple;
         try { localStorage.removeItem(STORAGE_KEY); } catch { /* privénavigatie o.i.d. */ }
+
+        if (naamInput) {
+            pasNaamToe('');
+            naamInput.value = '';
+            bewaarNaam('');
+        }
     });
 })();
