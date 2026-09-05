@@ -89,30 +89,35 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
     const iframes = document.querySelectorAll('.showcase-iframe[data-native-w]');
     if (!iframes.length) return;
 
-    function schaal(iframe) {
+    function schaal(iframe, canvasWidth) {
         const nativeW = Number(iframe.dataset.nativeW);
         const nativeH = Number(iframe.dataset.nativeH);
-        const canvas = iframe.parentElement;
-        if (!nativeW || !nativeH || !canvas) return;
+        if (!nativeW || !nativeH || !canvasWidth) return;
 
-        const factor = canvas.clientWidth / nativeW;
         iframe.style.width = `${nativeW}px`;
         iframe.style.height = `${nativeH}px`;
-        iframe.style.transform = `scale(${factor})`;
+        iframe.style.transform = `scale(${canvasWidth / nativeW})`;
     }
 
-    function schaalAlles() {
-        iframes.forEach(schaal);
+    // ResizeObserver i.p.v. gokken op het juiste moment (load/resize-events): dit vuurt
+    // gegarandeerd zodra de canvas zijn ECHTE, definitieve breedte heeft — voorkwam eerder dat
+    // de schaalfactor werd berekend vóór de flex/aspect-ratio-layout klaar was, wat een
+    // schaalfactor dicht bij 1 gaf (dus vrijwel ongeschaalde, veel te grote, uitgesneden tekst).
+    if ('ResizeObserver' in window) {
+        const observer = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                const iframe = entry.target.querySelector('.showcase-iframe[data-native-w]');
+                if (iframe) schaal(iframe, entry.contentRect.width);
+            }
+        });
+        iframes.forEach(iframe => { if (iframe.parentElement) observer.observe(iframe.parentElement); });
+    } else {
+        // Fallback voor uitzonderlijk oude browsers zonder ResizeObserver.
+        const schaalAlles = () => iframes.forEach(iframe => schaal(iframe, iframe.parentElement?.clientWidth));
+        schaalAlles();
+        window.addEventListener('load', schaalAlles);
+        window.addEventListener('resize', schaalAlles);
     }
-
-    schaalAlles();
-    window.addEventListener('load', schaalAlles);
-
-    let resizeTimer = null;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(schaalAlles, 150);
-    });
 })();
 
 // ---------- Showcase: MSN-toastje ("eerste chat van de stream") ----------
