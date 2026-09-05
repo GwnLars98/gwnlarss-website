@@ -13,6 +13,25 @@
 </head>
 <body>
 
+<div class="theme-picker" id="theme-picker">
+    <button type="button" class="theme-picker__toggle" id="theme-picker-toggle" aria-expanded="false" aria-label="Kies een kleur voor de site">🎨</button>
+    <div class="theme-picker__panel" id="theme-picker-panel" hidden>
+        <p class="theme-picker__label">Kies je kleur (alleen voor jou, blijft bewaard)</p>
+        <div class="theme-picker__swatches">
+            <button type="button" class="theme-swatch" data-purple="#9146ff" data-pink="#ff3ea5" style="background: linear-gradient(135deg, #9146ff, #ff3ea5);" aria-label="Paars/roze (standaard)"></button>
+            <button type="button" class="theme-swatch" data-purple="#3b82f6" data-pink="#22d3ee" style="background: linear-gradient(135deg, #3b82f6, #22d3ee);" aria-label="Blauw/cyaan"></button>
+            <button type="button" class="theme-swatch" data-purple="#16a34a" data-pink="#a3e635" style="background: linear-gradient(135deg, #16a34a, #a3e635);" aria-label="Groen/lime"></button>
+            <button type="button" class="theme-swatch" data-purple="#f97316" data-pink="#facc15" style="background: linear-gradient(135deg, #f97316, #facc15);" aria-label="Oranje/geel"></button>
+            <button type="button" class="theme-swatch" data-purple="#ef4444" data-pink="#f472b6" style="background: linear-gradient(135deg, #ef4444, #f472b6);" aria-label="Rood/roze"></button>
+        </div>
+        <label class="theme-picker__custom">
+            Eigen kleur
+            <input type="color" id="theme-picker-custom" value="#9146ff">
+        </label>
+        <button type="button" class="btn btn--ghost theme-picker__reset" id="theme-picker-reset">↻ Standaardkleuren</button>
+    </div>
+</div>
+
 <header class="nav">
     <a href="#top" class="nav__logo">GwnLarss</a>
     <nav class="nav__links">
@@ -96,6 +115,100 @@
         <div class="showcase-controls">
             <button type="button" class="btn btn--ghost showcase-replay" id="showcase-replay">↻ Opnieuw afspelen</button>
             <button type="button" class="btn btn--ghost showcase-mute" id="showcase-mute" aria-pressed="false">🔊 Geluid aan</button>
+        </div>
+
+        <p class="showcase-intro" style="margin-top: 48px;">De camera-rand overlay, zowel voor een gewoon 16:9-canvas als voor verticale (TikTok-)streams.</p>
+        <div class="showcase-row">
+            <div class="showcase-frame">
+                <div class="showcase-canvas">
+                    <span class="showcase-canvas__label">horizontaal</span>
+                    <div class="cam-demo cam-demo--horizontaal">
+                        <div class="cam-demo__face"></div>
+                        <div class="cam-demo__frame"></div>
+                        <div class="cam-demo__badge">
+                            <span class="cam-demo__dot"></span>
+                            <span>GwnLarss</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="showcase-frame showcase-frame--verticaal">
+                <div class="showcase-canvas showcase-canvas--verticaal">
+                    <span class="showcase-canvas__label">verticaal</span>
+                    <div class="cam-demo cam-demo--verticaal">
+                        <div class="cam-demo__face"></div>
+                        <div class="cam-demo__frame"></div>
+                        <div class="cam-demo__badge">
+                            <span class="cam-demo__dot"></span>
+                            <span>GwnLarss</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="showcase-intro" style="margin-top: 48px;">Het "starting soon"-scherm dat draait vlak voordat de stream begint.</p>
+        <div class="showcase-row">
+            <div class="showcase-frame">
+                <div class="showcase-canvas">
+                    <span class="showcase-canvas__label">horizontaal</span>
+                    <iframe class="showcase-iframe" src="https://api.gwnlarss.nl/starting-soon.html" title="Starting soon overlay (horizontaal)" loading="lazy"></iframe>
+                </div>
+            </div>
+            <div class="showcase-frame showcase-frame--verticaal">
+                <div class="showcase-canvas showcase-canvas--verticaal">
+                    <span class="showcase-canvas__label">verticaal</span>
+                    <iframe class="showcase-iframe" src="https://api.gwnlarss.nl/starting-soon-verticaal.html" title="Starting soon overlay (verticaal)" loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <p class="showcase-intro" style="margin-top: 48px;">Het end screen dat draait zodra de stream is afgelopen.</p>
+        <div class="showcase-row">
+            <div class="showcase-frame">
+                <div class="showcase-canvas">
+                    <span class="showcase-canvas__label">horizontaal</span>
+                    <iframe class="showcase-iframe" src="https://api.gwnlarss.nl/end-screen.html" title="End screen overlay (horizontaal)" loading="lazy"></iframe>
+                </div>
+            </div>
+            <div class="showcase-frame showcase-frame--verticaal">
+                <div class="showcase-canvas showcase-canvas--verticaal">
+                    <span class="showcase-canvas__label">verticaal</span>
+                    <iframe class="showcase-iframe" src="https://api.gwnlarss.nl/end-screen-verticaal.html" title="End screen overlay (verticaal)" loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <p class="showcase-intro" style="margin-top: 48px;">De sub-teller die live het aantal abonnees bijhoudt.</p>
+        <div class="showcase-row">
+            <div class="showcase-frame">
+                <div class="showcase-canvas">
+                    <span class="showcase-canvas__label">horizontaal</span>
+                    <iframe class="showcase-iframe" src="https://api.gwnlarss.nl/sub-count.html" title="Sub count overlay (horizontaal)" loading="lazy"></iframe>
+                </div>
+            </div>
+            <div class="showcase-frame showcase-frame--verticaal">
+                <div class="showcase-canvas showcase-canvas--verticaal">
+                    <span class="showcase-canvas__label">verticaal</span>
+                    <iframe class="showcase-iframe" src="https://api.gwnlarss.nl/sub-count-verticaal.html" title="Sub count overlay (verticaal)" loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <p class="showcase-intro" style="margin-top: 48px;">De statsbalk met de laatste volger, abonnee, cheer en tipper.</p>
+        <div class="showcase-row">
+            <div class="showcase-frame">
+                <div class="showcase-canvas">
+                    <span class="showcase-canvas__label">horizontaal</span>
+                    <iframe class="showcase-iframe" src="https://api.gwnlarss.nl/streamstats.html" title="Stream stats overlay (horizontaal)" loading="lazy"></iframe>
+                </div>
+            </div>
+            <div class="showcase-frame showcase-frame--verticaal">
+                <div class="showcase-canvas showcase-canvas--verticaal">
+                    <span class="showcase-canvas__label">verticaal</span>
+                    <iframe class="showcase-iframe" src="https://api.gwnlarss.nl/streamstats-verticaal.html" title="Stream stats overlay (verticaal)" loading="lazy"></iframe>
+                </div>
+            </div>
         </div>
     </section>
 

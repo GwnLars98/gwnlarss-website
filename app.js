@@ -1,9 +1,3 @@
-// Deze site is een statische Netlify-deploy zonder eigen backend — /api/live draait op de
-// bot-server zelf (Home Assistant-box). Daarom hier, anders dan in de kopie die same-origin
-// op die bot-server draait, een absolute cross-origin URL nodig i.p.v. een relatief pad.
-// Vereist dat api.gwnlarss.nl (Cloudflare Tunnel o.i.d.) naar die box wijst.
-const API_BASE = 'https://api.gwnlarss.nl';
-
 const POLL_MS = 20_000;
 
 const els = {
@@ -74,7 +68,7 @@ function render(data) {
 
 async function checkLive() {
     try {
-        const res = await fetch(`${API_BASE}/api/live`, { cache: 'no-store' });
+        const res = await fetch('/api/live', { cache: 'no-store' });
         render(await res.json());
     } catch {
         els.badgeText.textContent = 'Live-status kon niet geladen worden';
@@ -155,4 +149,98 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
 
     replayBtn.addEventListener('click', play);
     setTimeout(play, 600);
+})();
+
+// ---------- Kleurkiezer: verandert alleen de site-tint voor deze bezoeker (localStorage),
+// niemand anders ziet dit en wij slaan het nergens gedeeld op. ----------
+(() => {
+    const STORAGE_KEY = 'gwnlarss-accentkleur';
+    const toggle = document.getElementById('theme-picker-toggle');
+    const panel = document.getElementById('theme-picker-panel');
+    const customInput = document.getElementById('theme-picker-custom');
+    const resetBtn = document.getElementById('theme-picker-reset');
+    if (!toggle || !panel || !customInput || !resetBtn) return;
+
+    const STANDAARD = { purple: '#9146ff', pink: '#ff3ea5' };
+
+    function pasToe(purple, pink) {
+        document.documentElement.style.setProperty('--purple', purple);
+        document.documentElement.style.setProperty('--pink', pink);
+    }
+
+    function bewaar(purple, pink) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ purple, pink })); } catch { /* privénavigatie o.i.d. */ }
+    }
+
+    // Voor de "eigen kleur"-optie: leidt een tweede tint af door de tint (hue) van de
+    // gekozen kleur te draaien, zodat je niet zelf twee kleuren hoeft te kiezen die matchen.
+    function hexNaarHsl(hex) {
+        const r = parseInt(hex.slice(1, 3), 16) / 255;
+        const g = parseInt(hex.slice(3, 5), 16) / 255;
+        const b = parseInt(hex.slice(5, 7), 16) / 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0;
+        const l = (max + min) / 2;
+        const d = max - min;
+        if (d !== 0) {
+            s = d / (1 - Math.abs(2 * l - 1));
+            switch (max) {
+                case r: h = ((g - b) / d) % 6; break;
+                case g: h = (b - r) / d + 2; break;
+                default: h = (r - g) / d + 4;
+            }
+            h *= 60;
+            if (h < 0) h += 360;
+        }
+        return [h, s, l];
+    }
+    function hslNaarHex(h, s, l) {
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = l - c / 2;
+        let [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+        const naarHex = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+        return `#${naarHex(r)}${naarHex(g)}${naarHex(b)}`;
+    }
+    function afgeleideTint(hex) {
+        const [h, s, l] = hexNaarHsl(hex);
+        return hslNaarHex((h + 40) % 360, s, l);
+    }
+
+    // Bij laden: opgeslagen keuze van deze bezoeker terugzetten.
+    try {
+        const opgeslagen = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (opgeslagen?.purple && opgeslagen?.pink) pasToe(opgeslagen.purple, opgeslagen.pink);
+    } catch { /* geen geldige opgeslagen keuze */ }
+
+    toggle.addEventListener('click', () => {
+        const open = panel.hidden;
+        panel.hidden = !open;
+        toggle.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', e => {
+        if (!panel.hidden && !document.getElementById('theme-picker').contains(e.target)) panel.hidden = true;
+    });
+
+    document.querySelectorAll('.theme-swatch').forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            const { purple, pink } = swatch.dataset;
+            pasToe(purple, pink);
+            bewaar(purple, pink);
+            customInput.value = purple;
+        });
+    });
+
+    customInput.addEventListener('input', () => {
+        const purple = customInput.value;
+        const pink = afgeleideTint(purple);
+        pasToe(purple, pink);
+        bewaar(purple, pink);
+    });
+
+    resetBtn.addEventListener('click', () => {
+        pasToe(STANDAARD.purple, STANDAARD.pink);
+        customInput.value = STANDAARD.purple;
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* privénavigatie o.i.d. */ }
+    });
 })();
