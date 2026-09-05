@@ -68,7 +68,10 @@ function render(data) {
 
 async function checkLive() {
     try {
-        const res = await fetch('/api/live', { cache: 'no-store' });
+        // Absolute URL i.p.v. relatief: dit bestand draait zowel op api.gwnlarss.nl (de bot's
+        // eigen server, waar relatief ook zou werken) als op gwnlarss.nl (Netlify, geen eigen
+        // backend) — daar moet het wel naar de bot's server verwijzen. CORS staat daar al open.
+        const res = await fetch('https://api.gwnlarss.nl/api/live', { cache: 'no-store' });
         render(await res.json());
     } catch {
         els.badgeText.textContent = 'Live-status kon niet geladen worden';
