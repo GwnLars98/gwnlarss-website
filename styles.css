@@ -475,6 +475,11 @@ a { color: inherit; text-decoration: none; }
 .showcase-row .showcase-frame { flex: 1 1 320px; }
 .showcase-row .showcase-frame--verticaal { max-width: 280px; }
 
+/* Sub-count en streamstats zijn kleine widgets die in een standaardgrote 16:9/9:16-canvas
+   verhoudingsgewijs klein ogen — hier iets meer ruimte voor zodat de kaart zelf duidelijker is. */
+.showcase-row--groot .showcase-frame { flex-basis: 460px; max-width: 620px; }
+.showcase-row--groot .showcase-frame--verticaal { max-width: 340px; }
+
 .showcase-canvas--verticaal { aspect-ratio: 9 / 16; }
 
 /* Live overlay-bestanden rechtstreeks ingeladen i.p.v. met de hand nagebouwd, zodat deze
