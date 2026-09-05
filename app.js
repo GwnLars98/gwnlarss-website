@@ -80,6 +80,41 @@ setInterval(checkLive, POLL_MS);
 
 document.getElementById('footer-year').textContent = new Date().getFullYear();
 
+// ---------- Overlay-showcases: iframe op echte resolutie renderen, dan schalen ----------
+// Puur procentuele iframe-afmetingen (width/height:100%) gaven verkeerd geschaalde vw/vh-tekst
+// binnenin de overlay-pagina's — de iframe rendert nu op zijn eigen echte resolutie (bijv.
+// 1920x1080) en wordt daarna met een CSS-transform naar de kleine showcase-maat geschaald,
+// zodat de overlay's eigen vw/vh-CSS altijd tegen de juiste, echte viewport-grootte rekent.
+(() => {
+    const iframes = document.querySelectorAll('.showcase-iframe[data-native-w]');
+    if (!iframes.length) return;
+
+    function schaal(iframe) {
+        const nativeW = Number(iframe.dataset.nativeW);
+        const nativeH = Number(iframe.dataset.nativeH);
+        const canvas = iframe.parentElement;
+        if (!nativeW || !nativeH || !canvas) return;
+
+        const factor = canvas.clientWidth / nativeW;
+        iframe.style.width = `${nativeW}px`;
+        iframe.style.height = `${nativeH}px`;
+        iframe.style.transform = `scale(${factor})`;
+    }
+
+    function schaalAlles() {
+        iframes.forEach(schaal);
+    }
+
+    schaalAlles();
+    window.addEventListener('load', schaalAlles);
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(schaalAlles, 150);
+    });
+})();
+
 // ---------- Showcase: MSN-toastje ("eerste chat van de stream") ----------
 (() => {
     const toast = document.getElementById('msn-toast');

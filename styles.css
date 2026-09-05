@@ -478,12 +478,17 @@ a { color: inherit; text-decoration: none; }
 .showcase-canvas--verticaal { aspect-ratio: 9 / 16; }
 
 /* Live overlay-bestanden rechtstreeks ingeladen i.p.v. met de hand nagebouwd, zodat deze
-   showcases nooit uit sync raken met de echte overlays die de bot serveert. */
+   showcases nooit uit sync raken met de echte overlays die de bot serveert. De iframe rendert
+   op zijn ECHTE volledige resolutie (1920x1080 / 1080x1920, zie data-native-w/h) en wordt daarna
+   via JS (app.js) met een CSS-transform naar de kleine showcase-maat geschaald. Puur procentuele
+   breedte/hoogte op de iframe zelf gaf verkeerd geschaalde vw/vh-tekst binnenin: de vw/vh-eenheden
+   van de geladen pagina worden dan soms herberekend op een ander moment dan de uiteindelijke
+   layout-grootte, met een veel te grote/verkeerd gepositioneerde tekst tot gevolg. */
 .showcase-iframe {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
     border: 0;
 }
 
