@@ -58,24 +58,64 @@
     .form-row { display: flex; gap: 10px; }
 
     .thema-label {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-top: 16px;
+        margin: 20px 0 10px;
         font-size: 0.88rem;
+        font-weight: 700;
         color: var(--text-dim);
     }
-    .thema-label select {
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.04);
-        color: var(--text);
-        font-family: inherit;
-        font-size: 0.9rem;
+
+    .thema-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
     }
-    .thema-label select:focus { outline: none; border-color: var(--purple); }
+    .thema-kaart {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 12px;
+        border: 2px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        font-family: inherit;
+        transition: border-color 0.15s, transform 0.15s, background 0.15s;
+    }
+    .thema-kaart:hover { border-color: rgba(145, 70, 255, 0.5); transform: translateY(-2px); }
+    .thema-kaart.is-actief { border-color: var(--purple); background: rgba(145, 70, 255, 0.12); box-shadow: 0 0 0 3px rgba(145, 70, 255, 0.15); }
+    .thema-kaart__naam { font-size: 0.78rem; font-weight: 700; color: var(--text); text-align: center; }
+
+    /* Mini-nabootsing van het echte toastje, per thema in dezelfde kleuren als first-chat.html */
+    .thema-kaart__preview {
+        display: flex;
+        flex-direction: column;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.5);
+        font-family: Tahoma, 'Segoe UI', sans-serif;
+    }
+    .thema-kaart__balk {
+        padding: 5px 8px;
+        font-size: 0.62rem;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .thema-kaart__regel {
+        display: block;
+        height: 22px;
+        background: #fff;
+    }
+
+    .thema-kaart__preview--msn .thema-kaart__balk { background: linear-gradient(180deg, #6ea8fb, #1958c9); color: #fff; }
+    .thema-kaart__preview--aim { font-family: Verdana, Arial, sans-serif; }
+    .thema-kaart__preview--aim .thema-kaart__balk { background: linear-gradient(180deg, #fff35c, #ffce00); color: #4a3b00; }
+    .thema-kaart__preview--icq .thema-kaart__balk { background: linear-gradient(180deg, #b2e07a, #4c9a2a); color: #fff; }
+    .thema-kaart__preview--yahoo .thema-kaart__balk { background: linear-gradient(180deg, #d9a6f0, #7b1fa2); color: #fff; }
+    .thema-kaart__preview--xp { border: 1px solid #3f7fbf; border-radius: 5px; }
+    .thema-kaart__preview--xp .thema-kaart__balk { background: linear-gradient(180deg, #eef7ff, #cfe8fb); color: #003c74; }
+    .thema-kaart__preview--xp .thema-kaart__regel { background: linear-gradient(180deg, #eef7ff, #cfe8fb); }
     input[type="text"] {
         flex: 1;
         min-width: 0;
@@ -174,16 +214,44 @@
         <button type="button" class="btn" id="activeer-btn">Activeer</button>
     </div>
 
-    <label class="thema-label">
-        Uiterlijk van het toastje
-        <select id="thema-select">
-            <option value="msn">💬 MSN Messenger (standaard)</option>
-            <option value="aim">🏃 AIM</option>
-            <option value="icq">🌼 ICQ</option>
-            <option value="yahoo">💜 Yahoo! Messenger</option>
-            <option value="xp">ℹ️ Windows XP-balloon</option>
-        </select>
-    </label>
+    <p class="thema-label">Uiterlijk van het toastje</p>
+    <div class="thema-grid" id="thema-grid">
+        <button type="button" class="thema-kaart is-actief" data-thema="msn">
+            <span class="thema-kaart__preview thema-kaart__preview--msn">
+                <span class="thema-kaart__balk">💬 Nieuw bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">MSN Messenger</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="aim">
+            <span class="thema-kaart__preview thema-kaart__preview--aim">
+                <span class="thema-kaart__balk">🏃 IM ontvangen</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">AIM</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="icq">
+            <span class="thema-kaart__preview thema-kaart__preview--icq">
+                <span class="thema-kaart__balk">🌼 Nieuw bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">ICQ</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="yahoo">
+            <span class="thema-kaart__preview thema-kaart__preview--yahoo">
+                <span class="thema-kaart__balk">💜 Yahoo!-bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Yahoo! Messenger</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="xp">
+            <span class="thema-kaart__preview thema-kaart__preview--xp">
+                <span class="thema-kaart__balk">ℹ️ Bericht ontvangen</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Windows XP</span>
+        </button>
+    </div>
 
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
@@ -219,7 +287,15 @@
     const stepsEl = document.getElementById('steps');
     const kopieerBtn = document.getElementById('kopieer-btn');
     const verwijderBtn = document.getElementById('verwijder-btn');
-    const themaSelect = document.getElementById('thema-select');
+    const themaKaarten = document.querySelectorAll('.thema-kaart');
+    let gekozenThema = 'msn';
+    themaKaarten.forEach(kaart => {
+        kaart.addEventListener('click', () => {
+            themaKaarten.forEach(k => k.classList.remove('is-actief'));
+            kaart.classList.add('is-actief');
+            gekozenThema = kaart.dataset.thema;
+        });
+    });
     const toastEl = document.getElementById('toast');
     let huidigKanaal = null;
 
@@ -279,10 +355,9 @@
                 return;
             }
 
-            const thema = themaSelect.value;
-            const link = thema === 'msn'
+            const link = gekozenThema === 'msn'
                 ? `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`
-                : `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}&thema=${encodeURIComponent(thema)}`;
+                : `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}&thema=${encodeURIComponent(gekozenThema)}`;
             linkOutput.value = link;
             linkRow.hidden = false;
             stepsEl.hidden = false;
