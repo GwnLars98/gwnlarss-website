@@ -166,6 +166,7 @@
             <li>Plak het linkje hierboven als URL.</li>
             <li>Zet de grootte op iets als 360x160, positioneer 'm waar je wil.</li>
         </ol>
+        <button type="button" class="btn btn--ghost" id="verwijder-btn" hidden>Kanaal weer verwijderen</button>
     </div>
 </div>
 
@@ -186,7 +187,9 @@
     const linkOutput = document.getElementById('link-output');
     const stepsEl = document.getElementById('steps');
     const kopieerBtn = document.getElementById('kopieer-btn');
+    const verwijderBtn = document.getElementById('verwijder-btn');
     const toastEl = document.getElementById('toast');
+    let huidigKanaal = null;
 
     function toast(tekst) {
         toastEl.textContent = tekst;
@@ -248,6 +251,8 @@
             linkOutput.value = link;
             linkRow.hidden = false;
             stepsEl.hidden = false;
+            huidigKanaal = kanaal;
+            verwijderBtn.hidden = false;
             toonResultaat(
                 'goed',
                 data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
@@ -263,8 +268,35 @@
         }
     }
 
+    async function verwijder() {
+        if (!huidigKanaal) return;
+        verwijderBtn.disabled = true;
+        verwijderBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/first-chat/deactiveer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal: huidigKanaal }),
+            });
+            const data = await res.json();
+            if (!data.ok) { toast(`❌ ${data.fout || 'Verwijderen mislukt.'}`); return; }
+
+            toonResultaat('goed', '🗑️ Verwijderd', `De bot heeft twitch.tv/${huidigKanaal} verlaten en houdt niks meer bij voor dit kanaal.`);
+            linkRow.hidden = true;
+            stepsEl.hidden = true;
+            verwijderBtn.hidden = true;
+            huidigKanaal = null;
+        } catch {
+            toast('❌ Netwerkfout, probeer het nog eens.');
+        } finally {
+            verwijderBtn.disabled = false;
+            verwijderBtn.textContent = 'Kanaal weer verwijderen';
+        }
+    }
+
     btn.addEventListener('click', activeer);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') activeer(); });
+    verwijderBtn.addEventListener('click', verwijder);
 
     kopieerBtn.addEventListener('click', () => {
         if (kopieerNaarKlembord(linkOutput.value)) toast('🔗 Link gekopieerd!');
