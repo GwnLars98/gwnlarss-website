@@ -55,7 +55,9 @@
     }
     .sub { color: var(--text-dim); margin: 0 0 32px; line-height: 1.5; }
 
-    .form-row { display: flex; gap: 10px; }
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .form-row input[type="text"] { flex-basis: 160px; }
+    .veld-hint { margin: 10px 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; }
 
     input[type="text"] {
         flex: 1;
@@ -146,7 +148,9 @@
     <div class="form-row">
         <input type="text" id="kanaal-input" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
         <button type="button" class="btn" id="activeer-btn">Activeer</button>
+        <button type="button" class="btn btn--ghost" id="verwijder-btn">Verlaat kanaal</button>
     </div>
+    <p class="veld-hint">Zit de bot al in je chat? Vul gewoon je naam in en klik nog eens op Activeer — dat kan geen kwaad, je krijgt dan te zien dat 'ie er al in zit. Wil je 'm eruit? Gebruik "Verlaat kanaal".</p>
 
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
@@ -156,7 +160,6 @@
             <li>Optioneel: <code>!clip een eigen bijschrift</code> geeft de clip-melding een eigen tekst i.p.v. je streamtitel.</li>
             <li>Er geldt een cooldown van 30 seconden per kanaal tegen spam.</li>
         </ol>
-        <button type="button" class="btn btn--ghost" id="verwijder-btn" hidden>Kanaal weer verwijderen</button>
     </div>
 </div>
 
@@ -176,7 +179,6 @@
     const stepsEl = document.getElementById('steps');
     const verwijderBtn = document.getElementById('verwijder-btn');
     const toastEl = document.getElementById('toast');
-    let huidigKanaal = null;
 
     function toast(tekst) {
         toastEl.textContent = tekst;
@@ -215,14 +217,12 @@
             }
 
             stepsEl.hidden = false;
-            huidigKanaal = kanaal;
-            verwijderBtn.hidden = false;
             toonResultaat(
                 'goed',
-                data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
+                data.nieuw ? '✅ Geactiveerd!' : '✅ De bot zit al in je chat',
                 data.nieuw
                     ? `De bot zit nu in de chat van twitch.tv/${kanaal}. Iedereen daar kan vanaf nu !clip gebruiken.`
-                    : `Dit kanaal was al eerder geactiveerd, !clip werkt daar al gewoon.`,
+                    : `De bot was al eerder toegevoegd aan twitch.tv/${kanaal} — !clip werkt daar dus al gewoon, je hoeft niks te doen.`,
             );
         } catch {
             toonResultaat('fout', '❌ Kon niet activeren', 'Netwerkfout, probeer het nog eens.');
@@ -233,27 +233,30 @@
     }
 
     async function verwijder() {
-        if (!huidigKanaal) return;
+        const kanaal = input.value.trim().toLowerCase();
+        if (!kanaal) { toast('Vul eerst een gebruikersnaam in.'); return; }
+
         verwijderBtn.disabled = true;
         verwijderBtn.textContent = 'Bezig...';
         try {
             const res = await fetch(`${API_BASE}/api/clip/deactiveer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ kanaal: huidigKanaal }),
+                body: JSON.stringify({ kanaal }),
             });
             const data = await res.json();
-            if (!data.ok) { toast(`❌ ${data.fout || 'Verwijderen mislukt.'}`); return; }
+            if (!data.ok) {
+                toonResultaat('fout', '❌ Kon niet verlaten', data.fout || 'Verwijderen mislukt.');
+                return;
+            }
 
-            toonResultaat('goed', '🗑️ Verwijderd', `De bot heeft twitch.tv/${huidigKanaal} verlaten (tenzij daar nog een andere widget actief is) en !clip werkt daar niet meer.`);
+            toonResultaat('goed', '🗑️ Verlaten', `De bot heeft twitch.tv/${kanaal} verlaten (tenzij daar nog een andere widget zoals de eerste-chat-widget actief is) en !clip werkt daar niet meer.`);
             stepsEl.hidden = true;
-            verwijderBtn.hidden = true;
-            huidigKanaal = null;
         } catch {
-            toast('❌ Netwerkfout, probeer het nog eens.');
+            toonResultaat('fout', '❌ Kon niet verlaten', 'Netwerkfout, probeer het nog eens.');
         } finally {
             verwijderBtn.disabled = false;
-            verwijderBtn.textContent = 'Kanaal weer verwijderen';
+            verwijderBtn.textContent = 'Verlaat kanaal';
         }
     }
 
