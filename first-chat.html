@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eerste Chat — GwnLarss</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        background: transparent;
+        overflow: hidden;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    /* ---------- "Eerste chat van de stream": knipoog naar het klassieke MSN Messenger-toastje.
+       Losgetrokken uit alerts.html zodat je 'm als eigen OBS-bron kan gebruiken, los van de
+       andere alert-types (bijv. in een andere scene, of los te kunnen aan/uitzetten). Deelt
+       dezelfde /api/alerts/stream-databron en instellingen, dus alles blijft in sync met
+       wat je in alerts-admin.html instelt. ---------- */
+    .msn-toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        width: 320px;
+        font-family: Tahoma, 'Segoe UI', sans-serif;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px -8px rgba(0, 0, 0, 0.6);
+        transform: translateY(calc(100% + 24px));
+        transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    }
+    .msn-toast.is-visible { transform: translateY(0); }
+    .msn-toast__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: linear-gradient(180deg, #6ea8fb, #1958c9);
+        color: #fff;
+        font-weight: bold;
+        font-size: 0.85rem;
+    }
+    .msn-toast__body {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+    }
+    .msn-toast__avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        background: #eef3fc;
+        border: 1px solid #c9d9f2;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    .msn-toast__avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .msn-toast__text { min-width: 0; }
+    .msn-toast__name {
+        margin: 0 0 2px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: #1958c9;
+    }
+    .msn-toast__message {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #333;
+    }
+</style>
+</head>
+<body>
+
+<div class="msn-toast" id="msn-toast">
+    <div class="msn-toast__header">
+        <span>💬</span>
+        <span>Nieuw bericht</span>
+    </div>
+    <div class="msn-toast__body">
+        <div class="msn-toast__avatar" id="msn-toast-avatar">
+            <img id="msn-toast-avatar-img" alt="" hidden>
+            <span id="msn-toast-avatar-fallback">👤</span>
+        </div>
+        <div class="msn-toast__text">
+            <p class="msn-toast__name" id="msn-toast-naam"></p>
+            <p class="msn-toast__message" id="msn-toast-bericht"></p>
+        </div>
+    </div>
+</div>
+<audio id="msn-audio"></audio>
+
+<script>
+    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
+    // De kopie op gwnlarss.nl zelf (Netlify, geen eigen backend) zet dit op de absolute
+    // 'https://api.gwnlarss.nl', dat is de enige regel die tussen die twee kopieën verschilt.
+    const API_BASE = 'https://api.gwnlarss.nl';
+
+    // Zonder ?kanaal=... in de URL gedraagt dit zich als vanouds: gericht op gwnlarss zelf.
+    // Vul je wel ?kanaal=jouwnaam in, dan activeert dit hieronder automatisch dat kanaal bij de
+    // bot (die joint het dan zelf, geen handmatige configuratie nodig) en toont alleen nog
+    // eerste-chat-meldingen uit dát kanaal.
+    const KANAAL = (new URLSearchParams(location.search).get('kanaal') || 'gwnlarss').trim().toLowerCase();
+
+    fetch(`${API_BASE}/api/first-chat/activeer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kanaal: KANAAL }),
+    }).catch(() => {}); // netwerkhikje: de widget blijft gewoon proberen te verbinden hieronder
+
+    let weergaveTijd = 5000;
+    let alertVolume = 1;
+    let heeftEigenMsnGeluid = false;
+
+    const msnToastEl = document.getElementById('msn-toast');
+    const msnNaamEl = document.getElementById('msn-toast-naam');
+    const msnBerichtEl = document.getElementById('msn-toast-bericht');
+    const msnAudioEl = document.getElementById('msn-audio');
+    const msnAvatarImgEl = document.getElementById('msn-toast-avatar-img');
+    const msnAvatarFallbackEl = document.getElementById('msn-toast-avatar-fallback');
+
+    // Klassiek MSN-"ding"-geluidje, zelf gesynthetiseerd (geen audiobestand nodig) — gebruikt als
+    // fallback zolang er voor 'first_chat' geen eigen geluid geüpload is via alerts-admin.html.
+    function speelMsnDing() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = ctx.currentTime;
+            [1046.50, 1318.51, 1567.98, 2093.00].forEach((freq, i) => {
+                const start = now + i * 0.07;
+                const duur = 0.22;
+                for (const [ratio, piek] of [[1, 0.28], [2, 0.09]]) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq * ratio;
+                    gain.gain.setValueAtTime(0, start);
+                    gain.gain.linearRampToValueAtTime(piek * alertVolume, start + 0.008);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + duur);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + duur + 0.02);
+                }
+            });
+        } catch { /* Web Audio niet beschikbaar, dan maar geen geluid */ }
+    }
+
+    // Deze pagina blijft normaal gesproken continu open als OBS browser-source, dus periodiek
+    // verversen i.p.v. eenmalig bij laden.
+    function ververs() {
+        fetch(`${API_BASE}/api/alerts/settings`).then(r => r.json()).then(s => { weergaveTijd = s.first_chat ?? 5000; }).catch(() => {});
+        fetch(`${API_BASE}/api/alerts/volume`).then(r => r.json()).then(v => {
+            msnAudioEl.volume = v.volume;
+            alertVolume = v.volume;
+        }).catch(() => {});
+        fetch(`${API_BASE}/api/alerts/sounds`).then(r => r.json()).then(s => { heeftEigenMsnGeluid = Boolean(s.first_chat); }).catch(() => {});
+    }
+    ververs();
+    setInterval(ververs, 15000);
+
+    const wachtrij = [];
+    let bezig = false;
+
+    function toonVolgende() {
+        if (bezig || wachtrij.length === 0) return;
+        bezig = true;
+        const event = wachtrij.shift();
+
+        msnNaamEl.textContent = event.naam;
+        msnBerichtEl.textContent = event.extra?.bericht || '';
+
+        const avatarUrl = event.extra?.avatarUrl;
+        if (avatarUrl) {
+            msnAvatarImgEl.src = avatarUrl;
+            msnAvatarImgEl.hidden = false;
+            msnAvatarFallbackEl.hidden = true;
+        } else {
+            msnAvatarImgEl.hidden = true;
+            msnAvatarFallbackEl.hidden = false;
+        }
+
+        if (heeftEigenMsnGeluid) {
+            msnAudioEl.src = `${API_BASE}/alert-sounds/${event.type}?t=${Date.now()}`;
+            msnAudioEl.play().catch(() => speelMsnDing());
+        } else {
+            speelMsnDing();
+        }
+
+        requestAnimationFrame(() => msnToastEl.classList.add('is-visible'));
+        setTimeout(() => {
+            msnToastEl.classList.remove('is-visible');
+            setTimeout(() => { bezig = false; toonVolgende(); }, 400);
+        }, weergaveTijd);
+    }
+
+    function verbind() {
+        const bron = new EventSource(`${API_BASE}/api/alerts/stream`);
+        bron.onmessage = e => {
+            const event = JSON.parse(e.data);
+            if (event.type !== 'first_chat') return; // andere alert-types negeren, die horen bij alerts.html
+            if ((event.extra?.kanaal ?? 'gwnlarss') !== KANAAL) return; // niet voor ons kanaal
+            wachtrij.push(event);
+            toonVolgende();
+        };
+        bron.onerror = () => {
+            bron.close();
+            setTimeout(verbind, 3000);
+        };
+    }
+    verbind();
+</script>
+
+</body>
+</html>
