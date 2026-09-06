@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>!clip-commando instellen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0b0b12;
+        --panel: #161623;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #f1f0f6;
+        --text-dim: #a3a1b5;
+        --purple: #9146ff;
+        --pink: #ff3ea5;
+        --green: #24d17e;
+        --red: #ff5c7a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+            radial-gradient(55% 40% at 12% 0%, rgba(145, 70, 255, 0.12), transparent 70%),
+            radial-gradient(50% 38% at 100% 15%, rgba(255, 62, 165, 0.1), transparent 70%),
+            var(--bg);
+        color: var(--text);
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6vh 6vw;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 560px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+    }
+    h1 {
+        font-family: 'Baloo 2', sans-serif;
+        font-weight: 800;
+        font-size: 1.7rem;
+        margin: 0 0 10px;
+    }
+    .sub { color: var(--text-dim); margin: 0 0 32px; line-height: 1.5; }
+
+    .form-row { display: flex; gap: 10px; }
+
+    input[type="text"] {
+        flex: 1;
+        min-width: 0;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: var(--purple); }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 14px 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border: none;
+        background: linear-gradient(100deg, var(--purple), var(--pink));
+        color: #fff;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+        transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn--ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+    .btn--ghost:hover { border-color: var(--purple); background: rgba(145, 70, 255, 0.1); opacity: 1; }
+
+    .result {
+        margin-top: 24px;
+        padding: 18px 20px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        display: none;
+    }
+    .result.is-visible { display: block; }
+    .result.is-fout { border-color: rgba(255, 92, 122, 0.4); background: rgba(255, 92, 122, 0.08); }
+    .result.is-goed { border-color: rgba(36, 209, 126, 0.4); background: rgba(36, 209, 126, 0.08); }
+    .result__titel { font-weight: 700; margin: 0 0 8px; }
+    .result__titel.is-fout { color: var(--red); }
+    .result__titel.is-goed { color: var(--green); }
+    .result p { margin: 0 0 14px; color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
+
+    .steps { margin: 0; padding-left: 20px; color: var(--text-dim); font-size: 0.88rem; line-height: 1.7; }
+    .steps code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        padding: 12px 22px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 0.9rem;
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        pointer-events: none;
+    }
+    .toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h1>📎 !clip-commando instellen</h1>
+    <p class="sub">Vul je Twitch-gebruikersnaam in. De bot joint dan meteen jouw chat, en vanaf dat moment kan iedereen daar <code>!clip</code> typen om automatisch een clip van de laatste ~30 seconden te maken — met een linkje er direct achteraan in de chat.</p>
+
+    <div class="form-row">
+        <input type="text" id="kanaal-input" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
+        <button type="button" class="btn" id="activeer-btn">Activeer</button>
+    </div>
+
+    <div class="result" id="result">
+        <p class="result__titel" id="result-titel"></p>
+        <p id="result-tekst"></p>
+        <ol class="steps" id="steps" hidden>
+            <li>Typ <code>!clip</code> in je eigen Twitch-chat om te testen.</li>
+            <li>Optioneel: <code>!clip een eigen bijschrift</code> geeft de clip-melding een eigen tekst i.p.v. je streamtitel.</li>
+            <li>Er geldt een cooldown van 30 seconden per kanaal tegen spam.</li>
+        </ol>
+        <button type="button" class="btn btn--ghost" id="verwijder-btn" hidden>Kanaal weer verwijderen</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
+    // De kopie op gwnlarss.nl zelf (Netlify, geen eigen backend) zet dit op de absolute
+    // 'https://api.gwnlarss.nl', dat is de enige regel die tussen die twee kopieën verschilt.
+    const API_BASE = 'https://api.gwnlarss.nl';
+
+    const input = document.getElementById('kanaal-input');
+    const btn = document.getElementById('activeer-btn');
+    const resultEl = document.getElementById('result');
+    const titelEl = document.getElementById('result-titel');
+    const tekstEl = document.getElementById('result-tekst');
+    const stepsEl = document.getElementById('steps');
+    const verwijderBtn = document.getElementById('verwijder-btn');
+    const toastEl = document.getElementById('toast');
+    let huidigKanaal = null;
+
+    function toast(tekst) {
+        toastEl.textContent = tekst;
+        toastEl.classList.add('is-visible');
+        setTimeout(() => toastEl.classList.remove('is-visible'), 2500);
+    }
+
+    function toonResultaat(status, titel, tekst) {
+        resultEl.classList.add('is-visible');
+        resultEl.classList.toggle('is-fout', status === 'fout');
+        resultEl.classList.toggle('is-goed', status === 'goed');
+        titelEl.className = `result__titel is-${status}`;
+        titelEl.textContent = titel;
+        tekstEl.textContent = tekst;
+    }
+
+    async function activeer() {
+        const kanaal = input.value.trim().toLowerCase();
+        if (!kanaal) { toast('Vul eerst een gebruikersnaam in.'); return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Bezig...';
+        stepsEl.hidden = true;
+
+        try {
+            const res = await fetch(`${API_BASE}/api/clip/activeer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal }),
+            });
+            const data = await res.json();
+
+            if (!data.ok) {
+                toonResultaat('fout', '❌ Kon niet activeren', data.fout || 'Onbekende fout.');
+                return;
+            }
+
+            stepsEl.hidden = false;
+            huidigKanaal = kanaal;
+            verwijderBtn.hidden = false;
+            toonResultaat(
+                'goed',
+                data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
+                data.nieuw
+                    ? `De bot zit nu in de chat van twitch.tv/${kanaal}. Iedereen daar kan vanaf nu !clip gebruiken.`
+                    : `Dit kanaal was al eerder geactiveerd, !clip werkt daar al gewoon.`,
+            );
+        } catch {
+            toonResultaat('fout', '❌ Kon niet activeren', 'Netwerkfout, probeer het nog eens.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Activeer';
+        }
+    }
+
+    async function verwijder() {
+        if (!huidigKanaal) return;
+        verwijderBtn.disabled = true;
+        verwijderBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/clip/deactiveer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal: huidigKanaal }),
+            });
+            const data = await res.json();
+            if (!data.ok) { toast(`❌ ${data.fout || 'Verwijderen mislukt.'}`); return; }
+
+            toonResultaat('goed', '🗑️ Verwijderd', `De bot heeft twitch.tv/${huidigKanaal} verlaten (tenzij daar nog een andere widget actief is) en !clip werkt daar niet meer.`);
+            stepsEl.hidden = true;
+            verwijderBtn.hidden = true;
+            huidigKanaal = null;
+        } catch {
+            toast('❌ Netwerkfout, probeer het nog eens.');
+        } finally {
+            verwijderBtn.disabled = false;
+            verwijderBtn.textContent = 'Kanaal weer verwijderen';
+        }
+    }
+
+    btn.addEventListener('click', activeer);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') activeer(); });
+    verwijderBtn.addEventListener('click', verwijder);
+</script>
+
+</body>
+</html>
