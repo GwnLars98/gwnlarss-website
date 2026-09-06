@@ -16,11 +16,11 @@
         font-family: 'Inter', system-ui, sans-serif;
     }
 
-    /* ---------- "Eerste chat van de stream": knipoog naar het klassieke MSN Messenger-toastje.
-       Losgetrokken uit alerts.html zodat je 'm als eigen OBS-bron kan gebruiken, los van de
-       andere alert-types (bijv. in een andere scene, of los te kunnen aan/uitzetten). Deelt
-       dezelfde /api/alerts/stream-databron en instellingen, dus alles blijft in sync met
-       wat je in alerts-admin.html instelt. ---------- */
+    /* ---------- "Eerste chat van de stream": knipoog naar klassieke IM-toastjes van vroeger
+       (MSN Messenger/AIM/ICQ/Yahoo! Messenger/Windows XP). Losgetrokken uit alerts.html zodat
+       je 'm als eigen OBS-bron kan gebruiken, los van de andere alert-types. Deelt dezelfde
+       /api/alerts/stream-databron en instellingen, dus alles blijft in sync met wat je in
+       alerts-admin.html instelt. Kies het uiterlijk via ?thema=msn|aim|icq|yahoo|xp. ---------- */
     .msn-toast {
         position: fixed;
         right: 24px;
@@ -81,14 +81,53 @@
         font-size: 0.85rem;
         color: #333;
     }
+
+    /* ---------- AIM: geel/zwart, Verdana-gevoel, oranjerode naam (klassieke AIM-linkkleur) ---------- */
+    .msn-toast.theme-aim { font-family: Verdana, Arial, sans-serif; }
+    .msn-toast.theme-aim .msn-toast__header { background: linear-gradient(180deg, #fff35c, #ffce00); color: #4a3b00; }
+    .msn-toast.theme-aim .msn-toast__avatar { background: #fffbe0; border-color: #ffce00; }
+    .msn-toast.theme-aim .msn-toast__name { color: #cc3300; }
+
+    /* ---------- ICQ: groen, bloem-vibe ---------- */
+    .msn-toast.theme-icq .msn-toast__header { background: linear-gradient(180deg, #b2e07a, #4c9a2a); color: #fff; }
+    .msn-toast.theme-icq .msn-toast__avatar { background: #eaffe0; border-color: #7cc750; }
+    .msn-toast.theme-icq .msn-toast__name { color: #2d6a1e; }
+
+    /* ---------- Yahoo! Messenger: paars ---------- */
+    .msn-toast.theme-yahoo .msn-toast__header { background: linear-gradient(180deg, #d9a6f0, #7b1fa2); color: #fff; }
+    .msn-toast.theme-yahoo .msn-toast__avatar { background: #f5e6fc; border-color: #b968c7; }
+    .msn-toast.theme-yahoo .msn-toast__name { color: #7b1fa2; }
+
+    /* ---------- Windows XP-balloon: systray-tooltip-vibe met een "staartje" rechtsonder ---------- */
+    .msn-toast.theme-xp {
+        background: linear-gradient(180deg, #eef7ff, #cfe8fb);
+        border: 1px solid #3f7fbf;
+        border-radius: 6px;
+    }
+    .msn-toast.theme-xp::after {
+        content: '';
+        position: absolute;
+        right: 28px;
+        bottom: -9px;
+        width: 18px;
+        height: 18px;
+        background: #cfe8fb;
+        border-right: 1px solid #3f7fbf;
+        border-bottom: 1px solid #3f7fbf;
+        transform: rotate(45deg);
+    }
+    .msn-toast.theme-xp .msn-toast__header { background: transparent; color: #003c74; padding-bottom: 0; }
+    .msn-toast.theme-xp .msn-toast__avatar { background: #fff; border-color: #3f7fbf; }
+    .msn-toast.theme-xp .msn-toast__name { color: #003c74; }
+    .msn-toast.theme-xp .msn-toast__message { color: #000; }
 </style>
 </head>
 <body>
 
 <div class="msn-toast" id="msn-toast">
     <div class="msn-toast__header">
-        <span>💬</span>
-        <span>Nieuw bericht</span>
+        <span id="toast-header-icoon">💬</span>
+        <span id="toast-header-titel">Nieuw bericht</span>
     </div>
     <div class="msn-toast__body">
         <div class="msn-toast__avatar" id="msn-toast-avatar">
@@ -131,31 +170,66 @@
     const msnAudioEl = document.getElementById('msn-audio');
     const msnAvatarImgEl = document.getElementById('msn-toast-avatar-img');
     const msnAvatarFallbackEl = document.getElementById('msn-toast-avatar-fallback');
+    const headerIcoonEl = document.getElementById('toast-header-icoon');
+    const headerTitelEl = document.getElementById('toast-header-titel');
 
-    // Klassiek MSN-"ding"-geluidje, zelf gesynthetiseerd (geen audiobestand nodig) — gebruikt als
+    // Elk geluidje hieronder is zelf gesynthetiseerd (geen audiobestanden nodig) — gebruikt als
     // fallback zolang er voor 'first_chat' geen eigen geluid geüpload is via alerts-admin.html.
-    function speelMsnDing() {
+    function speelToon(noten, golfvorm = 'sine', piek = 0.25) {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const now = ctx.currentTime;
-            [1046.50, 1318.51, 1567.98, 2093.00].forEach((freq, i) => {
-                const start = now + i * 0.07;
-                const duur = 0.22;
-                for (const [ratio, piek] of [[1, 0.28], [2, 0.09]]) {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = freq * ratio;
-                    gain.gain.setValueAtTime(0, start);
-                    gain.gain.linearRampToValueAtTime(piek * alertVolume, start + 0.008);
-                    gain.gain.exponentialRampToValueAtTime(0.001, start + duur);
-                    osc.connect(gain).connect(ctx.destination);
-                    osc.start(start);
-                    osc.stop(start + duur + 0.02);
-                }
-            });
+            for (const [freq, offset, duur] of noten) {
+                const start = now + offset;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = golfvorm;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, start);
+                gain.gain.linearRampToValueAtTime(piek * alertVolume, start + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, start + duur);
+                osc.connect(gain).connect(ctx.destination);
+                osc.start(start);
+                osc.stop(start + duur + 0.02);
+            }
         } catch { /* Web Audio niet beschikbaar, dan maar geen geluid */ }
     }
+    // Klassieke MSN-"ding": opwaarts belletje-arpeggio met een zachte boventoon per noot.
+    function speelMsnDing() {
+        [1046.50, 1318.51, 1567.98, 2093.00].forEach((freq, i) => {
+            speelToon([[freq, i * 0.07, 0.22]], 'sine', 0.28);
+            speelToon([[freq * 2, i * 0.07, 0.22]], 'sine', 0.09);
+        });
+    }
+    // AIM: twee korte "bloops" met een blokgolf, wat rauwer/digitaler dan MSN's belletje.
+    function speelAimGeluid() {
+        speelToon([[600, 0, 0.15], [450, 0.12, 0.15]], 'square', 0.14);
+    }
+    // ICQ: knipoog naar het beroemde tweetonige "uh-oh"-berichtgeluidje.
+    function speelIcqGeluid() {
+        speelToon([[880, 0, 0.15], [659.25, 0.18, 0.22]], 'triangle', 0.25);
+    }
+    // Yahoo! Messenger: helder oplopend drietonig belletje.
+    function speelYahooGeluid() {
+        speelToon([[523.25, 0, 0.2], [659.25, 0.09, 0.2], [783.99, 0.18, 0.22]], 'sine', 0.22);
+    }
+    // Windows XP: het klassieke tweetonige systeem-"ding".
+    function speelXpGeluid() {
+        speelToon([[783.99, 0, 0.4], [1046.50, 0.15, 0.4]], 'sine', 0.2);
+    }
+
+    const THEMAS = {
+        msn: { klasse: null, icoon: '💬', titel: 'Nieuw bericht', geluid: speelMsnDing },
+        aim: { klasse: 'theme-aim', icoon: '🏃', titel: 'IM ontvangen', geluid: speelAimGeluid },
+        icq: { klasse: 'theme-icq', icoon: '🌼', titel: 'Nieuw bericht', geluid: speelIcqGeluid },
+        yahoo: { klasse: 'theme-yahoo', icoon: '💜', titel: 'Yahoo!-bericht', geluid: speelYahooGeluid },
+        xp: { klasse: 'theme-xp', icoon: 'ℹ️', titel: 'Bericht ontvangen', geluid: speelXpGeluid },
+    };
+    const themaKey = (new URLSearchParams(location.search).get('thema') || 'msn').toLowerCase();
+    const thema = THEMAS[themaKey] ?? THEMAS.msn;
+    if (thema.klasse) msnToastEl.classList.add(thema.klasse);
+    headerIcoonEl.textContent = thema.icoon;
+    headerTitelEl.textContent = thema.titel;
 
     // Deze pagina blijft normaal gesproken continu open als OBS browser-source, dus periodiek
     // verversen i.p.v. eenmalig bij laden.
@@ -193,9 +267,9 @@
 
         if (heeftEigenMsnGeluid) {
             msnAudioEl.src = `${API_BASE}/alert-sounds/${event.type}?t=${Date.now()}`;
-            msnAudioEl.play().catch(() => speelMsnDing());
+            msnAudioEl.play().catch(() => thema.geluid());
         } else {
-            speelMsnDing();
+            thema.geluid();
         }
 
         requestAnimationFrame(() => msnToastEl.classList.add('is-visible'));

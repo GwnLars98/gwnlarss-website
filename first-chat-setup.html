@@ -56,6 +56,26 @@
     .sub { color: var(--text-dim); margin: 0 0 32px; line-height: 1.5; }
 
     .form-row { display: flex; gap: 10px; }
+
+    .thema-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 16px;
+        font-size: 0.88rem;
+        color: var(--text-dim);
+    }
+    .thema-label select {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 0.9rem;
+    }
+    .thema-label select:focus { outline: none; border-color: var(--purple); }
     input[type="text"] {
         flex: 1;
         min-width: 0;
@@ -154,6 +174,17 @@
         <button type="button" class="btn" id="activeer-btn">Activeer</button>
     </div>
 
+    <label class="thema-label">
+        Uiterlijk van het toastje
+        <select id="thema-select">
+            <option value="msn">💬 MSN Messenger (standaard)</option>
+            <option value="aim">🏃 AIM</option>
+            <option value="icq">🌼 ICQ</option>
+            <option value="yahoo">💜 Yahoo! Messenger</option>
+            <option value="xp">ℹ️ Windows XP-balloon</option>
+        </select>
+    </label>
+
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
         <p id="result-tekst"></p>
@@ -188,6 +219,7 @@
     const stepsEl = document.getElementById('steps');
     const kopieerBtn = document.getElementById('kopieer-btn');
     const verwijderBtn = document.getElementById('verwijder-btn');
+    const themaSelect = document.getElementById('thema-select');
     const toastEl = document.getElementById('toast');
     let huidigKanaal = null;
 
@@ -247,7 +279,10 @@
                 return;
             }
 
-            const link = `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`;
+            const thema = themaSelect.value;
+            const link = thema === 'msn'
+                ? `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`
+                : `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}&thema=${encodeURIComponent(thema)}`;
             linkOutput.value = link;
             linkRow.hidden = false;
             stepsEl.hidden = false;
