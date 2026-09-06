@@ -116,6 +116,15 @@
     .thema-kaart__preview--xp { border: 1px solid #3f7fbf; border-radius: 5px; }
     .thema-kaart__preview--xp .thema-kaart__balk { background: linear-gradient(180deg, #eef7ff, #cfe8fb); color: #003c74; }
     .thema-kaart__preview--xp .thema-kaart__regel { background: linear-gradient(180deg, #eef7ff, #cfe8fb); }
+
+    .thema-kaart__preview--skype .thema-kaart__balk { background: linear-gradient(180deg, #00aff0, #0078d4); color: #fff; }
+    .thema-kaart__preview--nokia .thema-kaart__balk { background: #08150c; color: #8fce6a; font-family: 'Courier New', monospace; }
+    .thema-kaart__preview--nokia .thema-kaart__regel { background: #0d1f0d; }
+    .thema-kaart__preview--bbm .thema-kaart__balk { background: #000; color: #ee2737; }
+    .thema-kaart__preview--bbm .thema-kaart__regel { background: #1a1a1a; }
+    .thema-kaart__preview--discord .thema-kaart__balk { background: #5865f2; color: #fff; }
+    .thema-kaart__preview--discord .thema-kaart__regel { background: #313338; }
+    .thema-kaart__preview--instagram .thema-kaart__balk { background: linear-gradient(90deg, #833ab4, #fd1d1d, #fcb045); color: #fff; }
     input[type="text"] {
         flex: 1;
         min-width: 0;
@@ -250,6 +259,41 @@
                 <span class="thema-kaart__regel"></span>
             </span>
             <span class="thema-kaart__naam">Windows XP</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="skype">
+            <span class="thema-kaart__preview thema-kaart__preview--skype">
+                <span class="thema-kaart__balk">📞 Skype-bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Skype</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="nokia">
+            <span class="thema-kaart__preview thema-kaart__preview--nokia">
+                <span class="thema-kaart__balk">📱 Nieuw bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Nokia SMS</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="bbm">
+            <span class="thema-kaart__preview thema-kaart__preview--bbm">
+                <span class="thema-kaart__balk">📍 BBM PING!</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">BBM</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="discord">
+            <span class="thema-kaart__preview thema-kaart__preview--discord">
+                <span class="thema-kaart__balk">🎮 Nieuw bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Discord</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="instagram">
+            <span class="thema-kaart__preview thema-kaart__preview--instagram">
+                <span class="thema-kaart__balk">📸 Nieuw DM-bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Instagram</span>
         </button>
     </div>
 

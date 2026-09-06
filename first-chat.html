@@ -120,6 +120,37 @@
     .msn-toast.theme-xp .msn-toast__avatar { background: #fff; border-color: #3f7fbf; }
     .msn-toast.theme-xp .msn-toast__name { color: #003c74; }
     .msn-toast.theme-xp .msn-toast__message { color: #000; }
+
+    /* ---------- Skype (klassiek): blauw ---------- */
+    .msn-toast.theme-skype .msn-toast__header { background: linear-gradient(180deg, #00aff0, #0078d4); color: #fff; }
+    .msn-toast.theme-skype .msn-toast__avatar { background: #e6f6ff; border-color: #00aff0; }
+    .msn-toast.theme-skype .msn-toast__name { color: #0078d4; }
+
+    /* ---------- Nokia SMS: retro groene LCD-telefoonschermvibe ---------- */
+    .msn-toast.theme-nokia { background: #0d1f0d; font-family: 'Courier New', monospace; }
+    .msn-toast.theme-nokia .msn-toast__header { background: #08150c; color: #8fce6a; border-bottom: 1px solid #2c4a2c; }
+    .msn-toast.theme-nokia .msn-toast__avatar { background: #142814; border-color: #2c4a2c; color: #8fce6a; }
+    .msn-toast.theme-nokia .msn-toast__name { color: #8fce6a; }
+    .msn-toast.theme-nokia .msn-toast__message { color: #6fae52; }
+
+    /* ---------- BBM (BlackBerry Messenger): zwart/rood ---------- */
+    .msn-toast.theme-bbm { background: #1a1a1a; }
+    .msn-toast.theme-bbm .msn-toast__header { background: #000; color: #ee2737; border-bottom: 1px solid #ee2737; }
+    .msn-toast.theme-bbm .msn-toast__avatar { background: #2a2a2a; border-color: #ee2737; }
+    .msn-toast.theme-bbm .msn-toast__name { color: #ee2737; }
+    .msn-toast.theme-bbm .msn-toast__message { color: #ddd; }
+
+    /* ---------- Discord zelf: blurple op donker (Discord's eigen dark-thema-kleuren) ---------- */
+    .msn-toast.theme-discord { background: #313338; font-family: 'gg sans', 'Inter', system-ui, sans-serif; }
+    .msn-toast.theme-discord .msn-toast__header { background: #5865f2; color: #fff; }
+    .msn-toast.theme-discord .msn-toast__avatar { background: #404249; border-color: #5865f2; }
+    .msn-toast.theme-discord .msn-toast__name { color: #fff; }
+    .msn-toast.theme-discord .msn-toast__message { color: #b5bac1; }
+
+    /* ---------- Instagram: het bekende paars-roze-oranje verloop ---------- */
+    .msn-toast.theme-instagram .msn-toast__header { background: linear-gradient(90deg, #833ab4, #fd1d1d, #fcb045); color: #fff; }
+    .msn-toast.theme-instagram .msn-toast__avatar { background: #fff0f5; border: 2px solid; border-image: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045) 1; }
+    .msn-toast.theme-instagram .msn-toast__name { color: #c8228c; }
 </style>
 </head>
 <body>
@@ -217,6 +248,26 @@
     function speelXpGeluid() {
         speelToon([[783.99, 0, 0.4], [1046.50, 0.15, 0.4]], 'sine', 0.2);
     }
+    // Skype: een oplopende "swoosh"-achtige tweetoon, iets zachter van timbre dan de rest.
+    function speelSkypeGeluid() {
+        speelToon([[440, 0, 0.18], [880, 0.1, 0.3]], 'sine', 0.22);
+    }
+    // Nokia: het bekende korte, hoge "tri-tone"-getik, met een blokgolf voor dat piepBeep-gevoel.
+    function speelNokiaGeluid() {
+        speelToon([[1500, 0, 0.08], [1500, 0.12, 0.08], [1500, 0.24, 0.08]], 'square', 0.15);
+    }
+    // BBM: één scherpe, korte "ping".
+    function speelBbmGeluid() {
+        speelToon([[1800, 0, 0.12]], 'sine', 0.3);
+    }
+    // Discord: een zachte tweetonige "doot-doot", iets lager en ronder dan de andere geluidjes.
+    function speelDiscordGeluid() {
+        speelToon([[830.61, 0, 0.15], [622.25, 0.1, 0.2]], 'sine', 0.2);
+    }
+    // Instagram: een zachte, korte "pop"-bubbel.
+    function speelInstagramGeluid() {
+        speelToon([[700, 0, 0.1]], 'triangle', 0.2);
+    }
 
     const THEMAS = {
         msn: { klasse: null, icoon: '💬', titel: 'Nieuw bericht', geluid: speelMsnDing },
@@ -224,6 +275,11 @@
         icq: { klasse: 'theme-icq', icoon: '🌼', titel: 'Nieuw bericht', geluid: speelIcqGeluid },
         yahoo: { klasse: 'theme-yahoo', icoon: '💜', titel: 'Yahoo!-bericht', geluid: speelYahooGeluid },
         xp: { klasse: 'theme-xp', icoon: 'ℹ️', titel: 'Bericht ontvangen', geluid: speelXpGeluid },
+        skype: { klasse: 'theme-skype', icoon: '📞', titel: 'Skype-bericht', geluid: speelSkypeGeluid },
+        nokia: { klasse: 'theme-nokia', icoon: '📱', titel: 'Nieuw bericht', geluid: speelNokiaGeluid },
+        bbm: { klasse: 'theme-bbm', icoon: '📍', titel: 'BBM PING!', geluid: speelBbmGeluid },
+        discord: { klasse: 'theme-discord', icoon: '🎮', titel: 'Nieuw bericht', geluid: speelDiscordGeluid },
+        instagram: { klasse: 'theme-instagram', icoon: '📸', titel: 'Nieuw DM-bericht', geluid: speelInstagramGeluid },
     };
     const themaKey = (new URLSearchParams(location.search).get('thema') || 'msn').toLowerCase();
     const thema = THEMAS[themaKey] ?? THEMAS.msn;
