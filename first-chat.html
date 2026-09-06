@@ -45,6 +45,8 @@
         font-weight: bold;
         font-size: 0.85rem;
     }
+    #toast-header-icoon { display: flex; align-items: center; flex-shrink: 0; }
+    #toast-header-icoon svg { display: block; }
     .msn-toast__body {
         display: flex;
         align-items: center;
@@ -232,59 +234,84 @@
             speelToon([[freq * 2, i * 0.07, 0.22]], 'sine', 0.09);
         });
     }
-    // AIM: twee korte "bloops" met een blokgolf, wat rauwer/digitaler dan MSN's belletje.
+    // AIM: twee korte "bloops" met een blokgolf plus een zachte boventoon voor wat meer body.
     function speelAimGeluid() {
-        speelToon([[600, 0, 0.15], [450, 0.12, 0.15]], 'square', 0.14);
+        speelToon([[600, 0, 0.15], [450, 0.12, 0.15]], 'square', 0.13);
+        speelToon([[1200, 0, 0.12], [900, 0.12, 0.12]], 'sine', 0.05);
     }
-    // ICQ: knipoog naar het beroemde tweetonige "uh-oh"-berichtgeluidje.
+    // ICQ: knipoog naar het beroemde tweetonige "uh-oh"-berichtgeluidje, met een kwint erbij
+    // voor een voller, minder kaal geluid.
     function speelIcqGeluid() {
-        speelToon([[880, 0, 0.15], [659.25, 0.18, 0.22]], 'triangle', 0.25);
+        speelToon([[880, 0, 0.15], [659.25, 0.18, 0.22]], 'triangle', 0.24);
+        speelToon([[1318.51, 0, 0.15], [987.77, 0.18, 0.22]], 'sine', 0.06);
     }
-    // Yahoo! Messenger: helder oplopend drietonig belletje.
+    // Yahoo! Messenger: helder oplopend drietonig belletje met een lichte glinstering erboven.
     function speelYahooGeluid() {
         speelToon([[523.25, 0, 0.2], [659.25, 0.09, 0.2], [783.99, 0.18, 0.22]], 'sine', 0.22);
+        speelToon([[1046.50, 0, 0.18], [1318.51, 0.09, 0.18], [1567.98, 0.18, 0.2]], 'sine', 0.05);
     }
-    // Windows XP: het klassieke tweetonige systeem-"ding".
+    // Windows XP: het klassieke tweetonige systeem-"ding", met een zachte suboctaaf voor meer diepte.
     function speelXpGeluid() {
         speelToon([[783.99, 0, 0.4], [1046.50, 0.15, 0.4]], 'sine', 0.2);
+        speelToon([[391.995, 0, 0.35], [523.25, 0.15, 0.35]], 'sine', 0.06);
     }
-    // Skype: een oplopende "swoosh"-achtige tweetoon, iets zachter van timbre dan de rest.
+    // Skype: een oplopende "swoosh"-achtige tweetoon met een zachte ruisvleug voor het "lucht"-gevoel.
     function speelSkypeGeluid() {
-        speelToon([[440, 0, 0.18], [880, 0.1, 0.3]], 'sine', 0.22);
+        speelToon([[440, 0, 0.18], [880, 0.1, 0.3]], 'sine', 0.2);
+        speelToon([[440 * 1.5, 0, 0.16], [880 * 1.5, 0.1, 0.26]], 'triangle', 0.06);
     }
-    // Nokia: het bekende korte, hoge "tri-tone"-getik, met een blokgolf voor dat piepBeep-gevoel.
+    // Nokia: het bekende korte, hoge "tri-tone"-getik — bewust een generiek eigen patroon en
+    // geen exacte Nokia-melodie na te bootsen, die specifieke jingle is een geregistreerd
+    // geluidsmerk. Blokgolf + een octaaf erboven voor wat meer "piepBeep"-scherpte.
     function speelNokiaGeluid() {
-        speelToon([[1500, 0, 0.08], [1500, 0.12, 0.08], [1500, 0.24, 0.08]], 'square', 0.15);
+        speelToon([[1500, 0, 0.08], [1500, 0.12, 0.08], [1500, 0.24, 0.08]], 'square', 0.14);
+        speelToon([[3000, 0, 0.06], [3000, 0.12, 0.06], [3000, 0.24, 0.06]], 'square', 0.04);
     }
-    // BBM: één scherpe, korte "ping".
+    // BBM: één scherpe, korte "ping" met een kwint-boventoon voor wat meer glans.
     function speelBbmGeluid() {
-        speelToon([[1800, 0, 0.12]], 'sine', 0.3);
+        speelToon([[1800, 0, 0.12]], 'sine', 0.28);
+        speelToon([[2700, 0, 0.1]], 'sine', 0.08);
     }
-    // Discord: een zachte tweetonige "doot-doot", iets lager en ronder dan de andere geluidjes.
+    // Discord: een zachte tweetonige "doot-doot", iets lager en ronder, met een subtiele boventoon.
     function speelDiscordGeluid() {
-        speelToon([[830.61, 0, 0.15], [622.25, 0.1, 0.2]], 'sine', 0.2);
+        speelToon([[830.61, 0, 0.15], [622.25, 0.1, 0.2]], 'sine', 0.19);
+        speelToon([[1245.51, 0, 0.13], [933.33, 0.1, 0.18]], 'sine', 0.05);
     }
-    // Instagram: een zachte, korte "pop"-bubbel.
+    // Instagram: een zachte, korte "pop"-bubbel met een tikkeltje glinstering erboven.
     function speelInstagramGeluid() {
         speelToon([[700, 0, 0.1]], 'triangle', 0.2);
+        speelToon([[1400, 0.02, 0.08]], 'sine', 0.06);
     }
 
+    // Zelfgetekende iconen (geen echte merklogo's) die qua vorm/kleur de sfeer van elk
+    // programma oproepen, zonder de exacte beeldmerken van die bedrijven over te nemen.
+    const ICOON_MSN = '<svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-5 4v-4H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" fill="#fff"/></svg>';
+    const ICOON_AIM = '<svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="5.2" r="2.1" fill="#000"/><path d="M12 8c-1 0-1.8.6-2.1 1.5L8.1 14l1.9.7.9-2.8.7 1.8-2.2 4.9 1.9.9 2.4-5.3.5 1.3v3.8h1.9v-4.3l-1.3-3.2 2.4-1.5-.9-1.7-3 1.9-.9-1.8C13.4 8.3 12.7 8 12 8Z" fill="#000"/></svg>';
+    const ICOON_ICQ = '<svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4" fill="#fff"/><circle cx="12" cy="17" r="4" fill="#fff"/><circle cx="7" cy="12" r="4" fill="#fff"/><circle cx="17" cy="12" r="4" fill="#fff"/><circle cx="12" cy="12" r="3" fill="#ffe680"/></svg>';
+    const ICOON_YAHOO = '<svg width="12" height="16" viewBox="0 0 14 20"><rect x="4" y="0" width="6" height="12" rx="3" fill="#fff"/><circle cx="7" cy="17" r="3.2" fill="#fff"/></svg>';
+    const ICOON_XP = '<svg width="16" height="16" viewBox="0 0 20 20"><rect x="1" y="1" width="8" height="8" fill="#f35325"/><rect x="11" y="1" width="8" height="8" fill="#81bc06"/><rect x="1" y="11" width="8" height="8" fill="#05a6f0"/><rect x="11" y="11" width="8" height="8" fill="#ffba08"/></svg>';
+    const ICOON_SKYPE = '<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 4a7 7 0 0 0-6.9 8.1A5 5 0 0 0 7 22a5 5 0 0 0 4-2 7 7 0 0 0 8-9.9A7 7 0 0 0 12 4Z" fill="#fff"/></svg>';
+    const ICOON_NOKIA = '<svg width="13" height="16" viewBox="0 0 16 22"><rect x="1" y="1" width="14" height="20" rx="3" fill="none" stroke="#8fce6a" stroke-width="1.6"/><rect x="4" y="4" width="8" height="9" fill="#8fce6a"/><circle cx="8" cy="17" r="1.4" fill="#8fce6a"/></svg>';
+    const ICOON_BBM = '<svg width="18" height="12" viewBox="0 0 24 16"><circle cx="8" cy="8" r="6" fill="#ee2737"/><circle cx="18" cy="8" r="6" fill="#ee2737"/></svg>';
+    const ICOON_DISCORD = '<svg width="18" height="15" viewBox="0 0 26 22"><rect x="1" y="1" width="24" height="18" rx="9" fill="#fff"/><ellipse cx="9" cy="10" rx="1.8" ry="2.4" fill="#5865f2"/><ellipse cx="17" cy="10" rx="1.8" ry="2.4" fill="#5865f2"/></svg>';
+    const ICOON_INSTAGRAM = '<svg width="16" height="16" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="17" rx="5" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12.5" r="4.2" fill="none" stroke="#fff" stroke-width="2"/><circle cx="17.5" cy="7.5" r="1.1" fill="#fff"/></svg>';
+
     const THEMAS = {
-        msn: { klasse: null, icoon: '💬', titel: 'Nieuw bericht', geluid: speelMsnDing },
-        aim: { klasse: 'theme-aim', icoon: '🏃', titel: 'IM ontvangen', geluid: speelAimGeluid },
-        icq: { klasse: 'theme-icq', icoon: '🌼', titel: 'Nieuw bericht', geluid: speelIcqGeluid },
-        yahoo: { klasse: 'theme-yahoo', icoon: '💜', titel: 'Yahoo!-bericht', geluid: speelYahooGeluid },
-        xp: { klasse: 'theme-xp', icoon: 'ℹ️', titel: 'Bericht ontvangen', geluid: speelXpGeluid },
-        skype: { klasse: 'theme-skype', icoon: '📞', titel: 'Skype-bericht', geluid: speelSkypeGeluid },
-        nokia: { klasse: 'theme-nokia', icoon: '📱', titel: 'Nieuw bericht', geluid: speelNokiaGeluid },
-        bbm: { klasse: 'theme-bbm', icoon: '📍', titel: 'BBM PING!', geluid: speelBbmGeluid },
-        discord: { klasse: 'theme-discord', icoon: '🎮', titel: 'Nieuw bericht', geluid: speelDiscordGeluid },
-        instagram: { klasse: 'theme-instagram', icoon: '📸', titel: 'Nieuw DM-bericht', geluid: speelInstagramGeluid },
+        msn: { klasse: null, icoon: ICOON_MSN, titel: 'Nieuw bericht', geluid: speelMsnDing },
+        aim: { klasse: 'theme-aim', icoon: ICOON_AIM, titel: 'IM ontvangen', geluid: speelAimGeluid },
+        icq: { klasse: 'theme-icq', icoon: ICOON_ICQ, titel: 'Nieuw bericht', geluid: speelIcqGeluid },
+        yahoo: { klasse: 'theme-yahoo', icoon: ICOON_YAHOO, titel: 'Yahoo!-bericht', geluid: speelYahooGeluid },
+        xp: { klasse: 'theme-xp', icoon: ICOON_XP, titel: 'Bericht ontvangen', geluid: speelXpGeluid },
+        skype: { klasse: 'theme-skype', icoon: ICOON_SKYPE, titel: 'Skype-bericht', geluid: speelSkypeGeluid },
+        nokia: { klasse: 'theme-nokia', icoon: ICOON_NOKIA, titel: 'Nieuw bericht', geluid: speelNokiaGeluid },
+        bbm: { klasse: 'theme-bbm', icoon: ICOON_BBM, titel: 'BBM PING!', geluid: speelBbmGeluid },
+        discord: { klasse: 'theme-discord', icoon: ICOON_DISCORD, titel: 'Nieuw bericht', geluid: speelDiscordGeluid },
+        instagram: { klasse: 'theme-instagram', icoon: ICOON_INSTAGRAM, titel: 'Nieuw DM-bericht', geluid: speelInstagramGeluid },
     };
     const themaKey = (new URLSearchParams(location.search).get('thema') || 'msn').toLowerCase();
     const thema = THEMAS[themaKey] ?? THEMAS.msn;
     if (thema.klasse) msnToastEl.classList.add(thema.klasse);
-    headerIcoonEl.textContent = thema.icoon;
+    headerIcoonEl.innerHTML = thema.icoon;
     headerTitelEl.textContent = thema.titel;
 
     // Deze pagina blijft normaal gesproken continu open als OBS browser-source, dus periodiek
