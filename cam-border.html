@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cam Border — GwnLarss</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --purple: #9146ff;
+        --pink: #ff3ea5;
+        --live: #ff2e4d;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        background: transparent;
+        overflow: hidden;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Plaats deze bron in OBS precies over je camera-bron heen, en pas de grootte van
+       .frame hieronder aan (of stretch de hele browser-source) tot 'm past. */
+    .frame {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 22px;
+        box-sizing: border-box;
+    }
+
+    /* Verlopende rand via een gemaskeerde achtergrond i.p.v. `border`, zodat de hoeken
+       mooi vloeiend blijven i.p.v. een harde kleurovergang op de randen. */
+    .frame::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 5px;
+        background: linear-gradient(135deg, var(--purple), var(--pink));
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        box-shadow: 0 0 26px 2px rgba(145, 70, 255, 0.55), 0 0 46px 6px rgba(255, 62, 165, 0.3);
+        pointer-events: none;
+    }
+
+    /* Zelfde "live"-taal als de website (public/styles.css: .badge--live/.dot--live) — een
+       rood-getinte gloeiende pil met een ademend puntje, i.p.v. een neutrale donkere chip. */
+    .badge {
+        position: absolute;
+        right: 22px;
+        bottom: 22px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 26px;
+        background: rgba(255, 46, 77, 0.12);
+        border: 1px solid rgba(255, 46, 77, 0.4);
+        border-radius: 999px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.6);
+    }
+    /* Zelfde ademende aura als starting-soon.html/de andere widgets, hier in de rode
+       "live"-tint i.p.v. paars/roze zodat 'm bij de rest van de badge past. */
+    .badge::before {
+        content: '';
+        position: absolute;
+        inset: -30px;
+        z-index: -1;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 46, 77, 0.28), rgba(255, 46, 77, 0.1) 45%, transparent 72%);
+        filter: blur(20px);
+        animation: aura-breathe 5.5s ease-in-out infinite;
+        pointer-events: none;
+    }
+    @keyframes aura-breathe {
+        0%, 100% { transform: scale(0.94); opacity: 0.7; }
+        50% { transform: scale(1.05); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .badge::before { animation: none; }
+    }
+    .badge__dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--live);
+        box-shadow: 0 0 10px var(--live);
+        animation: badge-pulse 1.6s infinite;
+    }
+    @keyframes badge-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .badge__dot { animation: none; }
+    }
+    .badge__text {
+        font-family: 'Baloo 2', sans-serif;
+        font-weight: 800;
+        font-size: 1.6rem;
+        color: #ffffff;
+        letter-spacing: -0.01em;
+    }
+</style>
+</head>
+<body>
+
+<div class="frame">
+    <div class="badge">
+        <span class="badge__dot"></span>
+        <span class="badge__text" id="badge-tekst">GwnLarss</span>
+    </div>
+</div>
+
+<script>
+    // Zelfbedieningsversie: naam en kleuren instelbaar via de URL, zie cam-border-setup.html.
+    // Zonder parameters gedraagt dit zich gewoon als vanouds (GwnLarss, paars/roze).
+    const params = new URLSearchParams(location.search);
+    const naam = params.get('naam');
+    if (naam) document.getElementById('badge-tekst').textContent = naam;
+    const kleur1 = params.get('kleur1');
+    const kleur2 = params.get('kleur2');
+    if (kleur1) document.documentElement.style.setProperty('--purple', `#${kleur1.replace('#', '')}`);
+    if (kleur2) document.documentElement.style.setProperty('--pink', `#${kleur2.replace('#', '')}`);
+</script>
+
+</body>
+</html>

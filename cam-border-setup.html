@@ -251,8 +251,9 @@
 
 <script>
     // De overlay-bestanden zelf hebben geen backend nodig (puur CSS/JS), dus deze pagina praat
-    // met niks — hij bouwt gewoon een linkje naar de vaste overlay-bestanden op api.gwnlarss.nl.
-    const OVERLAY_BASIS = 'https://api.gwnlarss.nl';
+    // met niks — hij bouwt gewoon een linkje naar de vaste overlay-bestanden op gwnlarss.nl
+    // (bewust niet de api.gwnlarss.nl-backend, dit is publieke content).
+    const OVERLAY_BASIS = 'https://gwnlarss.nl';
 
     const naamInput = document.getElementById('naam-input');
     const kleur1Input = document.getElementById('kleur1-input');
