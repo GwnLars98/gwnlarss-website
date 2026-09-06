@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cam-border overlay instellen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0b0b12;
+        --panel: #161623;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #f1f0f6;
+        --text-dim: #a3a1b5;
+        --purple: #9146ff;
+        --pink: #ff3ea5;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+            radial-gradient(55% 40% at 12% 0%, rgba(145, 70, 255, 0.12), transparent 70%),
+            radial-gradient(50% 38% at 100% 15%, rgba(255, 62, 165, 0.1), transparent 70%),
+            var(--bg);
+        color: var(--text);
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6vh 6vw;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 620px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+    }
+    h1 {
+        font-family: 'Baloo 2', sans-serif;
+        font-weight: 800;
+        font-size: 1.7rem;
+        margin: 0 0 10px;
+    }
+    .sub { color: var(--text-dim); margin: 0 0 28px; line-height: 1.5; }
+
+    .veld-label {
+        margin: 20px 0 10px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text-dim);
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: var(--purple); }
+
+    .variant-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+    }
+    .variant-knop {
+        padding: 12px 10px;
+        border-radius: 12px;
+        border: 2px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+    }
+    .variant-knop:hover { border-color: rgba(145, 70, 255, 0.5); }
+    .variant-knop.is-actief { border-color: var(--purple); background: rgba(145, 70, 255, 0.12); }
+
+    .kleur-rij { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .swatch {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.15s, border-color 0.15s;
+    }
+    .swatch:hover { transform: scale(1.08); }
+    .swatch.is-actief { border-color: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15); }
+
+    .kleur-custom { display: flex; align-items: center; gap: 8px; margin-left: 4px; }
+    .kleur-custom label { font-size: 0.78rem; color: var(--text-dim); }
+    input[type="color"] {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: none;
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .preview-wrap { margin-top: 28px; display: flex; justify-content: center; }
+    .preview-canvas {
+        position: relative;
+        width: 100%;
+        max-width: 420px;
+        aspect-ratio: 16 / 9;
+        border-radius: 16px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 50% 38%, #3a3550 0%, #2a2638 45%, #1c1a26 100%);
+        border: 1px solid var(--border);
+        transition: aspect-ratio 0.2s;
+    }
+    .preview-canvas.is-verticaal { aspect-ratio: 9 / 16; max-width: 240px; }
+    .preview-canvas iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 14px 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border: none;
+        background: linear-gradient(100deg, var(--purple), var(--pink));
+        color: #fff;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+        transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn--ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+    .btn--ghost:hover { border-color: var(--purple); background: rgba(145, 70, 255, 0.1); opacity: 1; }
+
+    .link-row { display: flex; gap: 8px; margin-top: 24px; }
+    .link-row input {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+    }
+
+    .steps { margin: 16px 0 0; padding-left: 20px; color: var(--text-dim); font-size: 0.88rem; line-height: 1.7; }
+
+    .toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        padding: 12px 22px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 0.9rem;
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        pointer-events: none;
+    }
+    .toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🎥 Cam-border overlay instellen</h1>
+    <p class="sub">Kies je eigen naam en kleuren voor de camera-rand overlay, en gebruik het linkje hieronder als Browser Source in OBS. Werkt meteen, geen account of koppeling nodig.</p>
+
+    <p class="veld-label">Naam op de badge</p>
+    <input type="text" id="naam-input" placeholder="GwnLarss" maxlength="24" autocomplete="off">
+
+    <p class="veld-label">Variant</p>
+    <div class="variant-grid" id="variant-grid">
+        <button type="button" class="variant-knop is-actief" data-bestand="cam-border.html" data-verticaal="0">Horizontaal</button>
+        <button type="button" class="variant-knop" data-bestand="cam-border-fullscreen.html" data-verticaal="0">Fullscreen horizontaal</button>
+        <button type="button" class="variant-knop" data-bestand="cam-border-verticaal.html" data-verticaal="1">Verticaal</button>
+        <button type="button" class="variant-knop" data-bestand="cam-border-fullscreen-verticaal.html" data-verticaal="1">Fullscreen verticaal</button>
+    </div>
+
+    <p class="veld-label">Kleuren</p>
+    <div class="kleur-rij" id="kleur-rij">
+        <button type="button" class="swatch is-actief" data-purple="#9146ff" data-pink="#ff3ea5" style="background: linear-gradient(135deg, #9146ff, #ff3ea5);" aria-label="Paars/roze (standaard)"></button>
+        <button type="button" class="swatch" data-purple="#3b82f6" data-pink="#22d3ee" style="background: linear-gradient(135deg, #3b82f6, #22d3ee);" aria-label="Blauw/cyaan"></button>
+        <button type="button" class="swatch" data-purple="#16a34a" data-pink="#a3e635" style="background: linear-gradient(135deg, #16a34a, #a3e635);" aria-label="Groen/lime"></button>
+        <button type="button" class="swatch" data-purple="#f97316" data-pink="#facc15" style="background: linear-gradient(135deg, #f97316, #facc15);" aria-label="Oranje/geel"></button>
+        <button type="button" class="swatch" data-purple="#ef4444" data-pink="#f472b6" style="background: linear-gradient(135deg, #ef4444, #f472b6);" aria-label="Rood/roze"></button>
+        <div class="kleur-custom">
+            <label for="kleur1-input">Kleur 1</label>
+            <input type="color" id="kleur1-input" value="#9146ff">
+        </div>
+        <div class="kleur-custom">
+            <label for="kleur2-input">Kleur 2</label>
+            <input type="color" id="kleur2-input" value="#ff3ea5">
+        </div>
+    </div>
+
+    <div class="preview-wrap">
+        <div class="preview-canvas" id="preview-canvas">
+            <iframe id="preview-frame" src="" title="Voorbeeld"></iframe>
+        </div>
+    </div>
+
+    <div class="link-row">
+        <input type="text" id="link-output" readonly>
+        <button type="button" class="btn btn--ghost" id="kopieer-btn">Kopieer</button>
+    </div>
+    <ol class="steps">
+        <li>Open OBS, voeg een nieuwe <strong>Browser Source</strong> toe.</li>
+        <li>Plak het linkje hierboven als URL.</li>
+        <li>Zet de grootte gelijk aan je canvas (of stretch de bron) en leg 'm over je camera-bron heen.</li>
+    </ol>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // De overlay-bestanden zelf hebben geen backend nodig (puur CSS/JS), dus deze pagina praat
+    // met niks — hij bouwt gewoon een linkje naar de vaste overlay-bestanden op api.gwnlarss.nl.
+    const OVERLAY_BASIS = 'https://api.gwnlarss.nl';
+
+    const naamInput = document.getElementById('naam-input');
+    const kleur1Input = document.getElementById('kleur1-input');
+    const kleur2Input = document.getElementById('kleur2-input');
+    const linkOutput = document.getElementById('link-output');
+    const kopieerBtn = document.getElementById('kopieer-btn');
+    const previewFrame = document.getElementById('preview-frame');
+    const previewCanvas = document.getElementById('preview-canvas');
+    const toastEl = document.getElementById('toast');
+
+    let huidigBestand = 'cam-border.html';
+
+    function toast(tekst) {
+        toastEl.textContent = tekst;
+        toastEl.classList.add('is-visible');
+        setTimeout(() => toastEl.classList.remove('is-visible'), 2500);
+    }
+
+    function kopieerNaarKlembord(tekst) {
+        try {
+            navigator.clipboard?.writeText(tekst);
+        } catch { /* val hieronder terug */ }
+        const textarea = document.createElement('textarea');
+        textarea.value = tekst;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        let gelukt = false;
+        try { gelukt = document.execCommand('copy'); } catch { gelukt = false; }
+        document.body.removeChild(textarea);
+        return gelukt;
+    }
+
+    document.querySelectorAll('.variant-knop').forEach(knop => {
+        knop.addEventListener('click', () => {
+            document.querySelectorAll('.variant-knop').forEach(k => k.classList.remove('is-actief'));
+            knop.classList.add('is-actief');
+            huidigBestand = knop.dataset.bestand;
+            previewCanvas.classList.toggle('is-verticaal', knop.dataset.verticaal === '1');
+            bouwLink();
+        });
+    });
+
+    document.querySelectorAll('.swatch').forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('is-actief'));
+            swatch.classList.add('is-actief');
+            kleur1Input.value = swatch.dataset.purple;
+            kleur2Input.value = swatch.dataset.pink;
+            bouwLink();
+        });
+    });
+
+    function ontkleurActief() {
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('is-actief'));
+    }
+    kleur1Input.addEventListener('input', () => { ontkleurActief(); bouwLink(); });
+    kleur2Input.addEventListener('input', () => { ontkleurActief(); bouwLink(); });
+    naamInput.addEventListener('input', bouwLink);
+
+    function bouwLink() {
+        const naam = naamInput.value.trim() || 'GwnLarss';
+        const kleur1 = kleur1Input.value.replace('#', '');
+        const kleur2 = kleur2Input.value.replace('#', '');
+        const params = new URLSearchParams({ naam, kleur1, kleur2 });
+        const url = `${OVERLAY_BASIS}/${huidigBestand}?${params.toString()}`;
+        linkOutput.value = url;
+        previewFrame.src = url;
+    }
+
+    kopieerBtn.addEventListener('click', () => {
+        if (kopieerNaarKlembord(linkOutput.value)) toast('🔗 Link gekopieerd!');
+        else toast(linkOutput.value);
+    });
+
+    bouwLink();
+</script>
+
+</body>
+</html>
