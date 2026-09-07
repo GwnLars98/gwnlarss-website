@@ -208,9 +208,22 @@
 
     // Elk geluidje hieronder is zelf gesynthetiseerd (geen audiobestanden nodig) — gebruikt als
     // fallback zolang er voor 'first_chat' geen eigen geluid geüpload is via alerts-admin.html.
+    // Eén gedeelde, hergebruikte AudioContext i.p.v. een nieuwe per geluidje: een AudioContext
+    // start in de meeste browsers 'suspended' totdat er ooit een gebruikersinteractie op de
+    // pagina is geweest, en genoten die op een suspended context blijven dan stil zonder fout —
+    // resume() hieronder lost dat op zodra de pagina eenmaal een klik/toets gehad heeft (in OBS
+    // is dat sowieso geen probleem, browsers daar zijn minder streng met autoplay-beleid).
+    let gedeeldeAudioCtx = null;
+    function pakAudioCtx() {
+        if (!gedeeldeAudioCtx) gedeeldeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (gedeeldeAudioCtx.state === 'suspended') gedeeldeAudioCtx.resume().catch(() => {});
+        return gedeeldeAudioCtx;
+    }
+    document.addEventListener('click', () => pakAudioCtx(), { once: true });
+
     function speelToon(noten, golfvorm = 'sine', piek = 0.25) {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const ctx = pakAudioCtx();
             const now = ctx.currentTime;
             for (const [freq, offset, duur] of noten) {
                 const start = now + offset;
