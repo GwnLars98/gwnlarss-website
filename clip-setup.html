@@ -245,6 +245,7 @@
     }
 
     async function activeer() {
+        if (btn.disabled) return; // een ingedrukt gehouden Enter kan anders meerdere keren vuren
         const kanaal = input.value.trim().toLowerCase();
         if (!kanaal) { toast('Vul eerst een gebruikersnaam in.'); return; }
 
@@ -282,6 +283,7 @@
     }
 
     async function verwijder() {
+        if (verwijderBtn.disabled) return;
         const kanaal = input.value.trim().toLowerCase();
         if (!kanaal) { toast('Vul eerst een gebruikersnaam in.'); return; }
 
