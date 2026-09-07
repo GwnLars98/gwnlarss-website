@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>!lurk-commando instellen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0b0b12;
+        --panel: #161623;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #f1f0f6;
+        --text-dim: #a3a1b5;
+        --purple: #9146ff;
+        --pink: #ff3ea5;
+        --green: #24d17e;
+        --red: #ff5c7a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+            radial-gradient(55% 40% at 12% 0%, rgba(145, 70, 255, 0.12), transparent 70%),
+            radial-gradient(50% 38% at 100% 15%, rgba(255, 62, 165, 0.1), transparent 70%),
+            var(--bg);
+        color: var(--text);
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6vh 6vw;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 560px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+    }
+    h1 {
+        font-family: 'Baloo 2', sans-serif;
+        font-weight: 800;
+        font-size: 1.7rem;
+        margin: 0 0 10px;
+    }
+    .sub { color: var(--text-dim); margin: 0 0 32px; line-height: 1.5; }
+
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .form-row input[type="text"] { flex-basis: 160px; }
+
+    .thema-label {
+        margin: 20px 0 10px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text-dim);
+    }
+    .thema-hint {
+        margin: 0 0 14px;
+        font-size: 0.82rem;
+        color: var(--text-dim);
+        line-height: 1.5;
+    }
+
+    .grootte-rij { display: flex; gap: 10px; flex-wrap: wrap; }
+    .grootte-knop {
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 2px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+    }
+    .grootte-knop:hover { border-color: rgba(145, 70, 255, 0.5); }
+    .grootte-knop.is-actief { border-color: var(--purple); background: rgba(145, 70, 255, 0.12); }
+
+    .thema-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+    .thema-kaart {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 12px;
+        border: 2px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        font-family: inherit;
+        transition: border-color 0.15s, transform 0.15s, background 0.15s;
+    }
+    .thema-kaart:hover { border-color: rgba(145, 70, 255, 0.5); transform: translateY(-2px); }
+    .thema-kaart.is-actief { border-color: var(--purple); background: rgba(145, 70, 255, 0.12); box-shadow: 0 0 0 3px rgba(145, 70, 255, 0.15); }
+    .thema-kaart__naam { font-size: 0.78rem; font-weight: 700; color: var(--text); text-align: center; }
+
+    /* Mini-nabootsing van het echte toastje, per thema in dezelfde kleuren als lurk.html */
+    .thema-kaart__preview {
+        display: flex;
+        flex-direction: column;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.5);
+        font-family: Tahoma, 'Segoe UI', sans-serif;
+    }
+    .thema-kaart__balk {
+        padding: 5px 8px;
+        font-size: 0.62rem;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .thema-kaart__regel {
+        display: block;
+        height: 22px;
+        background: #fff;
+    }
+
+    .thema-kaart__preview--msn .thema-kaart__balk { background: linear-gradient(180deg, #6ea8fb, #1958c9); color: #fff; }
+    .thema-kaart__preview--aim { font-family: Verdana, Arial, sans-serif; }
+    .thema-kaart__preview--aim .thema-kaart__balk { background: linear-gradient(180deg, #fff35c, #ffce00); color: #4a3b00; }
+    .thema-kaart__preview--icq .thema-kaart__balk { background: linear-gradient(180deg, #b2e07a, #4c9a2a); color: #fff; }
+    .thema-kaart__preview--yahoo .thema-kaart__balk { background: linear-gradient(180deg, #d9a6f0, #7b1fa2); color: #fff; }
+    .thema-kaart__preview--xp { border: 1px solid #3f7fbf; border-radius: 5px; }
+    .thema-kaart__preview--xp .thema-kaart__balk { background: linear-gradient(180deg, #eef7ff, #cfe8fb); color: #003c74; }
+    .thema-kaart__preview--xp .thema-kaart__regel { background: linear-gradient(180deg, #eef7ff, #cfe8fb); }
+
+    .thema-kaart__preview--skype .thema-kaart__balk { background: linear-gradient(180deg, #00aff0, #0078d4); color: #fff; }
+    .thema-kaart__preview--nokia .thema-kaart__balk { background: #08150c; color: #8fce6a; font-family: 'Courier New', monospace; }
+    .thema-kaart__preview--nokia .thema-kaart__regel { background: #0d1f0d; }
+    .thema-kaart__preview--bbm .thema-kaart__balk { background: #000; color: #ee2737; }
+    .thema-kaart__preview--bbm .thema-kaart__regel { background: #1a1a1a; }
+    .thema-kaart__preview--discord .thema-kaart__balk { background: #5865f2; color: #fff; }
+    .thema-kaart__preview--discord .thema-kaart__regel { background: #313338; }
+    .thema-kaart__preview--instagram .thema-kaart__balk { background: linear-gradient(90deg, #833ab4, #fd1d1d, #fcb045); color: #fff; }
+
+    input[type="text"] {
+        flex: 1;
+        min-width: 0;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: var(--purple); }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 14px 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border: none;
+        background: linear-gradient(100deg, var(--purple), var(--pink));
+        color: #fff;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+        transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn--ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+    .btn--ghost:hover { border-color: var(--purple); background: rgba(145, 70, 255, 0.1); opacity: 1; }
+
+    .result {
+        margin-top: 24px;
+        padding: 18px 20px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        display: none;
+    }
+    .result.is-visible { display: block; }
+    .result.is-fout { border-color: rgba(255, 92, 122, 0.4); background: rgba(255, 92, 122, 0.08); }
+    .result.is-goed { border-color: rgba(36, 209, 126, 0.4); background: rgba(36, 209, 126, 0.08); }
+    .result__titel { font-weight: 700; margin: 0 0 8px; }
+    .result__titel.is-fout { color: var(--red); }
+    .result__titel.is-goed { color: var(--green); }
+    .result p { margin: 0 0 14px; color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
+
+    .link-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .link-row input {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+    }
+
+    .steps { margin: 0; padding-left: 20px; color: var(--text-dim); font-size: 0.88rem; line-height: 1.7; }
+    .steps code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        padding: 12px 22px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 0.9rem;
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        pointer-events: none;
+    }
+    .toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h1>😴 !lurk-commando instellen</h1>
+    <p class="sub">Vul je Twitch-gebruikersnaam in. De bot joint dan meteen jouw chat, en je krijgt een linkje dat je als Browser Source in OBS kan gebruiken. Zodra iemand <code>!lurk</code> typt (optioneel met een eigen tekst erachter), verschijnt er een pilletje met naam en avatar op de overlay.</p>
+
+    <div class="form-row">
+        <input type="text" id="kanaal-input" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
+        <button type="button" class="btn" id="activeer-btn">Activeer</button>
+        <button type="button" class="btn btn--ghost" id="verwijder-btn">Verlaat kanaal</button>
+    </div>
+    <p class="thema-hint" style="margin: 10px 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.5;">Zit de bot al in je chat? Vul gewoon je naam in en klik nog eens op Activeer, dat kan geen kwaad.</p>
+
+    <p class="thema-label">Uiterlijk van het toastje</p>
+    <p class="thema-hint">Kies gewoon een thema, dat werkt al voordat je op Activeer klikt. Wil je later van thema wisselen? Kies een andere kaart en klik op Opslaan, het linkje hieronder blijft dan hetzelfde, je hoeft 'm niet opnieuw in OBS te plakken. Bij elke keer opslaan sturen we ook meteen een testbericht naar de overlay, zodat je meteen ziet hoe het eruitziet.</p>
+    <div class="thema-grid" id="thema-grid">
+        <button type="button" class="thema-kaart is-actief" data-thema="msn">
+            <span class="thema-kaart__preview thema-kaart__preview--msn">
+                <span class="thema-kaart__balk">💬 Nieuw bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">MSN Messenger</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="aim">
+            <span class="thema-kaart__preview thema-kaart__preview--aim">
+                <span class="thema-kaart__balk">🏃 IM ontvangen</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">AIM</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="icq">
+            <span class="thema-kaart__preview thema-kaart__preview--icq">
+                <span class="thema-kaart__balk">🌼 Nieuw bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">ICQ</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="yahoo">
+            <span class="thema-kaart__preview thema-kaart__preview--yahoo">
+                <span class="thema-kaart__balk">💜 Yahoo!-bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Yahoo! Messenger</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="xp">
+            <span class="thema-kaart__preview thema-kaart__preview--xp">
+                <span class="thema-kaart__balk">ℹ️ Bericht ontvangen</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Windows XP</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="skype">
+            <span class="thema-kaart__preview thema-kaart__preview--skype">
+                <span class="thema-kaart__balk">📞 Skype-bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Skype</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="nokia">
+            <span class="thema-kaart__preview thema-kaart__preview--nokia">
+                <span class="thema-kaart__balk">📱 Nieuw bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Nokia SMS</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="bbm">
+            <span class="thema-kaart__preview thema-kaart__preview--bbm">
+                <span class="thema-kaart__balk">📍 BBM PING!</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">BBM</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="discord">
+            <span class="thema-kaart__preview thema-kaart__preview--discord">
+                <span class="thema-kaart__balk">🎮 Nieuw bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Discord</span>
+        </button>
+        <button type="button" class="thema-kaart" data-thema="instagram">
+            <span class="thema-kaart__preview thema-kaart__preview--instagram">
+                <span class="thema-kaart__balk">📸 Nieuw DM-bericht</span>
+                <span class="thema-kaart__regel"></span>
+            </span>
+            <span class="thema-kaart__naam">Instagram</span>
+        </button>
+    </div>
+
+    <p class="thema-label">Grootte</p>
+    <div class="grootte-rij" id="grootte-rij">
+        <button type="button" class="grootte-knop is-actief" data-grootte="normaal">Normaal</button>
+        <button type="button" class="grootte-knop" data-grootte="groot">Groot</button>
+        <button type="button" class="grootte-knop" data-grootte="extragroot">Extra groot</button>
+    </div>
+
+    <button type="button" class="btn btn--primary" id="opslaan-btn" hidden style="margin-top: 14px;">💾 Instellingen opslaan</button>
+
+    <div class="result" id="result">
+        <p class="result__titel" id="result-titel"></p>
+        <p id="result-tekst"></p>
+        <div class="link-row" id="link-row" hidden>
+            <input type="text" id="link-output" readonly>
+            <button type="button" class="btn btn--ghost" id="kopieer-btn">Kopieer</button>
+        </div>
+        <ol class="steps" id="steps" hidden>
+            <li>Open OBS, voeg een nieuwe <strong>Browser Source</strong> toe.</li>
+            <li>Plak het linkje hierboven als URL.</li>
+            <li>Typ <code>!lurk</code> in je eigen chat om te testen (optioneel: <code>!lurk aan het koken</code> voor een eigen tekst erbij).</li>
+        </ol>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API_BASE = 'https://api.gwnlarss.nl';
+
+    const input = document.getElementById('kanaal-input');
+    const btn = document.getElementById('activeer-btn');
+    const verwijderBtn = document.getElementById('verwijder-btn');
+    const resultEl = document.getElementById('result');
+    const titelEl = document.getElementById('result-titel');
+    const tekstEl = document.getElementById('result-tekst');
+    const linkRow = document.getElementById('link-row');
+    const linkOutput = document.getElementById('link-output');
+    const stepsEl = document.getElementById('steps');
+    const kopieerBtn = document.getElementById('kopieer-btn');
+    const opslaanBtn = document.getElementById('opslaan-btn');
+    const themaKaarten = document.querySelectorAll('.thema-kaart');
+    const grootteKnoppen = document.querySelectorAll('.grootte-knop');
+    let gekozenThema = 'msn';
+    let gekozenGrootte = 'normaal';
+    const toastEl = document.getElementById('toast');
+    let huidigKanaal = null;
+
+    themaKaarten.forEach(kaart => {
+        kaart.addEventListener('click', () => {
+            themaKaarten.forEach(k => k.classList.remove('is-actief'));
+            kaart.classList.add('is-actief');
+            gekozenThema = kaart.dataset.thema;
+            // Vóór activatie wordt dit gewoon meteen meegenomen door Activeer. Ná activatie moet
+            // je expliciet op Opslaan klikken, dan pas verandert het echt op de overlay.
+            if (huidigKanaal) opslaanBtn.hidden = false;
+        });
+    });
+
+    grootteKnoppen.forEach(knop => {
+        knop.addEventListener('click', () => {
+            grootteKnoppen.forEach(k => k.classList.remove('is-actief'));
+            knop.classList.add('is-actief');
+            gekozenGrootte = knop.dataset.grootte;
+            if (huidigKanaal) opslaanBtn.hidden = false;
+        });
+    });
+
+    async function opslaan() {
+        if (!huidigKanaal || opslaanBtn.disabled) return;
+        opslaanBtn.disabled = true;
+        opslaanBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/lurk/instellingen`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal: huidigKanaal, thema: gekozenThema, grootte: gekozenGrootte }),
+            });
+            const data = await res.json();
+            if (!data.ok) { toast(`❌ ${data.fout || 'Opslaan mislukt.'}`); return; }
+            toast('💾 Opgeslagen! Check de overlay, er komt een testbericht aan.');
+            opslaanBtn.hidden = true;
+        } catch {
+            toast('❌ Netwerkfout, probeer het nog eens.');
+        } finally {
+            opslaanBtn.disabled = false;
+            opslaanBtn.textContent = '💾 Instellingen opslaan';
+        }
+    }
+    opslaanBtn.addEventListener('click', opslaan);
+
+    function toast(tekst) {
+        toastEl.textContent = tekst;
+        toastEl.classList.add('is-visible');
+        setTimeout(() => toastEl.classList.remove('is-visible'), 2500);
+    }
+
+    function kopieerNaarKlembord(tekst) {
+        try {
+            navigator.clipboard?.writeText(tekst);
+        } catch { /* val hieronder terug */ }
+        const textarea = document.createElement('textarea');
+        textarea.value = tekst;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        let gelukt = false;
+        try { gelukt = document.execCommand('copy'); } catch { gelukt = false; }
+        document.body.removeChild(textarea);
+        return gelukt;
+    }
+
+    function toonResultaat(status, titel, tekst) {
+        resultEl.classList.add('is-visible');
+        resultEl.classList.toggle('is-fout', status === 'fout');
+        resultEl.classList.toggle('is-goed', status === 'goed');
+        titelEl.className = `result__titel is-${status}`;
+        titelEl.textContent = titel;
+        tekstEl.textContent = tekst;
+    }
+
+    function bouwLink(kanaal) {
+        return `${location.origin}/lurk.html?kanaal=${encodeURIComponent(kanaal)}`;
+    }
+
+    async function activeer() {
+        if (btn.disabled) return; // een ingedrukt gehouden Enter kan anders meerdere keren vuren
+        const kanaal = input.value.trim().toLowerCase();
+        if (!kanaal) { toast('Vul eerst een gebruikersnaam in.'); return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Bezig...';
+        linkRow.hidden = true;
+        stepsEl.hidden = true;
+        opslaanBtn.hidden = true;
+
+        try {
+            const res = await fetch(`${API_BASE}/api/lurk/activeer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal, thema: gekozenThema, grootte: gekozenGrootte }),
+            });
+            const data = await res.json();
+
+            if (!data.ok) {
+                toonResultaat('fout', '❌ Kon niet activeren', data.fout || 'Onbekende fout.');
+                return;
+            }
+
+            linkOutput.value = bouwLink(kanaal);
+            linkRow.hidden = false;
+            stepsEl.hidden = false;
+            huidigKanaal = kanaal;
+            toonResultaat(
+                'goed',
+                data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
+                data.nieuw
+                    ? `De bot zit nu in de chat van twitch.tv/${kanaal}. Gebruik het linkje hieronder als overlay.`
+                    : `Dit kanaal was al eerder geactiveerd, !lurk werkt daar al gewoon.`,
+            );
+        } catch {
+            toonResultaat('fout', '❌ Kon niet activeren', 'Netwerkfout, probeer het nog eens.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Activeer';
+        }
+    }
+
+    async function verwijder() {
+        if (verwijderBtn.disabled) return;
+        const kanaal = input.value.trim().toLowerCase();
+        if (!kanaal) { toast('Vul eerst een gebruikersnaam in.'); return; }
+
+        verwijderBtn.disabled = true;
+        verwijderBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/lurk/deactiveer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal }),
+            });
+            const data = await res.json();
+            if (!data.ok) {
+                toonResultaat('fout', '❌ Kon niet verlaten', data.fout || 'Verwijderen mislukt.');
+                return;
+            }
+            toonResultaat('goed', '🗑️ Verlaten', `De bot heeft twitch.tv/${kanaal} verlaten (tenzij daar nog een andere widget actief is) en !lurk werkt daar niet meer.`);
+            linkRow.hidden = true;
+            stepsEl.hidden = true;
+            opslaanBtn.hidden = true;
+            huidigKanaal = null;
+        } catch {
+            toonResultaat('fout', '❌ Kon niet verlaten', 'Netwerkfout, probeer het nog eens.');
+        } finally {
+            verwijderBtn.disabled = false;
+            verwijderBtn.textContent = 'Verlaat kanaal';
+        }
+    }
+
+    btn.addEventListener('click', activeer);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') activeer(); });
+    verwijderBtn.addEventListener('click', verwijder);
+
+    kopieerBtn.addEventListener('click', () => {
+        if (kopieerNaarKlembord(linkOutput.value)) toast('🔗 Link gekopieerd!');
+        else toast(linkOutput.value);
+    });
+</script>
+
+</body>
+</html>
