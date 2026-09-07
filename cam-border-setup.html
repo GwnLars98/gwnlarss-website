@@ -36,6 +36,44 @@
         padding: 6vh 6vw;
     }
 
+    .page-wrap { display: flex; flex-direction: column; align-items: center; width: 100%; }
+
+    .setup-nav {
+        width: 100%;
+        max-width: 620px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin: 0 0 24px;
+    }
+    .setup-nav__logo {
+        font-family: 'Baloo 2', sans-serif;
+        font-weight: 800;
+        font-size: 1.15rem;
+        color: var(--text);
+        text-decoration: none;
+    }
+    .setup-nav__links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .setup-nav__link {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .setup-nav__link:hover { border-color: rgba(145, 70, 255, 0.5); color: var(--text); }
+    .setup-nav__link.is-actief {
+        background: linear-gradient(100deg, var(--purple), var(--pink));
+        border-color: transparent;
+        color: #fff;
+    }
+
     .card {
         width: 100%;
         max-width: 620px;
@@ -198,6 +236,16 @@
 </head>
 <body>
 
+<div class="page-wrap">
+<nav class="setup-nav">
+    <a href="https://gwnlarss.nl/" class="setup-nav__logo">GwnLarss</a>
+    <div class="setup-nav__links">
+        <a href="first-chat-setup.html" class="setup-nav__link">💬 Eerste chat</a>
+        <a href="cam-border-setup.html" class="setup-nav__link is-actief">🎥 Cam-border</a>
+        <a href="clip-setup.html" class="setup-nav__link">📎 Clip</a>
+    </div>
+</nav>
+
 <div class="card">
     <h1>🎥 Cam-border overlay instellen</h1>
     <p class="sub">Kies je eigen naam en kleuren voor de camera-rand overlay, en gebruik het linkje hieronder als Browser Source in OBS. Werkt meteen, geen account of koppeling nodig.</p>
@@ -245,6 +293,7 @@
         <li>Plak het linkje hierboven als URL.</li>
         <li>Zet de grootte gelijk aan je canvas (of stretch de bron) en leg 'm over je camera-bron heen.</li>
     </ol>
+</div>
 </div>
 
 <div class="toast" id="toast"></div>
