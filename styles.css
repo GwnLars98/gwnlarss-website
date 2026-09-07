@@ -375,7 +375,45 @@ a { color: inherit; text-decoration: none; }
 .footer__copy { color: var(--text-dim); font-size: 0.8rem; margin: 0; opacity: 0.7; }
 
 /* ---------- Showcases ---------- */
+.showcase-tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+.showcase-tab {
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.15s;
+}
+.showcase-tab:hover { border-color: rgba(145, 70, 255, 0.5); color: var(--text); transform: translateY(-1px); }
+.showcase-tab.is-actief {
+    background: linear-gradient(100deg, var(--purple), var(--pink));
+    border-color: transparent;
+    color: #fff;
+}
+
+.showcase-panel[hidden] { display: none; }
+.showcase-footer { margin: 32px 0 0; color: var(--text-dim); font-size: 0.85rem; text-align: center; }
+.showcase-footer a { color: var(--text); }
+
+.showcase-canvas--chat { aspect-ratio: 16 / 7; display: flex; align-items: center; }
+.clip-demo { width: 100%; padding: 18px 22px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 0.88rem; line-height: 2; }
+.clip-demo__regel { margin: 0; color: var(--text); }
+.clip-demo__naam { font-weight: 700; }
+.clip-demo__naam--bot { color: var(--purple); }
+.clip-demo__regel--bot { color: var(--text-dim); }
+
 .showcase-intro { color: var(--text-dim); font-size: 1.02rem; max-width: 62ch; margin: 0 0 24px; }
+.showcase-intro code {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.92em;
+}
 
 .showcase-frame {
     background: var(--panel);
@@ -481,7 +519,7 @@ a { color: inherit; text-decoration: none; }
 .showcase-row--groot .showcase-frame--verticaal { max-width: 460px; }
 
 .showcase-cta {
-    margin-top: 48px;
+    margin-top: 28px;
     padding: 28px 32px;
     background: var(--panel);
     border: 1px solid var(--border);
@@ -492,9 +530,6 @@ a { color: inherit; text-decoration: none; }
     gap: 16px;
 }
 .showcase-cta p { margin: 0; color: var(--text-dim); max-width: 60ch; }
-.showcase-cta__knoppen { display: flex; gap: 12px; flex-wrap: wrap; }
-.showcase-cta__extra { font-size: 0.85rem; }
-.showcase-cta__extra a { color: var(--text); }
 
 .showcase-canvas--verticaal { aspect-ratio: 9 / 16; }
 
