@@ -382,15 +382,25 @@
     const verwijderBtn = document.getElementById('verwijder-btn');
     const themaKaarten = document.querySelectorAll('.thema-kaart');
     let gekozenThema = 'msn';
+    const toastEl = document.getElementById('toast');
+    let huidigKanaal = null;
+
+    function bouwLink(kanaal) {
+        return gekozenThema === 'msn'
+            ? `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`
+            : `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}&thema=${encodeURIComponent(gekozenThema)}`;
+    }
+
     themaKaarten.forEach(kaart => {
         kaart.addEventListener('click', () => {
             themaKaarten.forEach(k => k.classList.remove('is-actief'));
             kaart.classList.add('is-actief');
             gekozenThema = kaart.dataset.thema;
+            // Als er al een geactiveerd kanaal is, het linkje meteen bijwerken naar het nieuwe
+            // thema — anders moest je na het kiezen opnieuw op Activeer klikken voor niks.
+            if (huidigKanaal) linkOutput.value = bouwLink(huidigKanaal);
         });
     });
-    const toastEl = document.getElementById('toast');
-    let huidigKanaal = null;
 
     function toast(tekst) {
         toastEl.textContent = tekst;
@@ -449,10 +459,7 @@
                 return;
             }
 
-            const link = gekozenThema === 'msn'
-                ? `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`
-                : `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}&thema=${encodeURIComponent(gekozenThema)}`;
-            linkOutput.value = link;
+            linkOutput.value = bouwLink(kanaal);
             linkRow.hidden = false;
             stepsEl.hidden = false;
             huidigKanaal = kanaal;
