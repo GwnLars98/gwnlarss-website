@@ -95,99 +95,71 @@
 
     <section class="section" id="showcases">
         <h2 class="section__title">Showcases</h2>
-
-        <div class="showcase-tabs" role="tablist" aria-label="Kies een feature">
-            <button type="button" class="showcase-tab is-actief" id="tab-first-chat" role="tab" aria-selected="true" aria-controls="panel-first-chat" data-panel="first-chat">💬 Eerste chat</button>
-            <button type="button" class="showcase-tab" id="tab-cam-border" role="tab" aria-selected="false" aria-controls="panel-cam-border" data-panel="cam-border">🎥 Cam-border</button>
-            <button type="button" class="showcase-tab" id="tab-clip" role="tab" aria-selected="false" aria-controls="panel-clip" data-panel="clip">📎 Clip</button>
+        <p class="showcase-intro">Zodra iemand voor het eerst chat tijdens de stream, schuift dit knipoogje naar het klassieke MSN Messenger-berichtvenster in beeld op de overlay.</p>
+        <div class="showcase-frame">
+            <div class="showcase-canvas" id="showcase-canvas">
+                <span class="showcase-canvas__label">live overlay</span>
+                <div class="msn-toast" id="msn-toast">
+                    <div class="msn-toast__header">
+                        <span>💬</span>
+                        <span>Nieuw bericht</span>
+                    </div>
+                    <div class="msn-toast__body">
+                        <div class="msn-toast__avatar">
+                            <img src="https://static-cdn.jtvnw.net/user-default-pictures-uv/de130ab0-def7-11e9-b668-784f43822e80-profile_image-300x300.png" alt="">
+                        </div>
+                        <div class="msn-toast__text">
+                            <p class="msn-toast__name">xXDarkWolfXx</p>
+                            <p class="msn-toast__message">Beter ga je GaryMillerNL volgen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="showcase-controls">
+            <button type="button" class="btn btn--ghost showcase-replay" id="showcase-replay">↻ Opnieuw afspelen</button>
+            <button type="button" class="btn btn--ghost showcase-mute" id="showcase-mute" aria-pressed="false">🔊 Geluid aan</button>
         </div>
 
-        <div class="showcase-panel" id="panel-first-chat" role="tabpanel" aria-labelledby="tab-first-chat">
-            <p class="showcase-intro">Zodra iemand voor het eerst chat tijdens de stream, schuift dit knipoogje naar het klassieke MSN Messenger-berichtvenster in beeld op de overlay.</p>
+        <p class="showcase-intro" style="margin-top: 48px;">De camera-rand overlay, zowel voor een gewoon 16:9-canvas als voor verticale (TikTok-)streams.</p>
+        <div class="showcase-row">
             <div class="showcase-frame">
-                <div class="showcase-canvas" id="showcase-canvas">
-                    <span class="showcase-canvas__label">live overlay</span>
-                    <div class="msn-toast" id="msn-toast">
-                        <div class="msn-toast__header">
-                            <span>💬</span>
-                            <span>Nieuw bericht</span>
-                        </div>
-                        <div class="msn-toast__body">
-                            <div class="msn-toast__avatar">
-                                <img src="https://static-cdn.jtvnw.net/user-default-pictures-uv/de130ab0-def7-11e9-b668-784f43822e80-profile_image-300x300.png" alt="">
-                            </div>
-                            <div class="msn-toast__text">
-                                <p class="msn-toast__name">xXDarkWolfXx</p>
-                                <p class="msn-toast__message">Beter ga je GaryMillerNL volgen.</p>
-                            </div>
+                <div class="showcase-canvas">
+                    <span class="showcase-canvas__label">horizontaal</span>
+                    <div class="cam-demo cam-demo--horizontaal">
+                        <div class="cam-demo__face"></div>
+                        <div class="cam-demo__frame"></div>
+                        <div class="cam-demo__badge">
+                            <span class="cam-demo__dot"></span>
+                            <span class="brand-name">GwnLarss</span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="showcase-controls">
-                <button type="button" class="btn btn--ghost showcase-replay" id="showcase-replay">↻ Opnieuw afspelen</button>
-                <button type="button" class="btn btn--ghost showcase-mute" id="showcase-mute" aria-pressed="false">🔊 Geluid aan</button>
-            </div>
-            <div class="showcase-cta">
-                <p>Wil je dit zelf ook, voor je eigen stream? Vul alleen je Twitch-naam in, kies een van de tien retro-thema's, en je hebt direct een linkje voor OBS.</p>
-                <a class="btn btn--primary" href="first-chat-setup.html">Maak je eigen eerste-chat-widget</a>
+            <div class="showcase-frame showcase-frame--verticaal">
+                <div class="showcase-canvas showcase-canvas--verticaal">
+                    <span class="showcase-canvas__label">verticaal</span>
+                    <div class="cam-demo cam-demo--verticaal">
+                        <div class="cam-demo__face"></div>
+                        <div class="cam-demo__frame"></div>
+                        <div class="cam-demo__badge">
+                            <span class="cam-demo__dot"></span>
+                            <span class="brand-name">GwnLarss</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="showcase-panel" id="panel-cam-border" role="tabpanel" aria-labelledby="tab-cam-border" hidden>
-            <p class="showcase-intro">De camera-rand overlay, zowel voor een gewoon 16:9-canvas als voor verticale (TikTok-)streams.</p>
-            <div class="showcase-row">
-                <div class="showcase-frame">
-                    <div class="showcase-canvas">
-                        <span class="showcase-canvas__label">horizontaal</span>
-                        <div class="cam-demo cam-demo--horizontaal">
-                            <div class="cam-demo__face"></div>
-                            <div class="cam-demo__frame"></div>
-                            <div class="cam-demo__badge">
-                                <span class="cam-demo__dot"></span>
-                                <span class="brand-name">GwnLarss</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="showcase-frame showcase-frame--verticaal">
-                    <div class="showcase-canvas showcase-canvas--verticaal">
-                        <span class="showcase-canvas__label">verticaal</span>
-                        <div class="cam-demo cam-demo--verticaal">
-                            <div class="cam-demo__face"></div>
-                            <div class="cam-demo__frame"></div>
-                            <div class="cam-demo__badge">
-                                <span class="cam-demo__dot"></span>
-                                <span class="brand-name">GwnLarss</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="showcase-cta">
-                <p>Wil je deze zelf ook, voor je eigen stream? Maak direct je eigen versie, met je eigen naam en kleuren — geen account of Discord-ticket nodig.</p>
+        <div class="showcase-cta">
+            <p>Wil je deze zelf ook, voor je eigen stream? Maak direct je eigen versie, met je eigen naam en kleuren — geen account of Discord-ticket nodig.</p>
+            <div class="showcase-cta__knoppen">
                 <a class="btn btn--primary" href="cam-border-setup.html">Maak je eigen cam-border</a>
+                <a class="btn btn--ghost" href="first-chat-setup.html">Maak je eigen eerste-chat-widget</a>
+                <a class="btn btn--ghost" href="clip-setup.html">Zet !clip aan in je chat</a>
             </div>
+            <p class="showcase-cta__extra">Iets anders in gedachten? Join de <a href="https://discord.gg/NDBSrTyhSw" target="_blank" rel="noopener">Discord</a> en dien een ticket in.</p>
         </div>
-
-        <div class="showcase-panel" id="panel-clip" role="tabpanel" aria-labelledby="tab-clip" hidden>
-            <p class="showcase-intro">Typ <code>!clip</code> in de chat en de bot maakt direct een clip van de laatste ~30 seconden, met een linkje er meteen achteraan.</p>
-            <div class="showcase-frame">
-                <div class="showcase-canvas showcase-canvas--chat">
-                    <span class="showcase-canvas__label">twitch chat</span>
-                    <div class="clip-demo">
-                        <p class="clip-demo__regel"><span class="clip-demo__naam" style="color:#e91e8c">xXDarkWolfXx</span>: !clip</p>
-                        <p class="clip-demo__regel clip-demo__regel--bot"><span class="clip-demo__naam clip-demo__naam--bot">🤖 GwnLarssBot</span>: 📎 Clip gemaakt door xXDarkWolfXx! clips.twitch.tv/GezelligeKoala</p>
-                    </div>
-                </div>
-            </div>
-            <div class="showcase-cta">
-                <p>Wil je dit ook in je eigen chat? Vul je Twitch-naam in en de bot joint meteen — iedereen in je chat kan daarna !clip gebruiken.</p>
-                <a class="btn btn--primary" href="clip-setup.html">Zet !clip aan in je chat</a>
-            </div>
-        </div>
-
-        <p class="showcase-footer">Iets anders in gedachten? Join de <a href="https://discord.gg/NDBSrTyhSw" target="_blank" rel="noopener">Discord</a> en dien een ticket in.</p>
     </section>
 
     <section class="section" id="socials">

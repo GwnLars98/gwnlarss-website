@@ -123,25 +123,6 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
     }
 })();
 
-// ---------- Showcase: tabs om tussen eerste-chat/cam-border/clip te wisselen ----------
-(() => {
-    const tabs = document.querySelectorAll('.showcase-tab');
-    const panels = document.querySelectorAll('.showcase-panel');
-    if (!tabs.length || !panels.length) return;
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => {
-                t.classList.toggle('is-actief', t === tab);
-                t.setAttribute('aria-selected', String(t === tab));
-            });
-            panels.forEach(panel => {
-                panel.hidden = panel.id !== `panel-${tab.dataset.panel}`;
-            });
-        });
-    });
-})();
-
 // ---------- Showcase: MSN-toastje ("eerste chat van de stream") ----------
 (() => {
     const toast = document.getElementById('msn-toast');
