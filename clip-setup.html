@@ -191,14 +191,14 @@
 
 <div class="card">
     <h1>📎 !clip-commando instellen</h1>
-    <p class="sub">Vul je Twitch-gebruikersnaam in. De bot joint dan meteen jouw chat, en vanaf dat moment kan iedereen daar <code>!clip</code> typen om automatisch een clip van de laatste ~30 seconden te maken — met een linkje er direct achteraan in de chat.</p>
+    <p class="sub">Vul je Twitch-gebruikersnaam in. De bot joint dan meteen jouw chat, en vanaf dat moment kan iedereen daar <code>!clip</code> typen om automatisch een clip van de laatste ~30 seconden te maken, met een linkje er direct achteraan in de chat.</p>
 
     <div class="form-row">
         <input type="text" id="kanaal-input" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
         <button type="button" class="btn" id="activeer-btn">Activeer</button>
         <button type="button" class="btn btn--ghost" id="verwijder-btn">Verlaat kanaal</button>
     </div>
-    <p class="veld-hint">Zit de bot al in je chat? Vul gewoon je naam in en klik nog eens op Activeer — dat kan geen kwaad, je krijgt dan te zien dat 'ie er al in zit. Wil je 'm eruit? Gebruik "Verlaat kanaal".</p>
+    <p class="veld-hint">Zit de bot al in je chat? Vul gewoon je naam in en klik nog eens op Activeer, dat kan geen kwaad: je krijgt dan te zien dat 'ie er al in zit. Wil je 'm eruit? Gebruik "Verlaat kanaal".</p>
 
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
@@ -271,7 +271,7 @@
                 data.nieuw ? '✅ Geactiveerd!' : '✅ De bot zit al in je chat',
                 data.nieuw
                     ? `De bot zit nu in de chat van twitch.tv/${kanaal}. Iedereen daar kan vanaf nu !clip gebruiken.`
-                    : `De bot was al eerder toegevoegd aan twitch.tv/${kanaal} — !clip werkt daar dus al gewoon, je hoeft niks te doen.`,
+                    : `De bot was al eerder toegevoegd aan twitch.tv/${kanaal}, !clip werkt daar dus al gewoon, je hoeft niks te doen.`,
             );
         } catch {
             toonResultaat('fout', '❌ Kon niet activeren', 'Netwerkfout, probeer het nog eens.');

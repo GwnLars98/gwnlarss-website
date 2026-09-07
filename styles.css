@@ -481,7 +481,7 @@ a { color: inherit; text-decoration: none; }
 .showcase-row--groot .showcase-frame--verticaal { max-width: 460px; }
 
 .showcase-cta {
-    margin-top: 48px;
+    margin-bottom: 40px;
     padding: 28px 32px;
     background: var(--panel);
     border: 1px solid var(--border);
