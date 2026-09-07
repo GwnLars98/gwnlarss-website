@@ -33,13 +33,16 @@
         box-shadow: 0 10px 40px -8px rgba(0, 0, 0, 0.6);
         /* Grootte via een gedeelde schaalfactor i.p.v. losse breedte/font-size-regels, zodat
            alles (tekst, avatar, padding) evenredig meeschaalt. Standaard al iets groter dan de
-           oorspronkelijke 1x, plus twee grotere keuzes via de setup-pagina. */
+           oorspronkelijke 1x, plus twee grotere keuzes via de setup-pagina.
+           Let op de volgorde: scale() moet VOOR translateY() staan (dus als buitenste functie),
+           anders schaalt de verplaatsing die het toastje verbergt niet mee met een schaal > 1,
+           en blijft een stuk van het (groter geschaalde) toastje altijd in beeld hangen. */
         --toast-schaal: 1.1;
         transform-origin: bottom right;
-        transform: translateY(calc(100% + 24px)) scale(var(--toast-schaal));
+        transform: scale(var(--toast-schaal)) translateY(calc(100% + 24px));
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
     }
-    .msn-toast.is-visible { transform: translateY(0) scale(var(--toast-schaal)); }
+    .msn-toast.is-visible { transform: scale(var(--toast-schaal)) translateY(0); }
     .msn-toast__header {
         display: flex;
         align-items: center;
