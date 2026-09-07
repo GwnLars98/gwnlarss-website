@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raid-clip — GwnLarss</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+    :root {
+        --panel: rgba(22, 22, 35, 0.9);
+        --border: rgba(255, 255, 255, 0.08);
+        --text-dim: #cac8da;
+        --purple: #9146ff;
+        --pink: #ff3ea5;
+        --gold: #ffc94a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        background: transparent;
+        overflow: hidden;
+        font-family: 'Inter', system-ui, sans-serif;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    /* ---------- Bij een raid: laat een willekeurige clip van de rader zien, als
+       visitekaartje voor de kijkers die net binnenkomen. Zelfde entree-stijl als de "grote"
+       alerts (gift bombs) in alerts.html: van bovenaf naar binnen, iets kleiner dan
+       schermvullend. ---------- */
+    .kaart {
+        margin-top: 56px;
+        width: min(56vw, 780px);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 16px;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 201, 74, 0.35);
+        transform-origin: top center;
+        transform: translateY(-60%) scale(0.6);
+        opacity: 0;
+        transition: transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3), opacity 0.4s ease;
+    }
+    .kaart.is-visible {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+        animation: gloei 1.8s ease-in-out 0.55s infinite;
+    }
+    @keyframes gloei {
+        0%, 100% { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 201, 74, 0.35), 0 0 50px -6px rgba(255, 201, 74, 0.4); }
+        50% { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 62, 165, 0.4), 0 0 70px -4px rgba(255, 62, 165, 0.55); }
+    }
+
+    /* Ring in de merkkleuren rond de video i.p.v. een stark zwart kader — geeft de clip meteen
+       een "dit hoort bij de overlay" uitstraling in plaats van een los ingeplakt videovlak. */
+    .kaart__video {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 16px;
+        overflow: hidden;
+        background: linear-gradient(135deg, var(--purple), var(--pink));
+        padding: 2px;
+    }
+    .kaart__video-binnen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #000;
+    }
+    .kaart__video iframe,
+    .kaart__video video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+    .kaart__video video { object-fit: contain; }
+    .kaart__video video[hidden],
+    .kaart__video iframe[hidden] { display: none; }
+
+    /* Naam/titel zweven als een "lower third" over de video i.p.v. erboven te staan als losse
+       tekstregels — oogt als een echte broadcast-graphic, en laat de video zelf het meeste
+       ruimte innemen. */
+    .kaart__caption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 28px 18px 14px;
+        background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+        pointer-events: none;
+    }
+    .kaart__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(255, 201, 74, 0.16);
+        border: 1px solid rgba(255, 201, 74, 0.5);
+        color: var(--gold);
+        font-weight: 800;
+        font-size: 0.78rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        margin: 0 0 8px;
+    }
+    .kaart__naam {
+        margin: 0 0 3px;
+        color: #fff;
+        font-weight: 800;
+        font-size: 1.3rem;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    }
+    .kaart__titel {
+        margin: 0;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+</style>
+</head>
+<body>
+
+<div class="kaart" id="kaart">
+    <div class="kaart__video">
+        <div class="kaart__video-binnen">
+            <video id="kaart-video" playsinline hidden></video>
+            <iframe id="kaart-iframe" src="" allow="autoplay" allowfullscreen hidden></iframe>
+        </div>
+        <div class="kaart__caption">
+            <p class="kaart__badge">🚨 Raid</p>
+            <p class="kaart__naam" id="kaart-naam"></p>
+            <p class="kaart__titel" id="kaart-titel"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'https://api.gwnlarss.nl';
+
+    // De Twitch-clip-embed vereist een expliciete lijst van toegestane parent-domeinen —
+    // meerdere mag, dus gewoon elke plek waar deze pagina zelf ooit geladen kan worden.
+    const PARENTS = ['api.gwnlarss.nl', 'gwnlarss.nl', 'localhost'];
+
+    const kaartEl = document.getElementById('kaart');
+    const naamEl = document.getElementById('kaart-naam');
+    const titelEl = document.getElementById('kaart-titel');
+    const videoEl = document.getElementById('kaart-video');
+    const iframeEl = document.getElementById('kaart-iframe');
+
+    const wachtrij = [];
+    let bezig = false;
+
+    // Zelfde globale "Volume alert-geluiden"-slider als alerts.html/first-chat.html/lurk.html
+    // (alerts-admin.html), zodat je de raid-clip niet los hoeft te regelen.
+    let alertVolume = 1;
+    function verversVolume() {
+        fetch(`${API_BASE}/api/alerts/volume`).then(r => r.json()).then(v => {
+            alertVolume = v.volume;
+            videoEl.volume = alertVolume;
+        }).catch(() => {});
+    }
+    verversVolume();
+    setInterval(verversVolume, 15000);
+
+    // Probeert eerst met geluid te starten; lukt dat niet (browser-autoplaybeleid), dan
+    // gedempt starten en meteen daarna proberen te ontdempen — dat mag van zowat elk beleid
+    // omdat het al een lopende afspeel-sessie is, geen nieuwe autoplay-poging.
+    function forceerAfspelen(video) {
+        video.muted = false;
+        video.play().catch(() => {
+            video.muted = true;
+            video.play().then(() => { video.muted = false; }).catch(() => {});
+        });
+    }
+
+    function toonVolgende() {
+        if (bezig || wachtrij.length === 0) return;
+        bezig = true;
+        const event = wachtrij.shift();
+
+        naamEl.textContent = event.naam;
+        titelEl.textContent = event.extra?.titel || '';
+
+        function gebruikIframe() {
+            videoEl.hidden = true;
+            iframeEl.hidden = false;
+            const parentParams = PARENTS.map(p => `parent=${p}`).join('&');
+            iframeEl.src = `${event.extra?.embedUrl}&${parentParams}&autoplay=true`;
+        }
+        // De afgeleide mp4-URL kan een keer dood blijken (bijv. verlopen token) — merk dat pas
+        // op het moment zelf, dus dan alsnog live overschakelen naar de iframe-embed i.p.v. een
+        // zwart vlak te laten staan.
+        videoEl.onerror = () => { if (!videoEl.hidden && event.extra?.embedUrl) gebruikIframe(); };
+
+        if (event.extra?.videoUrl) {
+            videoEl.hidden = false;
+            iframeEl.hidden = true;
+            videoEl.volume = alertVolume;
+            videoEl.src = event.extra.videoUrl;
+            forceerAfspelen(videoEl);
+        } else {
+            // Geen videoUrl (afleiden mislukt): dan toch de officiële iframe-embed, die niet
+            // altijd betrouwbaar autoplayt in OBS, maar laat in elk geval de clip zien.
+            gebruikIframe();
+        }
+
+        // Clips duren max. 60s — plus een marge zodat de intro/laadtijd van de player niet
+        // meteen het einde van de clip wegsnijdt.
+        const weergaveTijd = ((event.extra?.duur || 30) + 4) * 1000;
+
+        requestAnimationFrame(() => kaartEl.classList.add('is-visible'));
+        setTimeout(() => {
+            kaartEl.classList.remove('is-visible');
+            // Stopt de afspelende clip meteen i.p.v. door te spelen achter de overlay. onerror
+            // eerst loskoppelen, anders triggert het opruimen zelf de fallback-naar-iframe-logica.
+            videoEl.onerror = null;
+            videoEl.pause();
+            videoEl.removeAttribute('src');
+            videoEl.load();
+            iframeEl.src = '';
+            setTimeout(() => { bezig = false; toonVolgende(); }, 400);
+        }, weergaveTijd);
+    }
+
+    function verbind() {
+        const bron = new EventSource(`${API_BASE}/api/alerts/stream`);
+        bron.onmessage = e => {
+            const event = JSON.parse(e.data);
+            if (event.type !== 'raid_clip') return; // andere alert-types negeren, die horen bij andere overlays
+            if (!event.extra?.embedUrl) return;
+            wachtrij.push(event);
+            toonVolgende();
+        };
+        bron.onerror = () => {
+            bron.close();
+            setTimeout(verbind, 3000);
+        };
+    }
+    verbind();
+</script>
+
+</body>
+</html>
