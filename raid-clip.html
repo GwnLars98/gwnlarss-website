@@ -152,6 +152,18 @@
     // meerdere mag, dus gewoon elke plek waar deze pagina zelf ooit geladen kan worden.
     const PARENTS = ['api.gwnlarss.nl', 'gwnlarss.nl', 'localhost'];
 
+    // Zonder ?kanaal=... in de URL gedraagt dit zich als vanouds: gericht op gwnlarss zelf.
+    // Vul je wel ?kanaal=jouwnaam in, dan activeert dit hieronder automatisch dat kanaal bij de
+    // bot (channel.raid-abonnement aanmaken, geen handmatige configuratie nodig) en toont alleen
+    // nog raid-clips uit dát kanaal.
+    const KANAAL = (new URLSearchParams(location.search).get('kanaal') || 'gwnlarss').trim().toLowerCase();
+
+    fetch(`${API_BASE}/api/raid-clip/activeer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kanaal: KANAAL }),
+    }).catch(() => {}); // netwerkhikje: de widget blijft gewoon proberen te verbinden hieronder
+
     const kaartEl = document.getElementById('kaart');
     const naamEl = document.getElementById('kaart-naam');
     const titelEl = document.getElementById('kaart-titel');
@@ -238,6 +250,7 @@
         bron.onmessage = e => {
             const event = JSON.parse(e.data);
             if (event.type !== 'raid_clip') return; // andere alert-types negeren, die horen bij andere overlays
+            if ((event.extra?.kanaal ?? 'gwnlarss') !== KANAAL) return; // niet voor ons kanaal
             if (!event.extra?.embedUrl) return;
             wachtrij.push(event);
             toonVolgende();

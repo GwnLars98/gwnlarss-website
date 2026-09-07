@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>!clip-commando instellen</title>
+<title>Raid-clip-widget instellen</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -152,6 +152,19 @@
     .result__titel.is-goed { color: var(--green); }
     .result p { margin: 0 0 14px; color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
 
+    .link-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .link-row input {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+    }
+
     .steps { margin: 0; padding-left: 20px; color: var(--text-dim); font-size: 0.88rem; line-height: 1.7; }
     .steps code {
         background: rgba(0, 0, 0, 0.3);
@@ -185,30 +198,34 @@
     <div class="setup-nav__links">
         <a href="first-chat-setup.html" class="setup-nav__link">💬 Eerste chat</a>
         <a href="cam-border-setup.html" class="setup-nav__link">🎥 Cam-border</a>
-        <a href="clip-setup.html" class="setup-nav__link is-actief">📎 Clip</a>
+        <a href="clip-setup.html" class="setup-nav__link">📎 Clip</a>
         <a href="lurk-setup.html" class="setup-nav__link">😴 Lurk</a>
-        <a href="raid-clip-setup.html" class="setup-nav__link">🎬 Raid-clip</a>
+        <a href="raid-clip-setup.html" class="setup-nav__link is-actief">🎬 Raid-clip</a>
     </div>
 </nav>
 
 <div class="card">
-    <h1>📎 !clip-commando instellen</h1>
-    <p class="sub">Vul je Twitch-gebruikersnaam in. De bot joint dan meteen jouw chat, en vanaf dat moment kan iedereen daar <code>!clip</code> typen om automatisch een clip van de laatste ~30 seconden te maken, met een linkje er direct achteraan in de chat.</p>
+    <h1>🎬 Raid-clip-widget instellen</h1>
+    <p class="sub">Vul je Twitch-gebruikersnaam in. Zodra iemand jouw kanaal raidt, laat de overlay dan automatisch een willekeurige clip van hun kanaal zien — een leuk visitekaartje voor de kijkers die net binnenkomen. Geen chat-bot nodig hiervoor, dit werkt via Twitch's eigen raid-melding.</p>
 
     <div class="form-row">
         <input type="text" id="kanaal-input" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
         <button type="button" class="btn" id="activeer-btn">Activeer</button>
-        <button type="button" class="btn btn--ghost" id="verwijder-btn">Verlaat kanaal</button>
+        <button type="button" class="btn btn--ghost" id="verwijder-btn">Deactiveer</button>
     </div>
-    <p class="veld-hint">Zit de bot al in je chat? Vul gewoon je naam in en klik nog eens op Activeer, dat kan geen kwaad: je krijgt dan te zien dat 'ie er al in zit. Wil je 'm eruit? Gebruik "Verlaat kanaal".</p>
+    <p class="veld-hint">Al eerder geactiveerd? Vul gewoon je naam in en klik nog eens op Activeer, dat kan geen kwaad.</p>
 
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
         <p id="result-tekst"></p>
+        <div class="link-row" id="link-row" hidden>
+            <input type="text" id="link-output" readonly>
+            <button type="button" class="btn btn--ghost" id="kopieer-btn">Kopieer</button>
+        </div>
         <ol class="steps" id="steps" hidden>
-            <li>Typ <code>!clip</code> in je eigen Twitch-chat om te testen.</li>
-            <li>Optioneel: <code>!clip een eigen bijschrift</code> geeft de clip-melding een eigen tekst i.p.v. je streamtitel.</li>
-            <li>Er geldt een cooldown van 30 seconden per kanaal tegen spam.</li>
+            <li>Open OBS, voeg een nieuwe <strong>Browser Source</strong> toe.</li>
+            <li>Plak het linkje hierboven als URL.</li>
+            <li>Klaar — je hoeft verder niks te doen, bij de volgende raid verschijnt de clip vanzelf.</li>
         </ol>
     </div>
 </div>
@@ -217,24 +234,41 @@
 <div class="toast" id="toast"></div>
 
 <script>
-    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
-    // De kopie op gwnlarss.nl zelf (Netlify, geen eigen backend) zet dit op de absolute
-    // 'https://api.gwnlarss.nl', dat is de enige regel die tussen die twee kopieën verschilt.
     const API_BASE = 'https://api.gwnlarss.nl';
 
     const input = document.getElementById('kanaal-input');
     const btn = document.getElementById('activeer-btn');
+    const verwijderBtn = document.getElementById('verwijder-btn');
     const resultEl = document.getElementById('result');
     const titelEl = document.getElementById('result-titel');
     const tekstEl = document.getElementById('result-tekst');
+    const linkRow = document.getElementById('link-row');
+    const linkOutput = document.getElementById('link-output');
     const stepsEl = document.getElementById('steps');
-    const verwijderBtn = document.getElementById('verwijder-btn');
+    const kopieerBtn = document.getElementById('kopieer-btn');
     const toastEl = document.getElementById('toast');
 
     function toast(tekst) {
         toastEl.textContent = tekst;
         toastEl.classList.add('is-visible');
         setTimeout(() => toastEl.classList.remove('is-visible'), 2500);
+    }
+
+    function kopieerNaarKlembord(tekst) {
+        try {
+            navigator.clipboard?.writeText(tekst);
+        } catch { /* val hieronder terug */ }
+        const textarea = document.createElement('textarea');
+        textarea.value = tekst;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        let gelukt = false;
+        try { gelukt = document.execCommand('copy'); } catch { gelukt = false; }
+        document.body.removeChild(textarea);
+        return gelukt;
     }
 
     function toonResultaat(status, titel, tekst) {
@@ -246,6 +280,10 @@
         tekstEl.textContent = tekst;
     }
 
+    function bouwLink(kanaal) {
+        return `${location.origin}/raid-clip.html?kanaal=${encodeURIComponent(kanaal)}`;
+    }
+
     async function activeer() {
         if (btn.disabled) return; // een ingedrukt gehouden Enter kan anders meerdere keren vuren
         const kanaal = input.value.trim().toLowerCase();
@@ -253,10 +291,11 @@
 
         btn.disabled = true;
         btn.textContent = 'Bezig...';
+        linkRow.hidden = true;
         stepsEl.hidden = true;
 
         try {
-            const res = await fetch(`${API_BASE}/api/clip/activeer`, {
+            const res = await fetch(`${API_BASE}/api/raid-clip/activeer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ kanaal }),
@@ -268,13 +307,15 @@
                 return;
             }
 
+            linkOutput.value = bouwLink(kanaal);
+            linkRow.hidden = false;
             stepsEl.hidden = false;
             toonResultaat(
                 'goed',
-                data.nieuw ? '✅ Geactiveerd!' : '✅ De bot zit al in je chat',
+                data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
                 data.nieuw
-                    ? `De bot zit nu in de chat van twitch.tv/${kanaal}. Iedereen daar kan vanaf nu !clip gebruiken.`
-                    : `De bot was al eerder toegevoegd aan twitch.tv/${kanaal}, !clip werkt daar dus al gewoon, je hoeft niks te doen.`,
+                    ? `Bij de volgende raid op twitch.tv/${kanaal} verschijnt er automatisch een clip op de overlay hieronder.`
+                    : `Dit kanaal was al eerder geactiveerd. Gebruik gewoon het linkje hieronder.`,
             );
         } catch {
             toonResultaat('fout', '❌ Kon niet activeren', 'Netwerkfout, probeer het nog eens.');
@@ -292,30 +333,35 @@
         verwijderBtn.disabled = true;
         verwijderBtn.textContent = 'Bezig...';
         try {
-            const res = await fetch(`${API_BASE}/api/clip/deactiveer`, {
+            const res = await fetch(`${API_BASE}/api/raid-clip/deactiveer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ kanaal }),
             });
             const data = await res.json();
             if (!data.ok) {
-                toonResultaat('fout', '❌ Kon niet verlaten', data.fout || 'Verwijderen mislukt.');
+                toonResultaat('fout', '❌ Kon niet deactiveren', data.fout || 'Deactiveren mislukt.');
                 return;
             }
-
-            toonResultaat('goed', '🗑️ Verlaten', `De bot heeft twitch.tv/${kanaal} verlaten (tenzij daar nog een andere widget zoals de eerste-chat-widget actief is) en !clip werkt daar niet meer.`);
+            toonResultaat('goed', '🗑️ Gedeactiveerd', `De raid-clip-widget staat nu uit voor twitch.tv/${kanaal}.`);
+            linkRow.hidden = true;
             stepsEl.hidden = true;
         } catch {
-            toonResultaat('fout', '❌ Kon niet verlaten', 'Netwerkfout, probeer het nog eens.');
+            toonResultaat('fout', '❌ Kon niet deactiveren', 'Netwerkfout, probeer het nog eens.');
         } finally {
             verwijderBtn.disabled = false;
-            verwijderBtn.textContent = 'Verlaat kanaal';
+            verwijderBtn.textContent = 'Deactiveer';
         }
     }
 
     btn.addEventListener('click', activeer);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') activeer(); });
     verwijderBtn.addEventListener('click', verwijder);
+
+    kopieerBtn.addEventListener('click', () => {
+        if (kopieerNaarKlembord(linkOutput.value)) toast('🔗 Link gekopieerd!');
+        else toast(linkOutput.value);
+    });
 </script>
 
 </body>
