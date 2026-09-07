@@ -278,7 +278,7 @@
     </div>
 
     <p class="thema-label">Uiterlijk van het toastje</p>
-    <p class="thema-hint">Kies gewoon een thema, dat werkt al voordat je op Activeer klikt. En als je later van gedachten verandert: klik op een andere kaart en het linkje hieronder wordt automatisch bijgewerkt, je hoeft niet steeds opnieuw op Activeer te drukken.</p>
+    <p class="thema-hint">Kies gewoon een thema, dat werkt al voordat je op Activeer klikt. Wil je later van thema wisselen? Kies een andere kaart en klik op Opslaan, het linkje hieronder blijft dan hetzelfde, je hoeft 'm niet opnieuw in OBS te plakken. Bij elke keer opslaan sturen we ook meteen een testbericht naar de overlay, zodat je meteen ziet hoe het eruitziet.</p>
     <div class="thema-grid" id="thema-grid">
         <button type="button" class="thema-kaart is-actief" data-thema="msn">
             <span class="thema-kaart__preview thema-kaart__preview--msn">
@@ -351,6 +351,7 @@
             <span class="thema-kaart__naam">Instagram</span>
         </button>
     </div>
+    <button type="button" class="btn btn--primary" id="opslaan-btn" hidden style="margin-top: 14px;">💾 Thema opslaan</button>
 
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
@@ -387,15 +388,16 @@
     const stepsEl = document.getElementById('steps');
     const kopieerBtn = document.getElementById('kopieer-btn');
     const verwijderBtn = document.getElementById('verwijder-btn');
+    const opslaanBtn = document.getElementById('opslaan-btn');
     const themaKaarten = document.querySelectorAll('.thema-kaart');
     let gekozenThema = 'msn';
     const toastEl = document.getElementById('toast');
     let huidigKanaal = null;
 
+    // Het linkje bevat sinds kort geen thema meer (dat staat server-side opgeslagen), dus dit
+    // blijft altijd hetzelfde ongeacht welk thema je kiest — nooit meer opnieuw in OBS plakken.
     function bouwLink(kanaal) {
-        return gekozenThema === 'msn'
-            ? `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`
-            : `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}&thema=${encodeURIComponent(gekozenThema)}`;
+        return `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`;
     }
 
     themaKaarten.forEach(kaart => {
@@ -403,11 +405,34 @@
             themaKaarten.forEach(k => k.classList.remove('is-actief'));
             kaart.classList.add('is-actief');
             gekozenThema = kaart.dataset.thema;
-            // Als er al een geactiveerd kanaal is, het linkje meteen bijwerken naar het nieuwe
-            // thema — anders moest je na het kiezen opnieuw op Activeer klikken voor niks.
-            if (huidigKanaal) linkOutput.value = bouwLink(huidigKanaal);
+            // Vóór activatie wordt dit gewoon meteen meegenomen door Activeer. Ná activatie moet
+            // je expliciet op Opslaan klikken, dan pas verandert het echt op de overlay.
+            if (huidigKanaal) opslaanBtn.hidden = false;
         });
     });
+
+    async function opslaan() {
+        if (!huidigKanaal || opslaanBtn.disabled) return;
+        opslaanBtn.disabled = true;
+        opslaanBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/first-chat/thema`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal: huidigKanaal, thema: gekozenThema }),
+            });
+            const data = await res.json();
+            if (!data.ok) { toast(`❌ ${data.fout || 'Opslaan mislukt.'}`); return; }
+            toast('💾 Opgeslagen! Check de overlay, er komt een testbericht aan.');
+            opslaanBtn.hidden = true;
+        } catch {
+            toast('❌ Netwerkfout, probeer het nog eens.');
+        } finally {
+            opslaanBtn.disabled = false;
+            opslaanBtn.textContent = '💾 Thema opslaan';
+        }
+    }
+    opslaanBtn.addEventListener('click', opslaan);
 
     function toast(tekst) {
         toastEl.textContent = tekst;
@@ -452,12 +477,13 @@
         btn.textContent = 'Bezig...';
         linkRow.hidden = true;
         stepsEl.hidden = true;
+        opslaanBtn.hidden = true;
 
         try {
             const res = await fetch(`${API_BASE}/api/first-chat/activeer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ kanaal }),
+                body: JSON.stringify({ kanaal, thema: gekozenThema }),
             });
             const data = await res.json();
 

@@ -308,14 +308,38 @@
         discord: { klasse: 'theme-discord', icoon: ICOON_DISCORD, titel: 'Nieuw bericht', geluid: speelDiscordGeluid },
         instagram: { klasse: 'theme-instagram', icoon: ICOON_INSTAGRAM, titel: 'Nieuw DM-bericht', geluid: speelInstagramGeluid },
     };
-    const themaKey = (new URLSearchParams(location.search).get('thema') || 'msn').toLowerCase();
-    const thema = THEMAS[themaKey] ?? THEMAS.msn;
-    if (thema.klasse) msnToastEl.classList.add(thema.klasse);
-    headerIcoonEl.innerHTML = thema.icoon;
-    headerTitelEl.textContent = thema.titel;
+    // Thema komt voortaan uit de setup-pagina (opgeslagen server-side), niet meer uit de URL —
+    // zo hoef je het OBS-linkje nooit aan te passen als je van thema wisselt. ?thema=... in de
+    // URL blijft als handmatige override werken (dan wordt er ook niet meer geherverst, dat is
+    // dan bewust vast), voor oudere linkjes of losstaand testen.
+    const THEMA_KLASSES = Object.values(THEMAS).map(t => t.klasse).filter(Boolean);
+    let thema = THEMAS.msn;
+    let huidigeThemaKey = 'msn';
+    const urlThemaOverride = new URLSearchParams(location.search).get('thema')?.toLowerCase();
+
+    function toepassenThema(themaKey) {
+        if (themaKey === huidigeThemaKey) return;
+        huidigeThemaKey = themaKey;
+        thema = THEMAS[themaKey] ?? THEMAS.msn;
+        THEMA_KLASSES.forEach(k => msnToastEl.classList.remove(k));
+        if (thema.klasse) msnToastEl.classList.add(thema.klasse);
+        headerIcoonEl.innerHTML = thema.icoon;
+        headerTitelEl.textContent = thema.titel;
+    }
+
+    async function haalThemaOp() {
+        if (urlThemaOverride) { toepassenThema(urlThemaOverride); return; }
+        try {
+            const res = await fetch(`${API_BASE}/api/first-chat/instellingen?kanaal=${encodeURIComponent(KANAAL)}`);
+            const data = await res.json();
+            toepassenThema((data.thema || 'msn').toLowerCase());
+        } catch { /* netwerkhikje: gewoon het huidige thema laten staan tot de volgende poging */ }
+    }
+    haalThemaOp();
 
     // Deze pagina blijft normaal gesproken continu open als OBS browser-source, dus periodiek
-    // verversen i.p.v. eenmalig bij laden.
+    // verversen i.p.v. eenmalig bij laden — zo werkt een thema-wijziging via de setup-pagina ook
+    // door zonder dat je de browser-source in OBS handmatig hoeft te verversen.
     function ververs() {
         fetch(`${API_BASE}/api/alerts/settings`).then(r => r.json()).then(s => { weergaveTijd = s.first_chat ?? 5000; }).catch(() => {});
         fetch(`${API_BASE}/api/alerts/volume`).then(r => r.json()).then(v => {
@@ -323,6 +347,7 @@
             alertVolume = v.volume;
         }).catch(() => {});
         fetch(`${API_BASE}/api/alerts/sounds`).then(r => r.json()).then(s => { heeftEigenMsnGeluid = Boolean(s.first_chat); }).catch(() => {});
+        if (!urlThemaOverride) haalThemaOp();
     }
     ververs();
     setInterval(ververs, 15000);
