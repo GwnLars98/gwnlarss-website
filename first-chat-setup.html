@@ -108,6 +108,22 @@
         line-height: 1.5;
     }
 
+    .grootte-rij { display: flex; gap: 10px; flex-wrap: wrap; }
+    .grootte-knop {
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 2px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+    }
+    .grootte-knop:hover { border-color: rgba(145, 70, 255, 0.5); }
+    .grootte-knop.is-actief { border-color: var(--purple); background: rgba(145, 70, 255, 0.12); }
+
     .thema-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -351,7 +367,15 @@
             <span class="thema-kaart__naam">Instagram</span>
         </button>
     </div>
-    <button type="button" class="btn btn--primary" id="opslaan-btn" hidden style="margin-top: 14px;">💾 Thema opslaan</button>
+
+    <p class="thema-label">Grootte</p>
+    <div class="grootte-rij" id="grootte-rij">
+        <button type="button" class="grootte-knop is-actief" data-grootte="normaal">Normaal</button>
+        <button type="button" class="grootte-knop" data-grootte="groot">Groot</button>
+        <button type="button" class="grootte-knop" data-grootte="extragroot">Extra groot</button>
+    </div>
+
+    <button type="button" class="btn btn--primary" id="opslaan-btn" hidden style="margin-top: 14px;">💾 Instellingen opslaan</button>
 
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
@@ -390,12 +414,14 @@
     const verwijderBtn = document.getElementById('verwijder-btn');
     const opslaanBtn = document.getElementById('opslaan-btn');
     const themaKaarten = document.querySelectorAll('.thema-kaart');
+    const grootteKnoppen = document.querySelectorAll('.grootte-knop');
     let gekozenThema = 'msn';
+    let gekozenGrootte = 'normaal';
     const toastEl = document.getElementById('toast');
     let huidigKanaal = null;
 
-    // Het linkje bevat sinds kort geen thema meer (dat staat server-side opgeslagen), dus dit
-    // blijft altijd hetzelfde ongeacht welk thema je kiest — nooit meer opnieuw in OBS plakken.
+    // Het linkje bevat sinds kort geen thema/grootte meer (dat staat server-side opgeslagen),
+    // dus dit blijft altijd hetzelfde ongeacht wat je kiest — nooit meer opnieuw in OBS plakken.
     function bouwLink(kanaal) {
         return `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`;
     }
@@ -411,15 +437,24 @@
         });
     });
 
+    grootteKnoppen.forEach(knop => {
+        knop.addEventListener('click', () => {
+            grootteKnoppen.forEach(k => k.classList.remove('is-actief'));
+            knop.classList.add('is-actief');
+            gekozenGrootte = knop.dataset.grootte;
+            if (huidigKanaal) opslaanBtn.hidden = false;
+        });
+    });
+
     async function opslaan() {
         if (!huidigKanaal || opslaanBtn.disabled) return;
         opslaanBtn.disabled = true;
         opslaanBtn.textContent = 'Bezig...';
         try {
-            const res = await fetch(`${API_BASE}/api/first-chat/thema`, {
+            const res = await fetch(`${API_BASE}/api/first-chat/instellingen`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ kanaal: huidigKanaal, thema: gekozenThema }),
+                body: JSON.stringify({ kanaal: huidigKanaal, thema: gekozenThema, grootte: gekozenGrootte }),
             });
             const data = await res.json();
             if (!data.ok) { toast(`❌ ${data.fout || 'Opslaan mislukt.'}`); return; }
@@ -429,7 +464,7 @@
             toast('❌ Netwerkfout, probeer het nog eens.');
         } finally {
             opslaanBtn.disabled = false;
-            opslaanBtn.textContent = '💾 Thema opslaan';
+            opslaanBtn.textContent = '💾 Instellingen opslaan';
         }
     }
     opslaanBtn.addEventListener('click', opslaan);
@@ -483,7 +518,7 @@
             const res = await fetch(`${API_BASE}/api/first-chat/activeer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ kanaal, thema: gekozenThema }),
+                body: JSON.stringify({ kanaal, thema: gekozenThema, grootte: gekozenGrootte }),
             });
             const data = await res.json();
 

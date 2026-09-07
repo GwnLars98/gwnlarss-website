@@ -31,10 +31,15 @@
         border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 10px 40px -8px rgba(0, 0, 0, 0.6);
-        transform: translateY(calc(100% + 24px));
+        /* Grootte via een gedeelde schaalfactor i.p.v. losse breedte/font-size-regels, zodat
+           alles (tekst, avatar, padding) evenredig meeschaalt. Standaard al iets groter dan de
+           oorspronkelijke 1x, plus twee grotere keuzes via de setup-pagina. */
+        --toast-schaal: 1.1;
+        transform-origin: bottom right;
+        transform: translateY(calc(100% + 24px)) scale(var(--toast-schaal));
         transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
     }
-    .msn-toast.is-visible { transform: translateY(0); }
+    .msn-toast.is-visible { transform: translateY(0) scale(var(--toast-schaal)); }
     .msn-toast__header {
         display: flex;
         align-items: center;
@@ -321,14 +326,17 @@
         discord: { klasse: 'theme-discord', icoon: ICOON_DISCORD, titel: 'Nieuw bericht', geluid: speelDiscordGeluid },
         instagram: { klasse: 'theme-instagram', icoon: ICOON_INSTAGRAM, titel: 'Nieuw DM-bericht', geluid: speelInstagramGeluid },
     };
-    // Thema komt voortaan uit de setup-pagina (opgeslagen server-side), niet meer uit de URL —
-    // zo hoef je het OBS-linkje nooit aan te passen als je van thema wisselt. ?thema=... in de
-    // URL blijft als handmatige override werken (dan wordt er ook niet meer geherverst, dat is
-    // dan bewust vast), voor oudere linkjes of losstaand testen.
+    // Thema/grootte komen voortaan uit de setup-pagina (opgeslagen server-side), niet meer uit
+    // de URL — zo hoef je het OBS-linkje nooit aan te passen als je iets wijzigt. ?thema=... in
+    // de URL blijft als handmatige override werken (dan wordt er ook niet meer geherverst, dat
+    // is dan bewust vast), voor oudere linkjes of losstaand testen.
     const THEMA_KLASSES = Object.values(THEMAS).map(t => t.klasse).filter(Boolean);
+    const GROOTTE_SCHALEN = { normaal: 1.1, groot: 1.35, extragroot: 1.6 };
     let thema = THEMAS.msn;
     let huidigeThemaKey = 'msn';
+    let huidigeGrootteKey = 'normaal';
     const urlThemaOverride = new URLSearchParams(location.search).get('thema')?.toLowerCase();
+    const urlGrootteOverride = new URLSearchParams(location.search).get('grootte')?.toLowerCase();
 
     function toepassenThema(themaKey) {
         if (themaKey === huidigeThemaKey) return;
@@ -340,15 +348,24 @@
         headerTitelEl.textContent = thema.titel;
     }
 
-    async function haalThemaOp() {
-        if (urlThemaOverride) { toepassenThema(urlThemaOverride); return; }
+    function toepassenGrootte(grootteKey) {
+        if (grootteKey === huidigeGrootteKey) return;
+        huidigeGrootteKey = grootteKey;
+        msnToastEl.style.setProperty('--toast-schaal', GROOTTE_SCHALEN[grootteKey] ?? GROOTTE_SCHALEN.normaal);
+    }
+
+    async function haalInstellingenOp() {
+        if (urlThemaOverride) toepassenThema(urlThemaOverride);
+        if (urlGrootteOverride) toepassenGrootte(urlGrootteOverride);
+        if (urlThemaOverride && urlGrootteOverride) return; // beide vast via de URL, geen serveraanroep nodig
         try {
             const res = await fetch(`${API_BASE}/api/first-chat/instellingen?kanaal=${encodeURIComponent(KANAAL)}`);
             const data = await res.json();
-            toepassenThema((data.thema || 'msn').toLowerCase());
-        } catch { /* netwerkhikje: gewoon het huidige thema laten staan tot de volgende poging */ }
+            if (!urlThemaOverride) toepassenThema((data.thema || 'msn').toLowerCase());
+            if (!urlGrootteOverride) toepassenGrootte((data.grootte || 'normaal').toLowerCase());
+        } catch { /* netwerkhikje: gewoon de huidige instellingen laten staan tot de volgende poging */ }
     }
-    haalThemaOp();
+    haalInstellingenOp();
 
     // Deze pagina blijft normaal gesproken continu open als OBS browser-source, dus periodiek
     // verversen i.p.v. eenmalig bij laden — zo werkt een thema-wijziging via de setup-pagina ook
@@ -360,7 +377,7 @@
             alertVolume = v.volume;
         }).catch(() => {});
         fetch(`${API_BASE}/api/alerts/sounds`).then(r => r.json()).then(s => { heeftEigenMsnGeluid = Boolean(s.first_chat); }).catch(() => {});
-        if (!urlThemaOverride) haalThemaOp();
+        if (!urlThemaOverride || !urlGrootteOverride) haalInstellingenOp();
     }
     ververs();
     setInterval(ververs, 15000);
