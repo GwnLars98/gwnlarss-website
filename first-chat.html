@@ -184,9 +184,6 @@
 <audio id="msn-audio"></audio>
 
 <script>
-    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
-    // De kopie op gwnlarss.nl zelf (Netlify, geen eigen backend) zet dit op de absolute
-    // 'https://api.gwnlarss.nl', dat is de enige regel die tussen die twee kopieën verschilt.
     const API_BASE = 'https://api.gwnlarss.nl';
 
     // Zonder ?kanaal=... in de URL gedraagt dit zich als vanouds: gericht op gwnlarss zelf.
@@ -360,27 +357,26 @@
     async function haalInstellingenOp() {
         if (urlThemaOverride) toepassenThema(urlThemaOverride);
         if (urlGrootteOverride) toepassenGrootte(urlGrootteOverride);
-        if (urlThemaOverride && urlGrootteOverride) return; // beide vast via de URL, geen serveraanroep nodig
         try {
             const res = await fetch(`${API_BASE}/api/first-chat/instellingen?kanaal=${encodeURIComponent(KANAAL)}`);
             const data = await res.json();
             if (!urlThemaOverride) toepassenThema((data.thema || 'msn').toLowerCase());
             if (!urlGrootteOverride) toepassenGrootte((data.grootte || 'normaal').toLowerCase());
+            // Eigen volume per kanaal i.p.v. de gedeelde, admin-only "Volume alert-geluiden" —
+            // dit is een publieke zelfbedieningspagina, elke streamer regelt dit voor zichzelf.
+            alertVolume = data.volume ?? 1;
+            msnAudioEl.volume = alertVolume;
         } catch { /* netwerkhikje: gewoon de huidige instellingen laten staan tot de volgende poging */ }
     }
     haalInstellingenOp();
 
     // Deze pagina blijft normaal gesproken continu open als OBS browser-source, dus periodiek
-    // verversen i.p.v. eenmalig bij laden — zo werkt een thema-wijziging via de setup-pagina ook
-    // door zonder dat je de browser-source in OBS handmatig hoeft te verversen.
+    // verversen i.p.v. eenmalig bij laden — zo werkt een thema-/volumewijziging via de
+    // setup-pagina ook door zonder dat je de browser-source in OBS handmatig hoeft te verversen.
     function ververs() {
         fetch(`${API_BASE}/api/alerts/settings`).then(r => r.json()).then(s => { weergaveTijd = s.first_chat ?? 5000; }).catch(() => {});
-        fetch(`${API_BASE}/api/alerts/volume`).then(r => r.json()).then(v => {
-            msnAudioEl.volume = v.volume;
-            alertVolume = v.volume;
-        }).catch(() => {});
         fetch(`${API_BASE}/api/alerts/sounds`).then(r => r.json()).then(s => { heeftEigenMsnGeluid = Boolean(s.first_chat); }).catch(() => {});
-        if (!urlThemaOverride || !urlGrootteOverride) haalInstellingenOp();
+        haalInstellingenOp();
     }
     ververs();
     setInterval(ververs, 15000);

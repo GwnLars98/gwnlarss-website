@@ -146,6 +146,7 @@
 </div>
 
 <script>
+    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
     const API_BASE = 'https://api.gwnlarss.nl';
 
     // De Twitch-clip-embed vereist een expliciete lijst van toegestane parent-domeinen —
@@ -173,12 +174,13 @@
     const wachtrij = [];
     let bezig = false;
 
-    // Zelfde globale "Volume alert-geluiden"-slider als alerts.html/first-chat.html/lurk.html
-    // (alerts-admin.html), zodat je de raid-clip niet los hoeft te regelen.
+    // Eigen volume per kanaal (via raid-clip-setup.html) i.p.v. de gedeelde, admin-only "Volume
+    // alert-geluiden" uit alerts-admin.html — dit is een publieke zelfbedieningspagina, elke
+    // streamer regelt dit voor zichzelf.
     let alertVolume = 1;
     function verversVolume() {
-        fetch(`${API_BASE}/api/alerts/volume`).then(r => r.json()).then(v => {
-            alertVolume = v.volume;
+        fetch(`${API_BASE}/api/raid-clip/instellingen?kanaal=${encodeURIComponent(KANAAL)}`).then(r => r.json()).then(v => {
+            alertVolume = v.volume ?? 1;
             videoEl.volume = alertVolume;
         }).catch(() => {});
     }

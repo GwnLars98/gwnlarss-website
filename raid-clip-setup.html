@@ -97,6 +97,16 @@
     .form-row input[type="text"] { flex-basis: 160px; }
     .veld-hint { margin: 10px 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; }
 
+    .thema-label {
+        margin: 20px 0 10px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text-dim);
+    }
+    .volume-rij { display: flex; align-items: center; gap: 12px; }
+    .volume-rij input[type="range"] { flex: 1; accent-color: var(--purple); }
+    .volume-rij__waarde { font-weight: 700; width: 3.2em; text-align: right; flex-shrink: 0; }
+
     input[type="text"] {
         flex: 1;
         min-width: 0;
@@ -215,6 +225,14 @@
     </div>
     <p class="veld-hint">Al eerder geactiveerd? Vul gewoon je naam in en klik nog eens op Activeer, dat kan geen kwaad.</p>
 
+    <p class="thema-label">Volume van de clip</p>
+    <div class="volume-rij">
+        <input type="range" id="volume-slider" min="0" max="100" step="1" value="100">
+        <span class="volume-rij__waarde" id="volume-waarde">100%</span>
+    </div>
+
+    <button type="button" class="btn btn--primary" id="opslaan-btn" hidden style="margin-top: 14px;">💾 Volume opslaan</button>
+
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
         <p id="result-tekst"></p>
@@ -234,6 +252,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
+    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
+    // De kopie op gwnlarss.nl zelf (Netlify, geen eigen backend) zet dit op de absolute
+    // 'https://api.gwnlarss.nl', dat is de enige regel die tussen die twee kopieën verschilt.
     const API_BASE = 'https://api.gwnlarss.nl';
 
     const input = document.getElementById('kanaal-input');
@@ -247,6 +268,40 @@
     const stepsEl = document.getElementById('steps');
     const kopieerBtn = document.getElementById('kopieer-btn');
     const toastEl = document.getElementById('toast');
+    const volumeSlider = document.getElementById('volume-slider');
+    const volumeWaarde = document.getElementById('volume-waarde');
+    const opslaanBtn = document.getElementById('opslaan-btn');
+    let huidigKanaal = null;
+
+    volumeSlider.addEventListener('input', () => {
+        volumeWaarde.textContent = `${volumeSlider.value}%`;
+        // Vóór activatie wordt dit gewoon meteen meegenomen door Activeer. Ná activatie moet je
+        // expliciet op Opslaan klikken, dan pas verandert het echt op de overlay.
+        if (huidigKanaal) opslaanBtn.hidden = false;
+    });
+
+    async function opslaan() {
+        if (!huidigKanaal || opslaanBtn.disabled) return;
+        opslaanBtn.disabled = true;
+        opslaanBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/raid-clip/instellingen`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal: huidigKanaal, volume: Number(volumeSlider.value) / 100 }),
+            });
+            const data = await res.json();
+            if (!data.ok) { toast(`❌ ${data.fout || 'Opslaan mislukt.'}`); return; }
+            toast('💾 Volume opgeslagen.');
+            opslaanBtn.hidden = true;
+        } catch {
+            toast('❌ Netwerkfout, probeer het nog eens.');
+        } finally {
+            opslaanBtn.disabled = false;
+            opslaanBtn.textContent = '💾 Volume opslaan';
+        }
+    }
+    opslaanBtn.addEventListener('click', opslaan);
 
     function toast(tekst) {
         toastEl.textContent = tekst;
@@ -293,12 +348,13 @@
         btn.textContent = 'Bezig...';
         linkRow.hidden = true;
         stepsEl.hidden = true;
+        opslaanBtn.hidden = true;
 
         try {
             const res = await fetch(`${API_BASE}/api/raid-clip/activeer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ kanaal }),
+                body: JSON.stringify({ kanaal, volume: Number(volumeSlider.value) / 100 }),
             });
             const data = await res.json();
 
@@ -310,6 +366,7 @@
             linkOutput.value = bouwLink(kanaal);
             linkRow.hidden = false;
             stepsEl.hidden = false;
+            huidigKanaal = kanaal;
             toonResultaat(
                 'goed',
                 data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
@@ -346,6 +403,8 @@
             toonResultaat('goed', '🗑️ Gedeactiveerd', `De raid-clip-widget staat nu uit voor twitch.tv/${kanaal}.`);
             linkRow.hidden = true;
             stepsEl.hidden = true;
+            opslaanBtn.hidden = true;
+            huidigKanaal = null;
         } catch {
             toonResultaat('fout', '❌ Kon niet deactiveren', 'Netwerkfout, probeer het nog eens.');
         } finally {

@@ -109,6 +109,10 @@
         line-height: 1.5;
     }
 
+    .volume-rij { display: flex; align-items: center; gap: 12px; }
+    .volume-rij input[type="range"] { flex: 1; accent-color: var(--purple); }
+    .volume-rij__waarde { font-weight: 700; width: 3.2em; text-align: right; flex-shrink: 0; }
+
     .grootte-rij { display: flex; gap: 10px; flex-wrap: wrap; }
     .grootte-knop {
         padding: 10px 18px;
@@ -387,6 +391,12 @@
         <button type="button" class="grootte-knop" data-grootte="extragroot">Extra groot</button>
     </div>
 
+    <p class="thema-label">Volume</p>
+    <div class="volume-rij">
+        <input type="range" id="volume-slider" min="0" max="100" step="1" value="100">
+        <span class="volume-rij__waarde" id="volume-waarde">100%</span>
+    </div>
+
     <button type="button" class="btn btn--primary" id="opslaan-btn" hidden style="margin-top: 14px;">💾 Instellingen opslaan</button>
 
     <div class="result" id="result">
@@ -408,6 +418,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
+    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
     const API_BASE = 'https://api.gwnlarss.nl';
 
     const input = document.getElementById('kanaal-input');
@@ -423,6 +434,8 @@
     const opslaanBtn = document.getElementById('opslaan-btn');
     const themaKaarten = document.querySelectorAll('.thema-kaart');
     const grootteKnoppen = document.querySelectorAll('.grootte-knop');
+    const volumeSlider = document.getElementById('volume-slider');
+    const volumeWaarde = document.getElementById('volume-waarde');
     let gekozenThema = 'msn';
     let gekozenGrootte = 'normaal';
     const toastEl = document.getElementById('toast');
@@ -448,6 +461,11 @@
         });
     });
 
+    volumeSlider.addEventListener('input', () => {
+        volumeWaarde.textContent = `${volumeSlider.value}%`;
+        if (huidigKanaal) opslaanBtn.hidden = false;
+    });
+
     async function opslaan() {
         if (!huidigKanaal || opslaanBtn.disabled) return;
         opslaanBtn.disabled = true;
@@ -456,7 +474,7 @@
             const res = await fetch(`${API_BASE}/api/lurk/instellingen`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ kanaal: huidigKanaal, thema: gekozenThema, grootte: gekozenGrootte }),
+                body: JSON.stringify({ kanaal: huidigKanaal, thema: gekozenThema, grootte: gekozenGrootte, volume: Number(volumeSlider.value) / 100 }),
             });
             const data = await res.json();
             if (!data.ok) { toast(`❌ ${data.fout || 'Opslaan mislukt.'}`); return; }
@@ -522,7 +540,7 @@
             const res = await fetch(`${API_BASE}/api/lurk/activeer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ kanaal, thema: gekozenThema, grootte: gekozenGrootte }),
+                body: JSON.stringify({ kanaal, thema: gekozenThema, grootte: gekozenGrootte, volume: Number(volumeSlider.value) / 100 }),
             });
             const data = await res.json();
 
