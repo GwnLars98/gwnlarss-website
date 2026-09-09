@@ -391,7 +391,9 @@
             msnAvatarFallbackEl.hidden = false;
         }
 
-        thema.geluid();
+        // Testbericht vanaf lurk-setup.html (bij elke thema-/instellingenwijziging): alleen het
+        // uiterlijk tonen, geen geluid, dat zou anders bij elke klik in de setup-pagina afgaan.
+        if (!event.extra?.test) thema.geluid();
 
         requestAnimationFrame(() => msnToastEl.classList.add('is-visible'));
         setTimeout(() => {
