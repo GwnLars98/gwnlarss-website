@@ -243,8 +243,9 @@
         <ol class="steps" id="steps" hidden>
             <li>Open OBS, voeg een nieuwe <strong>Browser Source</strong> toe.</li>
             <li>Plak het linkje hierboven als URL.</li>
-            <li>Klaar — je hoeft verder niks te doen, bij de volgende raid verschijnt de clip vanzelf.</li>
+            <li>Klaar, je hoeft verder niks te doen, bij de volgende raid verschijnt de clip vanzelf.</li>
         </ol>
+        <button type="button" class="btn btn--ghost" id="test-btn" hidden style="margin-top: 14px;">▶️ Test de overlay</button>
     </div>
 </div>
 </div>
@@ -266,6 +267,7 @@
     const linkRow = document.getElementById('link-row');
     const linkOutput = document.getElementById('link-output');
     const stepsEl = document.getElementById('steps');
+    const testBtn = document.getElementById('test-btn');
     const kopieerBtn = document.getElementById('kopieer-btn');
     const toastEl = document.getElementById('toast');
     const volumeSlider = document.getElementById('volume-slider');
@@ -366,6 +368,7 @@
             linkOutput.value = bouwLink(kanaal);
             linkRow.hidden = false;
             stepsEl.hidden = false;
+            testBtn.hidden = false;
             huidigKanaal = kanaal;
             toonResultaat(
                 'goed',
@@ -404,6 +407,7 @@
             linkRow.hidden = true;
             stepsEl.hidden = true;
             opslaanBtn.hidden = true;
+            testBtn.hidden = true;
             huidigKanaal = null;
         } catch {
             toonResultaat('fout', '❌ Kon niet deactiveren', 'Netwerkfout, probeer het nog eens.');
@@ -420,6 +424,27 @@
     kopieerBtn.addEventListener('click', () => {
         if (kopieerNaarKlembord(linkOutput.value)) toast('🔗 Link gekopieerd!');
         else toast(linkOutput.value);
+    });
+
+    testBtn.addEventListener('click', async () => {
+        if (!huidigKanaal || testBtn.disabled) return;
+        testBtn.disabled = true;
+        testBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/raid-clip/test`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal: huidigKanaal }),
+            });
+            const data = await res.json();
+            if (!data.ok) { toast(`❌ ${data.fout || 'Testen mislukt.'}`); return; }
+            toast('▶️ Testclip verstuurd, check je overlay in OBS.');
+        } catch {
+            toast('❌ Netwerkfout, probeer het nog eens.');
+        } finally {
+            testBtn.disabled = false;
+            testBtn.textContent = '▶️ Test de overlay';
+        }
     });
 </script>
 
