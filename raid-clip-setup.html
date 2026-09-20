@@ -274,6 +274,42 @@
     const volumeWaarde = document.getElementById('volume-waarde');
     const opslaanBtn = document.getElementById('opslaan-btn');
     let huidigKanaal = null;
+    const KANAAL_OPSLAG_KEY = 'raidClipSetupKanaal';
+
+    function bouwLink(kanaal) {
+        return `${location.origin}/raid-clip.html?kanaal=${encodeURIComponent(kanaal)}`;
+    }
+
+    // Zonder dit toont de pagina bij elk bezoek altijd 100% als "gekozen", ook als er allang een
+    // ander volume bewaard staat — waardoor een simpele klik op Activeer dat per ongeluk terugzet.
+    async function haalInstellingenOp(kanaal) {
+        try {
+            const res = await fetch(`${API_BASE}/api/raid-clip/instellingen?kanaal=${encodeURIComponent(kanaal)}`);
+            const data = await res.json();
+            volumeSlider.value = Math.round((data.volume ?? 1) * 100);
+            volumeWaarde.textContent = `${volumeSlider.value}%`;
+        } catch { /* netwerkhikje: gewoon de standaardwaarde laten staan */ }
+    }
+
+    // Onthoudt welk kanaal je hier laatst instelde, zodat je bij een volgend bezoek niet
+    // opnieuw je naam hoeft te typen om het juiste volume te zien.
+    const onthoudenKanaal = localStorage.getItem(KANAAL_OPSLAG_KEY);
+    if (onthoudenKanaal) {
+        input.value = onthoudenKanaal;
+        huidigKanaal = onthoudenKanaal;
+        linkOutput.value = bouwLink(onthoudenKanaal);
+        linkRow.hidden = false;
+        stepsEl.hidden = false;
+        testBtn.hidden = false;
+        haalInstellingenOp(onthoudenKanaal);
+    }
+
+    // Ook zodra iemand zelf een (andere) naam intypt en het veld verlaat — handig voor een
+    // andere streamer die hier voor het eerst zit maar al eerder via de API iets bewaarde.
+    input.addEventListener('blur', () => {
+        const kanaal = input.value.trim().toLowerCase();
+        if (kanaal && kanaal !== huidigKanaal) haalInstellingenOp(kanaal);
+    });
 
     volumeSlider.addEventListener('input', () => {
         volumeWaarde.textContent = `${volumeSlider.value}%`;
@@ -337,10 +373,6 @@
         tekstEl.textContent = tekst;
     }
 
-    function bouwLink(kanaal) {
-        return `${location.origin}/raid-clip.html?kanaal=${encodeURIComponent(kanaal)}`;
-    }
-
     async function activeer() {
         if (btn.disabled) return; // een ingedrukt gehouden Enter kan anders meerdere keren vuren
         const kanaal = input.value.trim().toLowerCase();
@@ -351,6 +383,10 @@
         linkRow.hidden = true;
         stepsEl.hidden = true;
         opslaanBtn.hidden = true;
+
+        // Zonder dit zou een simpele "nog een keer op Activeer klikken om het linkje te zien"
+        // een al bewaard volume overschrijven met de standaardwaarde.
+        if (kanaal !== huidigKanaal) await haalInstellingenOp(kanaal);
 
         try {
             const res = await fetch(`${API_BASE}/api/raid-clip/activeer`, {
@@ -370,6 +406,7 @@
             stepsEl.hidden = false;
             testBtn.hidden = false;
             huidigKanaal = kanaal;
+            localStorage.setItem(KANAAL_OPSLAG_KEY, kanaal);
             toonResultaat(
                 'goed',
                 data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
@@ -409,6 +446,7 @@
             opslaanBtn.hidden = true;
             testBtn.hidden = true;
             huidigKanaal = null;
+            localStorage.removeItem(KANAAL_OPSLAG_KEY);
         } catch {
             toonResultaat('fout', '❌ Kon niet deactiveren', 'Netwerkfout, probeer het nog eens.');
         } finally {

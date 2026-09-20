@@ -433,12 +433,56 @@
     let gekozenGrootte = 'normaal';
     const toastEl = document.getElementById('toast');
     let huidigKanaal = null;
+    const KANAAL_OPSLAG_KEY = 'firstChatSetupKanaal';
 
     // Het linkje bevat sinds kort geen thema/grootte meer (dat staat server-side opgeslagen),
     // dus dit blijft altijd hetzelfde ongeacht wat je kiest — nooit meer opnieuw in OBS plakken.
     function bouwLink(kanaal) {
         return `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`;
     }
+
+    // Past de kaarten/knop/slider aan op wat er al bewaard staat, zonder dat te zien als een
+    // eigen wijziging (dus geen Opslaan-knop tonen) — puur de huidige staat laten zien.
+    function toepassenInstellingen(data) {
+        gekozenThema = (data.thema || 'msn').toLowerCase();
+        themaKaarten.forEach(k => k.classList.toggle('is-actief', k.dataset.thema === gekozenThema));
+
+        gekozenGrootte = (data.grootte || 'normaal').toLowerCase();
+        grootteKnoppen.forEach(k => k.classList.toggle('is-actief', k.dataset.grootte === gekozenGrootte));
+
+        volumeSlider.value = Math.round((data.volume ?? 1) * 100);
+        volumeWaarde.textContent = `${volumeSlider.value}%`;
+    }
+
+    // Zonder dit toont de pagina bij elk bezoek altijd MSN/Normaal/100% als "gekozen", ook als er
+    // allang iets anders bewaard staat — waardoor een simpele klik op Activeer dat per ongeluk
+    // terugzet. Haalt de echte instellingen op zodra we een kanaalnaam hebben.
+    async function haalInstellingenOp(kanaal) {
+        try {
+            const res = await fetch(`${API_BASE}/api/first-chat/instellingen?kanaal=${encodeURIComponent(kanaal)}`);
+            toepassenInstellingen(await res.json());
+        } catch { /* netwerkhikje: gewoon de standaardwaarden laten staan */ }
+    }
+
+    // Onthoudt welk kanaal je hier laatst instelde, zodat je bij een volgend bezoek niet
+    // opnieuw je naam hoeft te typen om de juiste instellingen te zien.
+    const onthoudenKanaal = localStorage.getItem(KANAAL_OPSLAG_KEY);
+    if (onthoudenKanaal) {
+        input.value = onthoudenKanaal;
+        huidigKanaal = onthoudenKanaal;
+        linkOutput.value = bouwLink(onthoudenKanaal);
+        linkRow.hidden = false;
+        stepsEl.hidden = false;
+        verwijderBtn.hidden = false;
+        haalInstellingenOp(onthoudenKanaal);
+    }
+
+    // Ook zodra iemand zelf een (andere) naam intypt en het veld verlaat — handig voor een
+    // andere streamer die hier voor het eerst zit maar al eerder via de API iets bewaarde.
+    input.addEventListener('blur', () => {
+        const kanaal = input.value.trim().toLowerCase();
+        if (kanaal && kanaal !== huidigKanaal) haalInstellingenOp(kanaal);
+    });
 
     themaKaarten.forEach(kaart => {
         kaart.addEventListener('click', () => {
@@ -533,6 +577,11 @@
         stepsEl.hidden = true;
         opslaanBtn.hidden = true;
 
+        // Zonder dit zou een simpele "nog een keer op Activeer klikken om het linkje te zien"
+        // (zoals de hint hieronder aanraadt) een al bewaard thema/grootte/volume overschrijven
+        // met wat de pagina toevallig nog toonde (standaard MSN/Normaal/100%).
+        if (kanaal !== huidigKanaal) await haalInstellingenOp(kanaal);
+
         try {
             const res = await fetch(`${API_BASE}/api/first-chat/activeer`, {
                 method: 'POST',
@@ -551,6 +600,7 @@
             stepsEl.hidden = false;
             huidigKanaal = kanaal;
             verwijderBtn.hidden = false;
+            localStorage.setItem(KANAAL_OPSLAG_KEY, kanaal);
             toonResultaat(
                 'goed',
                 data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
@@ -584,6 +634,7 @@
             stepsEl.hidden = true;
             verwijderBtn.hidden = true;
             huidigKanaal = null;
+            localStorage.removeItem(KANAAL_OPSLAG_KEY);
         } catch {
             toast('❌ Netwerkfout, probeer het nog eens.');
         } finally {
