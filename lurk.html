@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lurk — GwnLarss</title>
+<title>Lurk, GwnLarss</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
     * { box-sizing: border-box; }
@@ -17,7 +17,7 @@
     }
 
     /* ---------- !lurk: zelfde IM-toastjes-thema als "eerste chat van de stream"
-       (first-chat.html) — MSN Messenger/AIM/ICQ/Yahoo!/Windows XP/Skype/Nokia/BBM/Discord/
+       (first-chat.html), MSN Messenger/AIM/ICQ/Yahoo!/Windows XP/Skype/Nokia/BBM/Discord/
        Instagram. Losgetrokken zodat je 'm als eigen OBS-bron kan gebruiken. Thema/grootte
        komen uit lurk-setup.html (server-side opgeslagen), niet uit de URL. ---------- */
     .msn-toast {
@@ -268,7 +268,7 @@
         speelToon([[440, 0, 0.18], [880, 0.1, 0.3]], 'sine', 0.2);
         speelToon([[440 * 1.5, 0, 0.16], [880 * 1.5, 0.1, 0.26]], 'triangle', 0.06);
     }
-    // Nokia: het bekende korte, hoge "tri-tone"-getik — bewust een generiek eigen patroon en
+    // Nokia: het bekende korte, hoge "tri-tone"-getik, bewust een generiek eigen patroon en
     // geen exacte Nokia-melodie na te bootsen, die specifieke jingle is een geregistreerd
     // geluidsmerk. Blokgolf + een octaaf erboven voor wat meer "piepBeep"-scherpte.
     function speelNokiaGeluid() {
@@ -316,7 +316,7 @@
         discord: { klasse: 'theme-discord', icoon: ICOON_DISCORD, titel: 'Nieuw bericht', geluid: speelDiscordGeluid },
         instagram: { klasse: 'theme-instagram', icoon: ICOON_INSTAGRAM, titel: 'Nieuw DM-bericht', geluid: speelInstagramGeluid },
     };
-    // Thema/grootte komen uit lurk-setup.html (opgeslagen server-side), niet uit de URL — zo
+    // Thema/grootte komen uit lurk-setup.html (opgeslagen server-side), niet uit de URL, zo
     // hoef je het OBS-linkje nooit aan te passen als je iets wijzigt. ?thema=... in de URL
     // blijft als handmatige override werken (dan wordt er ook niet meer geherverst, dat is dan
     // bewust vast), voor losstaand testen.
@@ -352,7 +352,7 @@
             const data = await res.json();
             if (!urlThemaOverride) toepassenThema((data.thema || 'msn').toLowerCase());
             if (!urlGrootteOverride) toepassenGrootte((data.grootte || 'normaal').toLowerCase());
-            // Eigen volume per kanaal i.p.v. de gedeelde, admin-only "Volume alert-geluiden" —
+            // Eigen volume per kanaal i.p.v. de gedeelde, admin-only "Volume alert-geluiden" ,
             // dit is een publieke zelfbedieningspagina, elke streamer regelt dit voor zichzelf.
             alertVolume = data.volume ?? 1;
             msnAudioEl.volume = alertVolume;
@@ -361,7 +361,7 @@
     haalInstellingenOp();
 
     // Deze pagina blijft normaal gesproken continu open als OBS browser-source, dus periodiek
-    // verversen i.p.v. eenmalig bij laden — zo werkt een thema-/volumewijziging via de
+    // verversen i.p.v. eenmalig bij laden, zo werkt een thema-/volumewijziging via de
     // setup-pagina ook door zonder dat je de browser-source in OBS handmatig hoeft te verversen.
     function ververs() {
         haalInstellingenOp();

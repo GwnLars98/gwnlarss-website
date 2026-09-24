@@ -70,7 +70,7 @@ async function checkLive() {
     try {
         // Absolute URL i.p.v. relatief: dit bestand draait zowel op api.gwnlarss.nl (de bot's
         // eigen server, waar relatief ook zou werken) als op gwnlarss.nl (Netlify, geen eigen
-        // backend) — daar moet het wel naar de bot's server verwijzen. CORS staat daar al open.
+        // backend), daar moet het wel naar de bot's server verwijzen. CORS staat daar al open.
         const res = await fetch('https://api.gwnlarss.nl/api/live', { cache: 'no-store' });
         render(await res.json());
     } catch {
@@ -85,7 +85,7 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
 
 // ---------- Overlay-showcases: iframe op echte resolutie renderen, dan schalen ----------
 // Puur procentuele iframe-afmetingen (width/height:100%) gaven verkeerd geschaalde vw/vh-tekst
-// binnenin de overlay-pagina's — de iframe rendert nu op zijn eigen echte resolutie (bijv.
+// binnenin de overlay-pagina's, de iframe rendert nu op zijn eigen echte resolutie (bijv.
 // 1920x1080) en wordt daarna met een CSS-transform naar de kleine showcase-maat geschaald,
 // zodat de overlay's eigen vw/vh-CSS altijd tegen de juiste, echte viewport-grootte rekent.
 (() => {
@@ -103,7 +103,7 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
     }
 
     // ResizeObserver i.p.v. gokken op het juiste moment (load/resize-events): dit vuurt
-    // gegarandeerd zodra de canvas zijn ECHTE, definitieve breedte heeft — voorkwam eerder dat
+    // gegarandeerd zodra de canvas zijn ECHTE, definitieve breedte heeft, voorkwam eerder dat
     // de schaalfactor werd berekend vóór de flex/aspect-ratio-layout klaar was, wat een
     // schaalfactor dicht bij 1 gaf (dus vrijwel ongeschaalde, veel te grote, uitgesneden tekst).
     if ('ResizeObserver' in window) {
@@ -149,7 +149,7 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
         try { localStorage.setItem('gwnlarss-showcase-gedempt', gedempt ? '1' : '0'); } catch { /* privénavigatie o.i.d. */ }
     });
 
-    // Klassiek MSN-"ding"-geluidje, zelf gesynthetiseerd — geen audiobestand nodig, en werkt dus
+    // Klassiek MSN-"ding"-geluidje, zelf gesynthetiseerd, geen audiobestand nodig, en werkt dus
     // ook op deze statische showcase-pagina zonder eigen backend.
     function speelMsnDing() {
         if (gedempt) return;
@@ -157,7 +157,7 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const now = ctx.currentTime;
             // Opwaarts belletje-arpeggio (C6-E6-G6-C7), met een zachte boventoon per noot voor
-            // een klokkerige klank i.p.v. een kale sinustoon — de klassieke "messenger-ding"-vibe.
+            // een klokkerige klank i.p.v. een kale sinustoon, de klassieke "messenger-ding"-vibe.
             [1046.50, 1318.51, 1567.98, 2093.00].forEach((freq, i) => {
                 const start = now + i * 0.07;
                 const duur = 0.22;
@@ -208,7 +208,7 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
     if (!toggle || !panel || !customInput || !resetBtn) return;
 
     // Puur de "GwnLarss"-badge in de cam-border-showcase, niet de rest van de site (logo,
-    // hero-titel, live-status) — die blijven altijd echt.
+    // hero-titel, live-status), die blijven altijd echt.
     function pasNaamToe(naam) {
         document.querySelectorAll('.brand-name').forEach(el => { el.textContent = naam || STANDAARD_NAAM; });
     }

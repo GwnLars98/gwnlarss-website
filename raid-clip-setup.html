@@ -219,7 +219,7 @@
 
 <div class="card">
     <h1>🎬 Raid-clip-widget instellen</h1>
-    <p class="sub">Vul je Twitch-gebruikersnaam in. Zodra iemand jouw kanaal raidt, laat de overlay dan automatisch een willekeurige clip van hun kanaal zien — een leuk visitekaartje voor de kijkers die net binnenkomen. Geen chat-bot nodig hiervoor, dit werkt via Twitch's eigen raid-melding.</p>
+    <p class="sub">Vul je Twitch-gebruikersnaam in. Zodra iemand jouw kanaal raidt, laat de overlay dan automatisch een willekeurige clip van hun kanaal zien, een leuk visitekaartje voor de kijkers die net binnenkomen. Geen chat-bot nodig hiervoor, dit werkt via Twitch's eigen raid-melding.</p>
 
     <div class="form-row">
         <input type="text" id="kanaal-input" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
@@ -285,7 +285,7 @@
     }
 
     // Zonder dit toont de pagina bij elk bezoek altijd 100% als "gekozen", ook als er allang een
-    // ander volume bewaard staat — waardoor een simpele klik op Activeer dat per ongeluk terugzet.
+    // ander volume bewaard staat, waardoor een simpele klik op Activeer dat per ongeluk terugzet.
     async function haalInstellingenOp(kanaal) {
         try {
             const res = await fetch(`${API_BASE}/api/raid-clip/instellingen?kanaal=${encodeURIComponent(kanaal)}`);
@@ -308,7 +308,7 @@
         haalInstellingenOp(onthoudenKanaal);
     }
 
-    // Ook zodra iemand zelf een (andere) naam intypt en het veld verlaat — handig voor een
+    // Ook zodra iemand zelf een (andere) naam intypt en het veld verlaat, handig voor een
     // andere streamer die hier voor het eerst zit maar al eerder via de API iets bewaarde.
     input.addEventListener('blur', () => {
         const kanaal = input.value.trim().toLowerCase();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eerste Chat — GwnLarss</title>
+<title>Eerste Chat, GwnLarss</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
     * { box-sizing: border-box; }
@@ -211,11 +211,11 @@
     const headerIcoonEl = document.getElementById('toast-header-icoon');
     const headerTitelEl = document.getElementById('toast-header-titel');
 
-    // Elk geluidje hieronder is zelf gesynthetiseerd (geen audiobestanden nodig) — gebruikt als
+    // Elk geluidje hieronder is zelf gesynthetiseerd (geen audiobestanden nodig), gebruikt als
     // fallback zolang er voor 'first_chat' geen eigen geluid geüpload is via alerts-admin.html.
     // Eén gedeelde, hergebruikte AudioContext i.p.v. een nieuwe per geluidje: een AudioContext
     // start in de meeste browsers 'suspended' totdat er ooit een gebruikersinteractie op de
-    // pagina is geweest, en genoten die op een suspended context blijven dan stil zonder fout —
+    // pagina is geweest, en genoten die op een suspended context blijven dan stil zonder fout ,
     // resume() hieronder lost dat op zodra de pagina eenmaal een klik/toets gehad heeft (in OBS
     // is dat sowieso geen probleem, browsers daar zijn minder streng met autoplay-beleid).
     let gedeeldeAudioCtx = null;
@@ -278,7 +278,7 @@
         speelToon([[440, 0, 0.18], [880, 0.1, 0.3]], 'sine', 0.2);
         speelToon([[440 * 1.5, 0, 0.16], [880 * 1.5, 0.1, 0.26]], 'triangle', 0.06);
     }
-    // Nokia: het bekende korte, hoge "tri-tone"-getik — bewust een generiek eigen patroon en
+    // Nokia: het bekende korte, hoge "tri-tone"-getik, bewust een generiek eigen patroon en
     // geen exacte Nokia-melodie na te bootsen, die specifieke jingle is een geregistreerd
     // geluidsmerk. Blokgolf + een octaaf erboven voor wat meer "piepBeep"-scherpte.
     function speelNokiaGeluid() {
@@ -327,7 +327,7 @@
         instagram: { klasse: 'theme-instagram', icoon: ICOON_INSTAGRAM, titel: 'Nieuw DM-bericht', geluid: speelInstagramGeluid },
     };
     // Thema/grootte komen voortaan uit de setup-pagina (opgeslagen server-side), niet meer uit
-    // de URL — zo hoef je het OBS-linkje nooit aan te passen als je iets wijzigt. ?thema=... in
+    // de URL, zo hoef je het OBS-linkje nooit aan te passen als je iets wijzigt. ?thema=... in
     // de URL blijft als handmatige override werken (dan wordt er ook niet meer geherverst, dat
     // is dan bewust vast), voor oudere linkjes of losstaand testen.
     const THEMA_KLASSES = Object.values(THEMAS).map(t => t.klasse).filter(Boolean);
@@ -362,7 +362,7 @@
             const data = await res.json();
             if (!urlThemaOverride) toepassenThema((data.thema || 'msn').toLowerCase());
             if (!urlGrootteOverride) toepassenGrootte((data.grootte || 'normaal').toLowerCase());
-            // Eigen volume per kanaal i.p.v. de gedeelde, admin-only "Volume alert-geluiden" —
+            // Eigen volume per kanaal i.p.v. de gedeelde, admin-only "Volume alert-geluiden" ,
             // dit is een publieke zelfbedieningspagina, elke streamer regelt dit voor zichzelf.
             alertVolume = data.volume ?? 1;
             msnAudioEl.volume = alertVolume;
@@ -371,7 +371,7 @@
     haalInstellingenOp();
 
     // Deze pagina blijft normaal gesproken continu open als OBS browser-source, dus periodiek
-    // verversen i.p.v. eenmalig bij laden — zo werkt een thema-/volumewijziging via de
+    // verversen i.p.v. eenmalig bij laden, zo werkt een thema-/volumewijziging via de
     // setup-pagina ook door zonder dat je de browser-source in OBS handmatig hoeft te verversen.
     function ververs() {
         fetch(`${API_BASE}/api/alerts/settings`).then(r => r.json()).then(s => { weergaveTijd = s.first_chat ?? 5000; }).catch(() => {});

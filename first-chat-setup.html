@@ -440,13 +440,13 @@
     const KANAAL_OPSLAG_KEY = 'firstChatSetupKanaal';
 
     // Het linkje bevat sinds kort geen thema/grootte meer (dat staat server-side opgeslagen),
-    // dus dit blijft altijd hetzelfde ongeacht wat je kiest — nooit meer opnieuw in OBS plakken.
+    // dus dit blijft altijd hetzelfde ongeacht wat je kiest, nooit meer opnieuw in OBS plakken.
     function bouwLink(kanaal) {
         return `${location.origin}/first-chat.html?kanaal=${encodeURIComponent(kanaal)}`;
     }
 
     // Past de kaarten/knop/slider aan op wat er al bewaard staat, zonder dat te zien als een
-    // eigen wijziging (dus geen Opslaan-knop tonen) — puur de huidige staat laten zien.
+    // eigen wijziging (dus geen Opslaan-knop tonen), puur de huidige staat laten zien.
     function toepassenInstellingen(data) {
         gekozenThema = (data.thema || 'msn').toLowerCase();
         themaKaarten.forEach(k => k.classList.toggle('is-actief', k.dataset.thema === gekozenThema));
@@ -459,7 +459,7 @@
     }
 
     // Zonder dit toont de pagina bij elk bezoek altijd MSN/Normaal/100% als "gekozen", ook als er
-    // allang iets anders bewaard staat — waardoor een simpele klik op Activeer dat per ongeluk
+    // allang iets anders bewaard staat, waardoor een simpele klik op Activeer dat per ongeluk
     // terugzet. Haalt de echte instellingen op zodra we een kanaalnaam hebben.
     async function haalInstellingenOp(kanaal) {
         try {
@@ -481,7 +481,7 @@
         haalInstellingenOp(onthoudenKanaal);
     }
 
-    // Ook zodra iemand zelf een (andere) naam intypt en het veld verlaat — handig voor een
+    // Ook zodra iemand zelf een (andere) naam intypt en het veld verlaat, handig voor een
     // andere streamer die hier voor het eerst zit maar al eerder via de API iets bewaarde.
     input.addEventListener('blur', () => {
         const kanaal = input.value.trim().toLowerCase();
@@ -542,7 +542,7 @@
         setTimeout(() => toastEl.classList.remove('is-visible'), 2500);
     }
 
-    // navigator.clipboard vereist een secure context — deze pagina kan ook via gewoon http
+    // navigator.clipboard vereist een secure context, deze pagina kan ook via gewoon http
     // bereikt worden, dus val terug op de oude execCommand-truc als dat niet lukt.
     function kopieerNaarKlembord(tekst) {
         try {

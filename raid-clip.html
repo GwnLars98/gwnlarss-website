@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Raid-clip — GwnLarss</title>
+<title>Raid-clip, GwnLarss</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
     :root {
@@ -56,7 +56,7 @@
         50% { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 62, 165, 0.4), 0 0 70px -4px rgba(255, 62, 165, 0.55); }
     }
 
-    /* Ring in de merkkleuren rond de video i.p.v. een stark zwart kader — geeft de clip meteen
+    /* Ring in de merkkleuren rond de video i.p.v. een stark zwart kader, geeft de clip meteen
        een "dit hoort bij de overlay" uitstraling in plaats van een los ingeplakt videovlak. */
     .kaart__video {
         position: relative;
@@ -88,7 +88,7 @@
     .kaart__video iframe[hidden] { display: none; }
 
     /* Naam/titel zweven als een "lower third" over de video i.p.v. erboven te staan als losse
-       tekstregels — oogt als een echte broadcast-graphic, en laat de video zelf het meeste
+       tekstregels, oogt als een echte broadcast-graphic, en laat de video zelf het meeste
        ruimte innemen. */
     .kaart__caption {
         position: absolute;
@@ -149,7 +149,7 @@
     // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
     const API_BASE = 'https://api.gwnlarss.nl';
 
-    // De Twitch-clip-embed vereist een expliciete lijst van toegestane parent-domeinen —
+    // De Twitch-clip-embed vereist een expliciete lijst van toegestane parent-domeinen ,
     // meerdere mag, dus gewoon elke plek waar deze pagina zelf ooit geladen kan worden.
     const PARENTS = ['api.gwnlarss.nl', 'gwnlarss.nl', 'localhost'];
 
@@ -175,7 +175,7 @@
     let bezig = false;
 
     // Eigen volume per kanaal (via raid-clip-setup.html) i.p.v. de gedeelde, admin-only "Volume
-    // alert-geluiden" uit alerts-admin.html — dit is een publieke zelfbedieningspagina, elke
+    // alert-geluiden" uit alerts-admin.html, dit is een publieke zelfbedieningspagina, elke
     // streamer regelt dit voor zichzelf.
     let alertVolume = 1;
     function verversVolume() {
@@ -188,7 +188,7 @@
     setInterval(verversVolume, 15000);
 
     // Probeert eerst met geluid te starten; lukt dat niet (browser-autoplaybeleid), dan
-    // gedempt starten en meteen daarna proberen te ontdempen — dat mag van zowat elk beleid
+    // gedempt starten en meteen daarna proberen te ontdempen, dat mag van zowat elk beleid
     // omdat het al een lopende afspeel-sessie is, geen nieuwe autoplay-poging.
     function forceerAfspelen(video) {
         video.muted = false;
@@ -212,7 +212,7 @@
             const parentParams = PARENTS.map(p => `parent=${p}`).join('&');
             iframeEl.src = `${event.extra?.embedUrl}&${parentParams}&autoplay=true`;
         }
-        // De afgeleide mp4-URL kan een keer dood blijken (bijv. verlopen token) — merk dat pas
+        // De afgeleide mp4-URL kan een keer dood blijken (bijv. verlopen token), merk dat pas
         // op het moment zelf, dus dan alsnog live overschakelen naar de iframe-embed i.p.v. een
         // zwart vlak te laten staan.
         videoEl.onerror = () => { if (!videoEl.hidden && event.extra?.embedUrl) gebruikIframe(); };
@@ -229,7 +229,7 @@
             gebruikIframe();
         }
 
-        // Clips duren max. 60s — plus een marge zodat de intro/laadtijd van de player niet
+        // Clips duren max. 60s, plus een marge zodat de intro/laadtijd van de player niet
         // meteen het einde van de clip wegsnijdt.
         const weergaveTijd = ((event.extra?.duur || 30) + 4) * 1000;
 
