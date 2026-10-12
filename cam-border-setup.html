@@ -7,253 +7,31 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-    :root {
-        --bg: #0b0b12;
-        --panel: #161623;
-        --border: rgba(255, 255, 255, 0.08);
-        --text: #f1f0f6;
-        --text-dim: #a3a1b5;
-        --purple: #9146ff;
-        --pink: #ff3ea5;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-        margin: 0;
-        min-height: 100vh;
-        background:
-            radial-gradient(55% 40% at 12% 0%, rgba(145, 70, 255, 0.12), transparent 70%),
-            radial-gradient(50% 38% at 100% 15%, rgba(255, 62, 165, 0.1), transparent 70%),
-            var(--bg);
-        color: var(--text);
-        font-family: 'Inter', system-ui, sans-serif;
-    }
-    body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 6vh 6vw;
-    }
-
-    .page-wrap { display: flex; flex-direction: column; align-items: center; width: 100%; }
-
-    .setup-nav {
-        width: 100%;
-        max-width: 620px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 14px;
-        margin: 0 0 24px;
-    }
-    .setup-nav__logo {
-        font-family: 'Baloo 2', sans-serif;
-        font-weight: 800;
-        font-size: 1.15rem;
-        color: var(--text);
-        text-decoration: none;
-    }
-    .setup-nav__links { display: flex; gap: 8px; flex-wrap: wrap; }
-    .setup-nav__link {
-        padding: 8px 14px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text-dim);
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: border-color 0.15s, color 0.15s, background 0.15s;
-    }
-    .setup-nav__link:hover { border-color: rgba(145, 70, 255, 0.5); color: var(--text); }
-    .setup-nav__link.is-actief {
-        background: linear-gradient(100deg, var(--purple), var(--pink));
-        border-color: transparent;
-        color: #fff;
-    }
-
-    .card {
-        width: 100%;
-        max-width: 620px;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
-    }
-    h1 {
-        font-family: 'Baloo 2', sans-serif;
-        font-weight: 800;
-        font-size: 1.7rem;
-        margin: 0 0 10px;
-    }
-    .sub { color: var(--text-dim); margin: 0 0 28px; line-height: 1.5; }
-    .powered-by { margin: 24px 0 0; font-size: 0.8rem; color: var(--text-dim); opacity: 0.7; text-align: center; }
-    .powered-by a { color: var(--text-dim); text-decoration: underline; text-underline-offset: 2px; }
-    .powered-by a:hover { color: var(--text); }
-
-    .veld-label {
-        margin: 20px 0 10px;
-        font-size: 0.88rem;
-        font-weight: 700;
-        color: var(--text-dim);
-    }
-
-    input[type="text"] {
-        width: 100%;
-        padding: 14px 18px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.04);
-        color: var(--text);
-        font-family: inherit;
-        font-size: 1rem;
-    }
-    input[type="text"]:focus { outline: none; border-color: var(--purple); }
-
-    .variant-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: 10px;
-    }
-    .variant-knop {
-        padding: 12px 10px;
-        border-radius: 12px;
-        border: 2px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text);
-        font-family: inherit;
-        font-size: 0.82rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: border-color 0.15s, background 0.15s;
-    }
-    .variant-knop:hover { border-color: rgba(145, 70, 255, 0.5); }
-    .variant-knop.is-actief { border-color: var(--purple); background: rgba(145, 70, 255, 0.12); }
-
-    .kleur-rij { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-    .swatch {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 2px solid transparent;
-        cursor: pointer;
-        padding: 0;
-        transition: transform 0.15s, border-color 0.15s;
-    }
-    .swatch:hover { transform: scale(1.08); }
-    .swatch.is-actief { border-color: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15); }
-
-    .kleur-custom { display: flex; align-items: center; gap: 8px; margin-left: 4px; }
-    .kleur-custom label { font-size: 0.78rem; color: var(--text-dim); }
-    input[type="color"] {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: none;
-        padding: 0;
-        cursor: pointer;
-    }
-
-    .preview-wrap { margin-top: 28px; display: flex; justify-content: center; }
-    .preview-canvas {
-        position: relative;
-        width: 100%;
-        max-width: 420px;
-        aspect-ratio: 16 / 9;
-        border-radius: 16px;
-        overflow: hidden;
-        background:
-            radial-gradient(circle at 50% 38%, #3a3550 0%, #2a2638 45%, #1c1a26 100%);
-        border: 1px solid var(--border);
-        transition: aspect-ratio 0.2s;
-    }
-    .preview-canvas.is-verticaal { aspect-ratio: 9 / 16; max-width: 240px; }
-    .preview-canvas iframe {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 14px 22px;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 0.95rem;
-        border: none;
-        background: linear-gradient(100deg, var(--purple), var(--pink));
-        color: #fff;
-        cursor: pointer;
-        font-family: inherit;
-        white-space: nowrap;
-        transition: opacity 0.2s;
-    }
-    .btn:hover { opacity: 0.9; }
-    .btn--ghost {
-        background: transparent;
-        border: 1px solid var(--border);
-        color: var(--text);
-    }
-    .btn--ghost:hover { border-color: var(--purple); background: rgba(145, 70, 255, 0.1); opacity: 1; }
-
-    .link-row { display: flex; gap: 8px; margin-top: 24px; }
-    .link-row input {
-        flex: 1;
-        min-width: 0;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        background: rgba(0, 0, 0, 0.25);
-        color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8rem;
-    }
-
-    .steps { margin: 16px 0 0; padding-left: 20px; color: var(--text-dim); font-size: 0.88rem; line-height: 1.7; }
-
-    .toast {
-        position: fixed;
-        bottom: 28px;
-        left: 50%;
-        transform: translateX(-50%) translateY(20px);
-        padding: 12px 22px;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        font-size: 0.9rem;
-        opacity: 0;
-        transition: opacity 0.3s, transform 0.3s;
-        pointer-events: none;
-    }
-    .toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
+<link rel="stylesheet" href="setup.css">
 </head>
 <body>
 
-<div class="page-wrap">
-<nav class="setup-nav">
-    <a href="https://gwnlarss.nl/" class="setup-nav__logo">GwnLarss</a>
-    <div class="setup-nav__links">
-        <a href="first-chat-setup.html" class="setup-nav__link">💬 Eerste chat</a>
-        <a href="cam-border-setup.html" class="setup-nav__link is-actief">🎥 Cam-border</a>
-        <a href="clip-setup.html" class="setup-nav__link">📎 Clip</a>
-        <a href="lurk-setup.html" class="setup-nav__link">😴 Lurk</a>
-        <a href="raid-clip-setup.html" class="setup-nav__link">🎬 Raid-clip</a>
-    </div>
+<canvas id="veld" aria-hidden="true"></canvas>
+<div class="page-wrap laag">
+<nav class="top">
+  <a class="merk" href="index.html">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a href="tools.html" aria-current="page">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
 </nav>
 
-<div class="card">
-    <h1>🎥 Cam-border overlay instellen</h1>
-    <p class="sub">Kies je eigen naam en kleuren voor de camera-rand overlay, en gebruik het linkje hieronder als Browser Source in OBS. Werkt meteen, geen account of koppeling nodig.</p>
+<header class="held">
+    <a class="terug" href="tools.html">&larr; Alle tools</a>
+    <p class="label">Overlay</p>
+    <h1>Cam-border</h1>
+    <p class="intro">Kies je eigen naam en kleuren voor de camera-rand overlay (of alleen een live-bordje met je naam, zonder rand), en gebruik het linkje hieronder als Browser Source in OBS. Werkt meteen, geen account of koppeling nodig.</p>
+</header>
+
+<div class="opzet">
+<div class="card rand">
 
     <p class="veld-label">Naam op de badge</p>
     <input type="text" id="naam-input" placeholder="GwnLarss" maxlength="24" autocomplete="off">
@@ -264,6 +42,8 @@
         <button type="button" class="variant-knop" data-bestand="cam-border-fullscreen.html" data-verticaal="0">Fullscreen horizontaal</button>
         <button type="button" class="variant-knop" data-bestand="cam-border-verticaal.html" data-verticaal="1">Verticaal</button>
         <button type="button" class="variant-knop" data-bestand="cam-border-fullscreen-verticaal.html" data-verticaal="1">Fullscreen verticaal</button>
+        <button type="button" class="variant-knop" data-bestand="cam-border.html" data-verticaal="0" data-rand="uit">Alleen naambordje</button>
+        <button type="button" class="variant-knop" data-bestand="cam-border-verticaal.html" data-verticaal="1" data-rand="uit">Alleen naambordje verticaal</button>
     </div>
 
     <p class="veld-label">Kleuren</p>
@@ -283,12 +63,6 @@
         </div>
     </div>
 
-    <div class="preview-wrap">
-        <div class="preview-canvas" id="preview-canvas">
-            <iframe id="preview-frame" src="" title="Voorbeeld"></iframe>
-        </div>
-    </div>
-
     <div class="link-row">
         <input type="text" id="link-output" readonly>
         <button type="button" class="btn btn--ghost" id="kopieer-btn">Kopieer</button>
@@ -298,6 +72,12 @@
         <li>Plak het linkje hierboven als URL.</li>
         <li>Zet de grootte gelijk aan je canvas (of stretch de bron) en leg 'm over je camera-bron heen.</li>
     </ol>
+</div>
+<div class="podium">
+    <div class="podium-kop"><span>Zo ziet het eruit</span><span class="live">Live voorbeeld</span></div>
+    <div class="vv rand preview-canvas" id="preview-canvas"><div class="persoon"></div><iframe id="preview-frame" src="" title="Voorbeeld"></iframe></div>
+    <p class="podium-voet">Dit is de echte overlay, live met jouw naam en kleuren.</p>
+</div>
 </div>
 <p class="powered-by">Powered by <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">GwnLarss</a></p>
 </div>
@@ -320,6 +100,8 @@
     const toastEl = document.getElementById('toast');
 
     let huidigBestand = 'cam-border.html';
+    // ?rand=uit = alleen het live-bordje met de naam, zonder rand om de camera.
+    let zonderRand = false;
 
     function toast(tekst) {
         toastEl.textContent = tekst;
@@ -349,6 +131,7 @@
             document.querySelectorAll('.variant-knop').forEach(k => k.classList.remove('is-actief'));
             knop.classList.add('is-actief');
             huidigBestand = knop.dataset.bestand;
+            zonderRand = knop.dataset.rand === 'uit';
             previewCanvas.classList.toggle('is-verticaal', knop.dataset.verticaal === '1');
             bouwLink();
         });
@@ -376,6 +159,7 @@
         const kleur1 = kleur1Input.value.replace('#', '');
         const kleur2 = kleur2Input.value.replace('#', '');
         const params = new URLSearchParams({ naam, kleur1, kleur2 });
+        if (zonderRand) params.set('rand', 'uit');
         const url = `${OVERLAY_BASIS}/${huidigBestand}?${params.toString()}`;
         linkOutput.value = url;
         previewFrame.src = url;
@@ -387,6 +171,18 @@
     });
 
     bouwLink();
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+  import { $, startVeld, kantel } from './setup.js';
+  kantel($('preview-canvas'));
+  startVeld('camera', 4);
 </script>
 
 </body>

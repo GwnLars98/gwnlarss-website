@@ -2,205 +2,158 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GwnLarss</title>
-<meta name="description" content="De officiële site van GwnLarss, Twitch-streamer. Bekijk live status en socials.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="GwnLarss: gamer en prutser op Twitch. Kom gezellig kijken, kletsen en samen dingen kapot maken.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>GwnLarss</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
+<style>
+  /* Home: bovenaan het massieve 3D-logo, daarna vormt het deeltjesveld per sectie iets anders (controller, bubbel, hart),
+     de tekst schuift in glazen panelen over het veld heen. */
+  #logo { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; pointer-events: none; }
+  .held { min-height: 100vh; display: grid; grid-template-rows: 1fr auto; justify-items: center; text-align: center; padding-block: 0 8vh; }
+  .held-tekst { grid-row: 2; display: grid; justify-items: center; gap: 22px; }
+  .slogan { max-width: 32rem; margin: 0; font-size: 1.2rem; color: var(--dim); text-wrap: balance; }
+  .scroll-hint { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); opacity: 0.7; }
+  .scroll-hint::after { content: ''; display: block; width: 1px; height: 34px; margin: 10px auto 0; background: linear-gradient(var(--roze), transparent); animation: zak 2s ease-in-out infinite; }
+  @keyframes zak { 50% { transform: translateY(8px); opacity: 0.4; } }
+
+  .over { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+  .over .paneel { display: grid; gap: 18px; align-content: start; }
+  .over p { margin: 0; color: var(--dim); }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .contact { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .adres { font-family: var(--mono); color: var(--tekst); user-select: all; overflow-wrap: anywhere; }
+  .kopieer { font: inherit; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--lijn); background: transparent; color: var(--dim); cursor: pointer; }
+  .kopieer:hover { color: var(--tekst); }
+
+  .tools-rij { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+  .tool { display: grid; gap: 6px; padding: 20px; border-radius: 22px; background: var(--glas); text-decoration: none; transition: transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1); }
+  .tool:hover { transform: translateY(-4px); }
+  .tool b { font-family: var(--display); font-size: 1.3rem; }
+  .tool span:last-child { color: var(--dim); font-size: 0.92rem; }
+
+  .socials { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 28px; max-width: 760px; }
+  .social { display: grid; gap: 6px; padding: 28px; border-radius: 26px; background: var(--glas); text-decoration: none; transition: transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1); }
+  a.social:hover { transform: translateY(-4px); }
+  .social b { font-family: var(--display); font-size: 2rem; font-weight: 800; line-height: 1; }
+  .social span { font-family: var(--mono); font-size: 0.85rem; color: var(--dim); overflow-wrap: anywhere; }
+  .binnenkort { justify-self: start; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 4px 10px; border-radius: 99px; background: rgba(255, 201, 74, 0.14); color: var(--goud); }
+
+  @media (max-width: 860px) {
+    .over, .socials { grid-template-columns: 1fr; }
+    .tools-rij { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
 </head>
 <body>
 
-<div class="theme-picker" id="theme-picker">
-    <button type="button" class="theme-picker__toggle" id="theme-picker-toggle" aria-expanded="false" aria-label="Kies een kleur voor de site">🎨</button>
-    <div class="theme-picker__panel" id="theme-picker-panel" hidden>
-        <p class="theme-picker__label">Personaliseer de site (alleen voor jou, blijft bewaard)</p>
-        <div class="theme-picker__swatches">
-            <button type="button" class="theme-swatch" data-purple="#9146ff" data-pink="#ff3ea5" style="background: linear-gradient(135deg, #9146ff, #ff3ea5);" aria-label="Paars/roze (standaard)"></button>
-            <button type="button" class="theme-swatch" data-purple="#3b82f6" data-pink="#22d3ee" style="background: linear-gradient(135deg, #3b82f6, #22d3ee);" aria-label="Blauw/cyaan"></button>
-            <button type="button" class="theme-swatch" data-purple="#16a34a" data-pink="#a3e635" style="background: linear-gradient(135deg, #16a34a, #a3e635);" aria-label="Groen/lime"></button>
-            <button type="button" class="theme-swatch" data-purple="#f97316" data-pink="#facc15" style="background: linear-gradient(135deg, #f97316, #facc15);" aria-label="Oranje/geel"></button>
-            <button type="button" class="theme-swatch" data-purple="#ef4444" data-pink="#f472b6" style="background: linear-gradient(135deg, #ef4444, #f472b6);" aria-label="Rood/roze"></button>
-        </div>
-        <label class="theme-picker__custom">
-            Eigen kleur
-            <input type="color" id="theme-picker-custom" value="#9146ff">
-        </label>
-        <label class="theme-picker__naam">
-            Jouw naam in de overlay
-            <input type="text" id="theme-picker-naam" placeholder="GwnLarss" maxlength="24">
-        </label>
-        <button type="button" class="btn btn--ghost theme-picker__reset" id="theme-picker-reset">↻ Standaard (kleur + naam)</button>
+<canvas id="veld" aria-hidden="true"></canvas>
+<canvas id="logo" aria-hidden="true"></canvas>
+
+<nav class="top">
+  <a class="merk" href="#top">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a class="verberg-mobiel" href="#over">Over mij</a>
+    <a href="tools.html">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
+</nav>
+
+<main class="laag" id="top">
+  <header class="held" data-vorm="stof">
+    <div class="held-tekst">
+      <p class="slogan">Gamer en prutser. Kom gezellig kijken, kletsen en samen dingen kapot maken.</p>
+      <a class="knop" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Kijk mee op Twitch</a>
+      <span class="scroll-hint">Scroll</span>
     </div>
-</div>
+  </header>
 
-<header class="nav">
-    <a href="#top" class="nav__logo">GwnLarss</a>
-    <nav class="nav__links">
-        <a href="#over-mij">Over mij</a>
-        <a href="#showcases">Showcases</a>
-        <a href="#socials">Socials</a>
-    </nav>
-    <a class="nav__cta" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">
-        <span class="dot" id="nav-dot"></span> Twitch
-    </a>
-</header>
+  <section class="blok" id="over" data-vorm="controller">
+    <div class="over">
+      <div class="paneel rand">
+        <p class="label">Over mij</p>
+        <h2>Regelneef met een controller</h2>
+        <div class="chips"><span class="chip">Regelneef</span><span class="chip">Levensgenieter</span><span class="chip">Noob in elke game</span></div>
+        <div class="contact"><span class="adres" id="mail">gwnlarssinfo@gmail.com</span><button class="kopieer" id="kopieer" type="button">Kopieer</button></div>
+      </div>
+    </div>
+  </section>
 
-<main>
-    <section class="hero" id="top">
-        <div class="hero__glow"></div>
-        <div class="hero__content">
-            <span class="badge" id="live-badge">
-                <span class="badge__dot"></span>
-                <span id="live-badge-text">Status laden...</span>
-            </span>
-            <h1 class="hero__title">GwnLarss</h1>
-            <p class="hero__tagline">Gamer, prutser en gastheer van <strong>Streamers met een Hart</strong>. Kom gezellig kijken, kletsen en samen dingen kapot maken.</p>
-            <p class="hero__stream-title" id="stream-title"></p>
-            <div class="hero__actions">
-                <a class="btn btn--primary" id="watch-btn" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">
-                    Volg op Twitch
-                </a>
-                <a class="btn btn--ghost" href="https://discord.gg/NDBSrTyhSw" target="_blank" rel="noopener">
-                    Join de Discord
-                </a>
-            </div>
-        </div>
+  <section class="blok" id="tools" data-vorm="bubbel">
+    <p class="label">Voor andere streamers</p>
+    <h2>Pak zelf een tool</h2>
+    <p class="intro">Een deel van mijn overlays en chatcommando's kun je gratis voor je eigen stream gebruiken.</p>
+    <div class="tools-rij">
+      <a class="tool rand" href="first-chat-setup.html"><span class="tag">overlay</span><b>Eerste chat</b><span>Een pop-up zodra iemand voor het eerst chat.</span></a>
+      <a class="tool rand" href="cam-border-setup.html"><span class="tag">overlay</span><b>Cam-border</b><span>Neonrand met je eigen naam en kleuren.</span></a>
+      <a class="tool rand" href="clip-setup.html"><span class="tag">chat</span><b>!clip</b><span>Kijkers maken met één woord een clip.</span></a>
+      <a class="tool rand" href="tools.html"><span class="tag">en meer</span><b>Alle tools</b><span>Lurk, raid-clip, kanaalpunten en Lingo.</span></a>
+    </div>
+  </section>
 
-        <div class="hero__card">
-            <div class="preview" id="preview">
-                <div id="twitch-embed"></div>
-                <span class="preview__live-tag" id="preview-live-tag" hidden>LIVE</span>
-            </div>
-            <div class="preview__info">
-                <img id="avatar" class="avatar" alt="GwnLarss avatar" hidden>
-                <div class="avatar avatar--placeholder" id="avatar-placeholder">GL</div>
-                <div class="preview__meta">
-                    <strong id="preview-name">GwnLarss</strong>
-                    <span id="preview-sub">op Twitch</span>
-                </div>
-            </div>
-        </div>
-    </section>
+  <section class="blok" id="socials" data-vorm="hart">
+    <p class="label">Socials</p>
+    <h2>Kom langs</h2>
+    <div class="socials">
+      <a class="social rand" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener"><b>Twitch</b><span>twitch.tv/gwnlarss</span></a>
+      <div class="social rand"><b>TikTok</b><span class="binnenkort">Nieuw account komt eraan</span></div>
+    </div>
+  </section>
 
-    <section class="section" id="over-mij">
-        <h2 class="section__title">Over mij</h2>
-        <div class="about">
-            <p class="about__tagline">Regelneef <span aria-hidden="true">·</span> Levensgenieter <span aria-hidden="true">·</span> Noob in elke game</p>
-            <p>Contact? <a href="mailto:gwnlarssinfo@gmail.com">gwnlarssinfo@gmail.com</a></p>
-        </div>
-    </section>
-
-    <section class="section" id="showcases">
-        <h2 class="section__title">Showcases</h2>
-
-        <div class="showcase-cta">
-            <p>Wil je deze zelf ook, voor je eigen stream? Maak direct je eigen versie, met je eigen naam en kleuren, geen account of Discord-ticket nodig.</p>
-            <div class="showcase-cta__knoppen">
-                <a class="btn btn--primary" href="cam-border-setup.html">Maak je eigen cam-border</a>
-                <a class="btn btn--ghost" href="first-chat-setup.html">Maak je eigen eerste-chat-widget</a>
-                <a class="btn btn--ghost" href="clip-setup.html">Zet !clip aan in je chat</a>
-                <a class="btn btn--ghost" href="lurk-setup.html">Zet !lurk aan in je chat</a>
-                <a class="btn btn--ghost" href="raid-clip-setup.html">Zet raid-clips aan</a>
-            </div>
-            <p class="showcase-cta__extra">Iets anders in gedachten? Join de <a href="https://discord.gg/NDBSrTyhSw" target="_blank" rel="noopener">Discord</a> en dien een ticket in.</p>
-        </div>
-
-        <p class="showcase-intro" style="margin-top: 40px;">Zodra iemand voor het eerst chat tijdens de stream, schuift dit knipoogje naar het klassieke MSN Messenger-berichtvenster in beeld op de overlay.</p>
-        <div class="showcase-frame">
-            <div class="showcase-canvas" id="showcase-canvas">
-                <span class="showcase-canvas__label">live overlay</span>
-                <div class="msn-toast" id="msn-toast">
-                    <div class="msn-toast__header">
-                        <span>💬</span>
-                        <span>Nieuw bericht</span>
-                    </div>
-                    <div class="msn-toast__body">
-                        <div class="msn-toast__avatar">
-                            <img src="https://static-cdn.jtvnw.net/user-default-pictures-uv/de130ab0-def7-11e9-b668-784f43822e80-profile_image-300x300.png" alt="">
-                        </div>
-                        <div class="msn-toast__text">
-                            <p class="msn-toast__name">xXDarkWolfXx</p>
-                            <p class="msn-toast__message">Beter ga je GaryMillerNL volgen.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="showcase-controls">
-            <button type="button" class="btn btn--ghost showcase-replay" id="showcase-replay">↻ Opnieuw afspelen</button>
-            <button type="button" class="btn btn--ghost showcase-mute" id="showcase-mute" aria-pressed="false">🔊 Geluid aan</button>
-        </div>
-
-        <p class="showcase-intro" style="margin-top: 48px;">De camera-rand overlay, zowel voor een gewoon 16:9-canvas als voor verticale (TikTok-)streams.</p>
-        <div class="showcase-row">
-            <div class="showcase-frame">
-                <div class="showcase-canvas">
-                    <span class="showcase-canvas__label">horizontaal</span>
-                    <div class="cam-demo cam-demo--horizontaal">
-                        <div class="cam-demo__face"></div>
-                        <div class="cam-demo__frame"></div>
-                        <div class="cam-demo__badge">
-                            <span class="cam-demo__dot"></span>
-                            <span class="brand-name">GwnLarss</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="showcase-frame showcase-frame--verticaal">
-                <div class="showcase-canvas showcase-canvas--verticaal">
-                    <span class="showcase-canvas__label">verticaal</span>
-                    <div class="cam-demo cam-demo--verticaal">
-                        <div class="cam-demo__face"></div>
-                        <div class="cam-demo__frame"></div>
-                        <div class="cam-demo__badge">
-                            <span class="cam-demo__dot"></span>
-                            <span class="brand-name">GwnLarss</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="section" id="socials">
-        <h2 class="section__title">Socials</h2>
-        <div class="socials">
-            <a class="social" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">
-                <span class="social__icon">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.29 3.43 3.43 7.29v11.14h4v3l3.43-3.43H14l6.57-6.57V3.43Zm11.71 8.29-2.86 2.85h-2.85l-2.5 2.5v-2.5H7.29V5.14h11.71Z"/><path d="M15.14 8.14h1.72v3.72h-1.72zm-3.43 0h1.72v3.72h-1.72z"/></svg>
-                </span>
-                <span>Twitch</span>
-            </a>
-            <a class="social" href="https://discord.gg/NDBSrTyhSw" target="_blank" rel="noopener">
-                <span class="social__icon">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 5.3A17.9 17.9 0 0 0 15.9 4l-.3.6a13 13 0 0 1 3.5 1.3 15.9 15.9 0 0 0-13.9 0A13 13 0 0 1 8.7 4.6L8.4 4a17.9 17.9 0 0 0-4.4 1.3C1.7 9 1 12.6 1.3 16.1a17.8 17.8 0 0 0 5.4 2.7l.7-1.1a11.5 11.5 0 0 1-1.9-.9l.5-.4a12.9 12.9 0 0 0 11 0l.5.4a11.5 11.5 0 0 1-1.9.9l.7 1.1a17.8 17.8 0 0 0 5.4-2.7c.4-4-.6-7.6-2.4-10.8ZM8.7 14a1.6 1.6 0 1 1 1.5-1.6A1.5 1.5 0 0 1 8.7 14Zm6.6 0a1.6 1.6 0 1 1 1.5-1.6A1.5 1.5 0 0 1 15.3 14Z"/></svg>
-                </span>
-                <span>Discord</span>
-            </a>
-            <a class="social" href="https://www.tiktok.com/@gwnlarsss" target="_blank" rel="noopener">
-                <span class="social__icon">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.8a4.6 4.6 0 0 1-3.6-4.2h-3.3v14.4a2.7 2.7 0 1 1-1.9-2.6V9.9a6 6 0 1 0 5.2 6V9.5a7.9 7.9 0 0 0 4.6 1.5V7.7a4.6 4.6 0 0 1-1-1.9Z"/></svg>
-                </span>
-                <span>TikTok</span>
-            </a>
-        </div>
-    </section>
+  <footer>Powered by <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">GwnLarss</a></footer>
 </main>
 
-<footer class="footer">
-    <div class="footer__brand">GwnLarss</div>
-    <div class="footer__links">
-        <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
-        <a href="https://discord.gg/NDBSrTyhSw" target="_blank" rel="noopener">Discord</a>
-        <a href="https://www.tiktok.com/@gwnlarsss" target="_blank" rel="noopener">TikTok</a>
-    </div>
-    <p class="footer__copy">&copy; <span id="footer-year"></span> GwnLarss</p>
-    <p class="footer__powered">Powered by <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">GwnLarss</a></p>
-</footer>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+  import { deeltjesVeld, VORM, laadFont } from './deeltjes.js';
+  import { logoPodium } from './logo.js';
 
-<script src="app.js"></script>
+  document.getElementById('kopieer').addEventListener('click', async e => {
+    try { await navigator.clipboard.writeText('gwnlarssinfo@gmail.com'); e.target.textContent = 'Gekopieerd'; }
+    catch { getSelection().selectAllChildren(document.getElementById('mail')); e.target.textContent = 'Druk Ctrl+C'; }
+  });
+
+  // ---------- hero: het massieve 3D-logo uit versie 1 ----------
+  const font = await laadFont('logo-font.json');
+  logoPodium(document.getElementById('logo'), font);
+
+  // ---------- deeltjesveld: per sectie een vorm, overvloeiend tijdens het scrollen ----------
+  const klein = () => innerWidth < 860;
+  const secties = [...document.querySelectorAll('[data-vorm]')];
+  const PLEK = {
+    stof: () => ({ x: 0, y: 0, alpha: 0.55 }),
+    controller: () => (klein() ? { x: 0, y: 2.6, alpha: 0.45 } : { x: 4.2, y: 0, alpha: 1 }),
+    bubbel: () => (klein() ? { x: 0, y: 2.6, alpha: 0.4 } : { x: 4.4, y: 2.2, alpha: 0.75 }),
+    hart: () => (klein() ? { x: 0, y: 2.4, alpha: 0.5 } : { x: 3.6, y: 0, alpha: 1 }),
+  };
+  await deeltjesVeld(document.getElementById('veld'), {
+    stof: { geo: VORM.stof(), breedte: 22 },
+    controller: { geo: VORM.controller(), breedte: 4.6 },
+    bubbel: { geo: VORM.bubbel(), breedte: 3.6 },
+    hart: { geo: VORM.hart(), breedte: 4 },
+  }, tijd => {
+    const midden = innerHeight / 2;
+    const centra = secties.map(s => { const r = s.getBoundingClientRect(); return r.top + r.height / 2 - midden; });
+    let i = 0;
+    while (i < centra.length - 1 && centra[i + 1] <= 0) i++;
+    const j = Math.min(i + 1, secties.length - 1);
+    let mix = j === i ? 0 : Math.min(1, Math.max(0, -centra[i] / (centra[j] - centra[i])));
+    let van = secties[i].dataset.vorm, naar = secties[j].dataset.vorm;
+    if (mix > 0.999) { van = naar; mix = 0; }
+    const a = PLEK[van](), b = PLEK[naar]();
+    const plek = { x: a.x + (b.x - a.x) * mix, y: a.y + (b.y - a.y) * mix, alpha: a.alpha + (b.alpha - a.alpha) * mix };
+    return { van, naar, mix, ...plek };
+  });
+
+</script>
 </body>
 </html>

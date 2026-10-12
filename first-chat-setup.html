@@ -7,295 +7,31 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-    :root {
-        --bg: #0b0b12;
-        --panel: #161623;
-        --border: rgba(255, 255, 255, 0.08);
-        --text: #f1f0f6;
-        --text-dim: #a3a1b5;
-        --purple: #9146ff;
-        --pink: #ff3ea5;
-        --green: #24d17e;
-        --red: #ff5c7a;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-        margin: 0;
-        min-height: 100vh;
-        background:
-            radial-gradient(55% 40% at 12% 0%, rgba(145, 70, 255, 0.12), transparent 70%),
-            radial-gradient(50% 38% at 100% 15%, rgba(255, 62, 165, 0.1), transparent 70%),
-            var(--bg);
-        color: var(--text);
-        font-family: 'Inter', system-ui, sans-serif;
-    }
-    body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 6vh 6vw;
-    }
-
-    .page-wrap { display: flex; flex-direction: column; align-items: center; width: 100%; }
-
-    .setup-nav {
-        width: 100%;
-        max-width: 560px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 14px;
-        margin: 0 0 24px;
-    }
-    .setup-nav__logo {
-        font-family: 'Baloo 2', sans-serif;
-        font-weight: 800;
-        font-size: 1.15rem;
-        color: var(--text);
-        text-decoration: none;
-    }
-    .setup-nav__links { display: flex; gap: 8px; flex-wrap: wrap; }
-    .setup-nav__link {
-        padding: 8px 14px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text-dim);
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: border-color 0.15s, color 0.15s, background 0.15s;
-    }
-    .setup-nav__link:hover { border-color: rgba(145, 70, 255, 0.5); color: var(--text); }
-    .setup-nav__link.is-actief {
-        background: linear-gradient(100deg, var(--purple), var(--pink));
-        border-color: transparent;
-        color: #fff;
-    }
-
-    .card {
-        width: 100%;
-        max-width: 560px;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
-    }
-    h1 {
-        font-family: 'Baloo 2', sans-serif;
-        font-weight: 800;
-        font-size: 1.7rem;
-        margin: 0 0 10px;
-    }
-    .sub { color: var(--text-dim); margin: 0 0 32px; line-height: 1.5; }
-    .powered-by { margin: 24px 0 0; font-size: 0.8rem; color: var(--text-dim); opacity: 0.7; text-align: center; }
-    .powered-by a { color: var(--text-dim); text-decoration: underline; text-underline-offset: 2px; }
-    .powered-by a:hover { color: var(--text); }
-
-    .form-row { display: flex; gap: 10px; }
-
-    .thema-label {
-        margin: 20px 0 10px;
-        font-size: 0.88rem;
-        font-weight: 700;
-        color: var(--text-dim);
-    }
-    .thema-hint {
-        margin: 0 0 14px;
-        font-size: 0.82rem;
-        color: var(--text-dim);
-        line-height: 1.5;
-    }
-
-    .volume-rij { display: flex; align-items: center; gap: 12px; }
-    .volume-rij input[type="range"] { flex: 1; accent-color: var(--purple); }
-    .volume-rij__waarde { font-weight: 700; width: 3.2em; text-align: right; flex-shrink: 0; }
-
-    .grootte-rij { display: flex; gap: 10px; flex-wrap: wrap; }
-    .grootte-knop {
-        padding: 10px 18px;
-        border-radius: 999px;
-        border: 2px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text);
-        font-family: inherit;
-        font-size: 0.85rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: border-color 0.15s, background 0.15s;
-    }
-    .grootte-knop:hover { border-color: rgba(145, 70, 255, 0.5); }
-    .grootte-knop.is-actief { border-color: var(--purple); background: rgba(145, 70, 255, 0.12); }
-
-    .thema-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 10px;
-    }
-    .thema-kaart {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 8px;
-        border-radius: 12px;
-        border: 2px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-        cursor: pointer;
-        font-family: inherit;
-        transition: border-color 0.15s, transform 0.15s, background 0.15s;
-    }
-    .thema-kaart:hover { border-color: rgba(145, 70, 255, 0.5); transform: translateY(-2px); }
-    .thema-kaart.is-actief { border-color: var(--purple); background: rgba(145, 70, 255, 0.12); box-shadow: 0 0 0 3px rgba(145, 70, 255, 0.15); }
-    .thema-kaart__naam { font-size: 0.78rem; font-weight: 700; color: var(--text); text-align: center; }
-
-    /* Mini-nabootsing van het echte toastje, per thema in dezelfde kleuren als first-chat.html */
-    .thema-kaart__preview {
-        display: flex;
-        flex-direction: column;
-        border-radius: 6px;
-        overflow: hidden;
-        box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.5);
-        font-family: Tahoma, 'Segoe UI', sans-serif;
-    }
-    .thema-kaart__balk {
-        padding: 5px 8px;
-        font-size: 0.62rem;
-        font-weight: bold;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .thema-kaart__regel {
-        display: block;
-        height: 22px;
-        background: #fff;
-    }
-
-    .thema-kaart__preview--msn .thema-kaart__balk { background: linear-gradient(180deg, #6ea8fb, #1958c9); color: #fff; }
-    .thema-kaart__preview--aim { font-family: Verdana, Arial, sans-serif; }
-    .thema-kaart__preview--aim .thema-kaart__balk { background: linear-gradient(180deg, #fff35c, #ffce00); color: #4a3b00; }
-    .thema-kaart__preview--icq .thema-kaart__balk { background: linear-gradient(180deg, #b2e07a, #4c9a2a); color: #fff; }
-    .thema-kaart__preview--yahoo .thema-kaart__balk { background: linear-gradient(180deg, #d9a6f0, #7b1fa2); color: #fff; }
-    .thema-kaart__preview--xp { border: 1px solid #3f7fbf; border-radius: 5px; }
-    .thema-kaart__preview--xp .thema-kaart__balk { background: linear-gradient(180deg, #eef7ff, #cfe8fb); color: #003c74; }
-    .thema-kaart__preview--xp .thema-kaart__regel { background: linear-gradient(180deg, #eef7ff, #cfe8fb); }
-
-    .thema-kaart__preview--skype .thema-kaart__balk { background: linear-gradient(180deg, #00aff0, #0078d4); color: #fff; }
-    .thema-kaart__preview--nokia .thema-kaart__balk { background: #08150c; color: #8fce6a; font-family: 'Courier New', monospace; }
-    .thema-kaart__preview--nokia .thema-kaart__regel { background: #0d1f0d; }
-    .thema-kaart__preview--bbm .thema-kaart__balk { background: #000; color: #ee2737; }
-    .thema-kaart__preview--bbm .thema-kaart__regel { background: #1a1a1a; }
-    .thema-kaart__preview--discord .thema-kaart__balk { background: #5865f2; color: #fff; }
-    .thema-kaart__preview--discord .thema-kaart__regel { background: #313338; }
-    .thema-kaart__preview--instagram .thema-kaart__balk { background: linear-gradient(90deg, #833ab4, #fd1d1d, #fcb045); color: #fff; }
-    input[type="text"] {
-        flex: 1;
-        min-width: 0;
-        padding: 14px 18px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.04);
-        color: var(--text);
-        font-family: inherit;
-        font-size: 1rem;
-    }
-    input[type="text"]:focus { outline: none; border-color: var(--purple); }
-
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 14px 22px;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 0.95rem;
-        border: none;
-        background: linear-gradient(100deg, var(--purple), var(--pink));
-        color: #fff;
-        cursor: pointer;
-        font-family: inherit;
-        white-space: nowrap;
-        transition: opacity 0.2s;
-    }
-    .btn:hover { opacity: 0.9; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn--ghost {
-        background: transparent;
-        border: 1px solid var(--border);
-        color: var(--text);
-    }
-    .btn--ghost:hover { border-color: var(--purple); background: rgba(145, 70, 255, 0.1); opacity: 1; }
-
-    .result {
-        margin-top: 24px;
-        padding: 18px 20px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-        display: none;
-    }
-    .result.is-visible { display: block; }
-    .result.is-fout { border-color: rgba(255, 92, 122, 0.4); background: rgba(255, 92, 122, 0.08); }
-    .result.is-goed { border-color: rgba(36, 209, 126, 0.4); background: rgba(36, 209, 126, 0.08); }
-    .result__titel { font-weight: 700; margin: 0 0 8px; }
-    .result__titel.is-fout { color: var(--red); }
-    .result__titel.is-goed { color: var(--green); }
-    .result p { margin: 0 0 14px; color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
-
-    .link-row { display: flex; gap: 8px; margin-bottom: 14px; }
-    .link-row input {
-        flex: 1;
-        min-width: 0;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        background: rgba(0, 0, 0, 0.25);
-        color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.82rem;
-    }
-
-    .steps { margin: 0; padding-left: 20px; color: var(--text-dim); font-size: 0.88rem; line-height: 1.7; }
-
-    .toast {
-        position: fixed;
-        bottom: 28px;
-        left: 50%;
-        transform: translateX(-50%) translateY(20px);
-        padding: 12px 22px;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        font-size: 0.9rem;
-        opacity: 0;
-        transition: opacity 0.3s, transform 0.3s;
-        pointer-events: none;
-    }
-    .toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
+<link rel="stylesheet" href="setup.css">
 </head>
 <body>
 
-<div class="page-wrap">
-<nav class="setup-nav">
-    <a href="https://gwnlarss.nl/" class="setup-nav__logo">GwnLarss</a>
-    <div class="setup-nav__links">
-        <a href="first-chat-setup.html" class="setup-nav__link is-actief">💬 Eerste chat</a>
-        <a href="cam-border-setup.html" class="setup-nav__link">🎥 Cam-border</a>
-        <a href="clip-setup.html" class="setup-nav__link">📎 Clip</a>
-        <a href="lurk-setup.html" class="setup-nav__link">😴 Lurk</a>
-        <a href="raid-clip-setup.html" class="setup-nav__link">🎬 Raid-clip</a>
-    </div>
+<canvas id="veld" aria-hidden="true"></canvas>
+<div class="page-wrap laag">
+<nav class="top">
+  <a class="merk" href="index.html">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a href="tools.html" aria-current="page">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
 </nav>
 
-<div class="card">
-    <h1>💬 Eerste-chat-widget instellen</h1>
-    <p class="sub">Vul je Twitch-gebruikersnaam in. De bot joint dan meteen jouw chat, en je krijgt een linkje dat je als Browser Source in OBS (of als custom widget in StreamElements) kan gebruiken: dan verschijnt er automatisch een MSN-achtig toastje zodra iemand voor het eerst chat tijdens je stream.</p>
+<header class="held">
+    <a class="terug" href="tools.html">&larr; Alle tools</a>
+    <p class="label">Overlay</p>
+    <h1>Eerste chat</h1>
+    <p class="intro">Vul je Twitch-gebruikersnaam in. De bot joint dan meteen jouw chat, en je krijgt een linkje dat je als Browser Source in OBS (of als custom widget in StreamElements) kan gebruiken: dan verschijnt er automatisch een MSN-achtig toastje zodra iemand voor het eerst chat tijdens je stream.</p>
+</header>
+
+<div class="opzet">
+<div class="card rand">
 
     <div class="form-row">
         <input type="text" id="kanaal-input" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
@@ -406,8 +142,16 @@
         </ol>
         <button type="button" class="btn btn--ghost" id="verwijder-btn" hidden>Kanaal weer verwijderen</button>
     </div>
-<p class="powered-by">Powered by <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">GwnLarss</a></p>
 </div>
+<div class="podium">
+    <div class="podium-kop"><span>Zo ziet het eruit</span><span class="live">Live voorbeeld</span></div>
+    <div class="vv rand" id="vv">
+        <div class="im-toast" id="im-toast"><div class="im-toast__balk"></div><div class="im-toast__body"><div class="im-toast__avatar"></div><div><div class="im-toast__naam"></div><div class="im-toast__bericht"></div></div></div></div>
+    </div>
+    <button type="button" class="btn btn--ghost" id="speel-geluid">🔊 Speel het geluidje</button>
+</div>
+</div>
+<p class="powered-by">Powered by <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">GwnLarss</a></p>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -655,6 +399,19 @@
         if (kopieerNaarKlembord(linkOutput.value)) toast('🔗 Link gekopieerd!');
         else toast(linkOutput.value);
     });
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+  import { $, startVeld, kantel, toastVoorbeeld } from './setup.js';
+  kantel($('vv'));
+  toastVoorbeeld($('im-toast'), [['Pixelpiet', 'yooo eerste keer hier, wat een vibe', '#9146ff'], ['Bramble', 'hoi allemaal! 👋', '#ff3ea5'], ['Zoë_Speelt', 'gezellig hier zeg', '#16a34a']]);
+  startVeld('bubbel', 3.6);
 </script>
 
 </body>

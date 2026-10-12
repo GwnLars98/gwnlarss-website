@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lingo instellen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
+<link rel="stylesheet" href="setup.css">
+</head>
+<body>
+
+<canvas id="veld" aria-hidden="true"></canvas>
+<div class="page-wrap laag">
+<nav class="top">
+  <a class="merk" href="index.html">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a href="tools.html" aria-current="page">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
+</nav>
+
+<header class="held">
+    <a class="terug" href="tools.html">&larr; Alle tools</a>
+    <p class="label">Spel</p>
+    <h1>Lingo</h1>
+    <p class="intro">Vul je Twitch-gebruikersnaam in. De bot joint dan meteen jouw chat en start een ronde: chat raadt samen een Nederlands woord van 5 letters, elke gok (gewoon het hele woord typen, geen commando nodig) krijgt groen/geel/grijs-feedback terug. Het linkje hieronder gebruik je als Browser Source in OBS voor het bord.</p>
+</header>
+
+<div class="opzet">
+<div class="card rand">
+
+    <div class="form-row">
+        <input type="text" id="kanaal-input" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
+        <button type="button" class="btn" id="activeer-btn">Activeer</button>
+        <button type="button" class="btn btn--ghost" id="verwijder-btn">Verlaat kanaal</button>
+    </div>
+    <p class="veld-hint">Zit de bot al in je chat? Vul gewoon je naam in en klik nog eens op Activeer, dat kan geen kwaad. Je kan ook meteen het linkje hieronder als Browser Source toevoegen (met <code>?kanaal=jouw-naam</code> erachter) zonder hier eerst op Activeer te klikken, de overlay activeert Lingo dan zelf zodra 'ie geladen wordt.</p>
+
+    <div class="result" id="result">
+        <p class="result__titel" id="result-titel"></p>
+        <p id="result-tekst"></p>
+        <div class="link-row" id="link-row" hidden>
+            <input type="text" id="link-output" readonly>
+            <button type="button" class="btn btn--ghost" id="kopieer-btn">Kopieer</button>
+        </div>
+        <ol class="steps" id="steps" hidden>
+            <li>Open OBS, voeg een nieuwe <strong>Browser Source</strong> toe.</li>
+            <li>Plak het linkje hierboven als URL.</li>
+            <li>Typ een 5-letterwoord (zonder iets erbij) in je eigen chat om te testen.</li>
+            <li>Chat heeft samen 5 pogingen per ronde, daarna start automatisch een nieuwe ronde met een nieuw woord.</li>
+        </ol>
+    </div>
+
+    <p class="veld-hint">🛠️ Lukt het activeren een keer niet vanzelf? Stuur me gewoon een berichtje op Discord (<strong>Larsjuhh</strong>), dan zet ik het met liefde even handmatig voor je klaar.</p>
+</div>
+<div class="podium">
+    <div class="podium-kop"><span>Zo ziet het eruit</span><span class="live">Live voorbeeld</span></div>
+    <div class="vv rand" id="vv"><div class="bord" id="bord"></div><div class="lingo-chat" id="lingo-chat"></div></div>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
+    // De kopie op gwnlarss.nl zelf (Netlify, geen eigen backend) zet dit op de absolute
+    // 'https://api.gwnlarss.nl', dat is de enige regel die tussen die twee kopieën verschilt.
+    const API_BASE = 'https://api.gwnlarss.nl';
+
+    const input = document.getElementById('kanaal-input');
+    const btn = document.getElementById('activeer-btn');
+    const verwijderBtn = document.getElementById('verwijder-btn');
+    const resultEl = document.getElementById('result');
+    const titelEl = document.getElementById('result-titel');
+    const tekstEl = document.getElementById('result-tekst');
+    const linkRow = document.getElementById('link-row');
+    const linkOutput = document.getElementById('link-output');
+    const stepsEl = document.getElementById('steps');
+    const kopieerBtn = document.getElementById('kopieer-btn');
+    const toastEl = document.getElementById('toast');
+    const KANAAL_OPSLAG_KEY = 'lingoSetupKanaal';
+
+    const onthoudenKanaal = localStorage.getItem(KANAAL_OPSLAG_KEY);
+    if (onthoudenKanaal) input.value = onthoudenKanaal;
+
+    function toast(tekst) {
+        toastEl.textContent = tekst;
+        toastEl.classList.add('is-visible');
+        setTimeout(() => toastEl.classList.remove('is-visible'), 2500);
+    }
+
+    function toonResultaat(status, titel, tekst) {
+        resultEl.classList.add('is-visible');
+        resultEl.classList.toggle('is-fout', status === 'fout');
+        resultEl.classList.toggle('is-goed', status === 'goed');
+        titelEl.className = `result__titel is-${status}`;
+        titelEl.textContent = titel;
+        tekstEl.textContent = tekst;
+    }
+
+    function bouwLink(kanaal) {
+        return `${location.origin}/lingo-overlay.html?kanaal=${encodeURIComponent(kanaal)}`;
+    }
+
+    function kopieerNaarKlembord(tekst) {
+        try {
+            navigator.clipboard?.writeText(tekst);
+        } catch { /* val hieronder terug */ }
+        const textarea = document.createElement('textarea');
+        textarea.value = tekst;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        let gelukt = false;
+        try { gelukt = document.execCommand('copy'); } catch { gelukt = false; }
+        document.body.removeChild(textarea);
+        return gelukt;
+    }
+
+    async function activeer() {
+        if (btn.disabled) return; // een ingedrukt gehouden Enter kan anders meerdere keren vuren
+        const kanaal = input.value.trim().toLowerCase();
+        if (!kanaal) { toast('Vul eerst een gebruikersnaam in.'); return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Bezig...';
+        linkRow.hidden = true;
+        stepsEl.hidden = true;
+
+        try {
+            const res = await fetch(`${API_BASE}/api/lingo/activeer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal }),
+            });
+            const data = await res.json();
+
+            if (!data.ok) {
+                toonResultaat('fout', '❌ Kon niet activeren', data.fout || 'Onbekende fout.');
+                return;
+            }
+
+            linkOutput.value = bouwLink(kanaal);
+            linkRow.hidden = false;
+            stepsEl.hidden = false;
+            localStorage.setItem(KANAAL_OPSLAG_KEY, kanaal);
+            toonResultaat(
+                'goed',
+                data.nieuw ? '✅ Geactiveerd!' : '✅ Was al actief',
+                data.nieuw
+                    ? `De bot zit nu in de chat van twitch.tv/${kanaal} en er is een verse ronde gestart. Gebruik het linkje hieronder als overlay.`
+                    : `Lingo was hier al actief, gebruik gewoon het linkje hieronder als overlay.`,
+            );
+        } catch {
+            toonResultaat('fout', '❌ Kon niet activeren', 'Netwerkfout, probeer het nog eens.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Activeer';
+        }
+    }
+
+    async function verwijder() {
+        if (verwijderBtn.disabled) return;
+        const kanaal = input.value.trim().toLowerCase();
+        if (!kanaal) { toast('Vul eerst een gebruikersnaam in.'); return; }
+
+        verwijderBtn.disabled = true;
+        verwijderBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/lingo/deactiveer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal }),
+            });
+            const data = await res.json();
+            if (!data.ok) {
+                toonResultaat('fout', '❌ Kon niet verlaten', data.fout || 'Verwijderen mislukt.');
+                return;
+            }
+
+            toonResultaat('goed', '🗑️ Verlaten', `De bot heeft twitch.tv/${kanaal} verlaten (tenzij daar nog een andere widget actief is) en Lingo werkt daar niet meer.`);
+            linkRow.hidden = true;
+            stepsEl.hidden = true;
+        } catch {
+            toonResultaat('fout', '❌ Kon niet verlaten', 'Netwerkfout, probeer het nog eens.');
+        } finally {
+            verwijderBtn.disabled = false;
+            verwijderBtn.textContent = 'Verlaat kanaal';
+        }
+    }
+
+    kopieerBtn.addEventListener('click', () => {
+        if (kopieerNaarKlembord(linkOutput.value)) toast('📋 Link gekopieerd!');
+    });
+
+    btn.addEventListener('click', activeer);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') activeer(); });
+    verwijderBtn.addEventListener('click', verwijder);
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+  import { $, startVeld, kantel, wacht, veilig } from './setup.js';
+  kantel($('vv'));
+  const bord = $('bord'), log = $('lingo-chat');
+  bord.innerHTML = '<div class="vak"></div>'.repeat(25);
+  const vakken = [...bord.children];
+  function kleur(gok, woord) {
+    const uit = Array(5).fill('x'), rest = [...woord];
+    [...gok].forEach((c, i) => { if (c === woord[i]) { uit[i] = 'g'; rest[i] = null; } });
+    [...gok].forEach((c, i) => { if (uit[i] !== 'g') { const j = rest.indexOf(c); if (j >= 0) { uit[i] = 'y'; rest[j] = null; } } });
+    return uit;
+  }
+  const WOORDEN = [['kaart', [['Bramble', 'koord'], ['Pixelpiet', 'kanon'], ['Zoë_Speelt', 'kaars'], ['Bramble', 'kaart']]], ['plant', [['Noorderlicht', 'paard'], ['Pixelpiet', 'pluim'], ['Bramble', 'plant']]]];
+  (async () => {
+    for (let r = 0; ; r = (r + 1) % WOORDEN.length) {
+      const [woord, gokken] = WOORDEN[r];
+      vakken.forEach(v => { v.className = 'vak'; v.textContent = ''; });
+      vakken[0].textContent = woord[0]; log.innerHTML = '';
+      await wacht(1200);
+      for (let p = 0; p < gokken.length; p++) {
+        const [wie, gok] = gokken[p], k = kleur(gok, woord);
+        log.insertAdjacentHTML('beforeend', `<div><b>${veilig(wie)}</b>: ${gok}</div>`);
+        if (log.children.length > 4) log.firstElementChild.remove();
+        for (let i = 0; i < 5; i++) { const v = vakken[p * 5 + i]; v.textContent = gok[i]; v.classList.add('draai', k[i]); await wacht(160); }
+        if (p + 1 < 5 && gok !== woord) vakken[(p + 1) * 5].textContent = woord[0];
+        await wacht(1500);
+      }
+      log.insertAdjacentHTML('beforeend', `<div>🟩 Geraden! Het woord was <b>${woord}</b></div>`);
+      await wacht(3000);
+    }
+  })();
+  startVeld('lingo', 4.2);
+</script>
+
+</body>
+</html>

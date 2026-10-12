@@ -1,0 +1,72 @@
+/* Gedeelde stijl van gwnlarss.nl v2 (home + tools): het deeltjesveld als podium, glazen panelen
+   met een draaiende neonrand eroverheen. Bewust alleen donker, net als de stream. */
+:root {
+    --nacht: #06050c;
+    --glas: rgba(15, 12, 28, 0.74);
+    --glas-sterk: rgba(15, 12, 28, 0.9);
+    --lijn: rgba(255, 255, 255, 0.09);
+    --tekst: #f3f1fa;
+    --dim: #a9a5c2;
+    --paars: #9146ff;
+    --roze: #ff3ea5;
+    --goud: #ffc94a;
+    --display: 'Baloo 2', 'Trebuchet MS', sans-serif;
+    --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+    color-scheme: dark;
+}
+@property --hoek { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes draai { to { --hoek: 360deg; } }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--nacht); color: var(--tekst); font-family: var(--body); font-size: 17px; line-height: 1.6; overflow-x: hidden; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--goud); outline-offset: 3px; border-radius: 10px; }
+
+#veld { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.laag { position: relative; z-index: 1; padding-inline: max(16px, 4vw); }
+
+nav.top {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px max(16px, 4vw);
+    background: linear-gradient(var(--nacht) 30%, rgba(6, 5, 12, 0));
+}
+.merk { font-family: var(--display); font-weight: 800; font-size: 1.5rem; text-decoration: none; letter-spacing: -0.01em; }
+.merk span { color: var(--roze); }
+.nav-links { display: flex; gap: 22px; flex-wrap: wrap; align-items: center; font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.22em; text-transform: uppercase; }
+.nav-links a { text-decoration: none; color: var(--dim); }
+.nav-links a:hover, .nav-links a[aria-current] { color: var(--tekst); }
+
+.rand { position: relative; }
+.rand::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px;
+    background: conic-gradient(from var(--hoek), var(--paars), var(--roze), var(--goud), var(--roze), var(--paars));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: draai 6s linear infinite; pointer-events: none;
+}
+.knop {
+    display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 999px; text-decoration: none;
+    font-family: var(--display); font-weight: 800; font-size: 1.15rem; border: 0; cursor: pointer; color: var(--tekst);
+    background: linear-gradient(135deg, var(--paars), var(--roze)); box-shadow: 0 10px 34px -8px rgba(255, 62, 165, 0.6);
+    transition: transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.knop:hover { transform: translateY(-3px) scale(1.03); }
+.knop--klein { padding: 9px 18px; font-size: 1rem; }
+.knop--glas { background: var(--glas); box-shadow: none; }
+
+section.blok { max-width: 1120px; margin: 0 auto; padding-block: 90px; }
+.label { font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--roze); margin: 0 0 10px; }
+h1, h2 { font-family: var(--display); font-weight: 800; line-height: 1.02; margin: 0 0 18px; text-wrap: balance; letter-spacing: -0.01em; }
+h2 { font-size: clamp(2.3rem, 5.4vw, 3.8rem); }
+.intro { color: var(--dim); max-width: 40rem; margin: 0; }
+.paneel { background: var(--glas); border-radius: 26px; padding: 28px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); min-width: 0; }
+.chip { font-family: var(--display); font-weight: 600; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--lijn); background: rgba(255, 255, 255, 0.04); }
+.tag { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--goud); }
+
+.kantel { transform-style: preserve-3d; transition: transform 0.45s cubic-bezier(0.2, 1, 0.3, 1); }
+
+footer { text-align: center; padding-block: 50px 70px; color: var(--dim); font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.2em; }
+
+@media (max-width: 640px) { .nav-links .verberg-mobiel { display: none; } section.blok { padding-block: 64px; } }
+@media (prefers-reduced-motion: reduce) { .rand::before { animation: none; } html { scroll-behavior: auto; } }

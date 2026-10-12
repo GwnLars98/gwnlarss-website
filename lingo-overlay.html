@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lingo-overlay, GwnLarss</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        background: transparent;
+        overflow: hidden;
+        font-family: 'Inter', system-ui, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    :root {
+        --green: #24d17e;
+        --geel: #e8b923;
+        --grijs: #3a3a46;
+    }
+
+    .paneel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 22px 28px;
+        border-radius: 20px;
+        background: rgba(8, 16, 12, 0.78);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+    }
+
+    .titel {
+        font-family: 'Baloo 2', sans-serif;
+        font-weight: 800;
+        font-size: 1.3rem;
+        color: #fff;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        margin: 0;
+    }
+
+    .bord { display: flex; flex-direction: column; gap: 6px; }
+    .rij { display: flex; gap: 6px; }
+
+    .tegel {
+        width: 42px;
+        height: 42px;
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Baloo 2', sans-serif;
+        font-weight: 700;
+        font-size: 1.25rem;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        transition: transform 0.25s, background 0.25s, border-color 0.25s;
+    }
+    .tegel.klap { animation: klappen 0.35s ease; }
+    @keyframes klappen {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.12); }
+        100% { transform: scale(1); }
+    }
+    .tegel.correct { background: var(--green); border-color: var(--green); color: #06130b; }
+    .tegel.aanwezig { background: var(--geel); border-color: var(--geel); color: #241c02; }
+    .tegel.afwezig { background: var(--grijs); border-color: var(--grijs); color: #cfcfd8; }
+
+    .status {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #f1f0f6;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        max-width: 320px;
+    }
+    .status.is-win { color: var(--green); }
+    .status.is-verlies { color: #ff5c7a; }
+
+    .speler {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #c9f2d8;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+
+<div class="paneel">
+    <p class="titel">🟩 Lingo</p>
+    <div class="bord" id="bord"></div>
+    <p class="status" id="status">Typ het woord in de chat!</p>
+    <p class="speler" id="speler" hidden></p>
+</div>
+
+<script>
+    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
+    // De kopie op gwnlarss.nl zelf (Netlify, geen eigen backend) zet dit op de absolute
+    // 'https://api.gwnlarss.nl', dat is de enige regel die tussen die twee kopieën verschilt.
+    const API_BASE = 'https://api.gwnlarss.nl';
+
+    // Zonder ?kanaal=... in de URL gedraagt dit zich als vanouds: gericht op gwnlarss zelf.
+    // Vul je wel ?kanaal=jouwnaam in, dan activeert dit hieronder automatisch Lingo bij de bot
+    // (die joint dan zelf je chat, geen handmatige configuratie nodig via lingo-setup.html).
+    const KANAAL = (new URLSearchParams(location.search).get('kanaal') || 'gwnlarss').trim().toLowerCase();
+
+    const bordEl = document.getElementById('bord');
+    const statusEl = document.getElementById('status');
+    const spelerEl = document.getElementById('speler');
+
+    fetch(`${API_BASE}/api/lingo/activeer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kanaal: KANAAL }),
+    }).catch(() => {}); // netwerkhikje: hieronder blijft het gewoon proberen te verbinden
+
+    function tekenBord(state) {
+        bordEl.innerHTML = '';
+        const rijen = state.rijen ?? [];
+        for (let r = 0; r < (state.pogingenMax ?? 5); r++) {
+            const rijEl = document.createElement('div');
+            rijEl.className = 'rij';
+            const gok = rijen[r];
+            for (let c = 0; c < (state.lengte ?? 5); c++) {
+                const tegel = document.createElement('div');
+                tegel.className = 'tegel';
+                if (gok) {
+                    tegel.textContent = gok.gok[c];
+                    tegel.classList.add(gok.resultaat[c]);
+                } else if (r === rijen.length && c === 0 && state.status === 'bezig') {
+                    tegel.textContent = state.eersteLetter;
+                    tegel.classList.add('correct');
+                }
+                rijEl.appendChild(tegel);
+            }
+            bordEl.appendChild(rijEl);
+        }
+    }
+
+    function tekenStatus(state) {
+        if (state.status === 'gewonnen') {
+            statusEl.textContent = `🎉 Geraden! Het woord was ${state.doelwoord.toUpperCase()}`;
+            statusEl.className = 'status is-win';
+        } else if (state.status === 'verloren') {
+            statusEl.textContent = `Helaas! Het woord was ${state.doelwoord.toUpperCase()}`;
+            statusEl.className = 'status is-verlies';
+        } else {
+            const over = (state.pogingenMax ?? 5) - (state.rijen?.length ?? 0);
+            statusEl.textContent = `Typ het woord in de chat! (nog ${over} poging${over === 1 ? '' : 'en'})`;
+            statusEl.className = 'status';
+        }
+    }
+
+    function verwerkState(state, naam) {
+        if (state.actief === false) {
+            statusEl.textContent = 'Lingo wordt hier gestart...';
+            return;
+        }
+        tekenBord(state);
+        tekenStatus(state);
+        const laatsteRij = state.rijen?.[state.rijen.length - 1];
+        if (naam && naam !== 'Systeem' && laatsteRij) {
+            spelerEl.textContent = `laatste gok: ${naam}`;
+            spelerEl.hidden = false;
+        } else {
+            spelerEl.hidden = true;
+        }
+        const nieuweTegels = bordEl.querySelectorAll(`.rij:nth-child(${state.rijen?.length || 1}) .tegel`);
+        nieuweTegels.forEach((t, i) => setTimeout(() => t.classList.add('klap'), i * 80));
+    }
+
+    async function haalStateOp() {
+        try {
+            const res = await fetch(`${API_BASE}/api/lingo/state?kanaal=${encodeURIComponent(KANAAL)}`);
+            const data = await res.json();
+            verwerkState(data, null);
+        } catch { /* netwerkhikje: gewoon het huidige bord laten staan tot de volgende poging */ }
+    }
+    haalStateOp();
+    // Deze pagina blijft normaal gesproken continu open als OBS-browserbron, periodiek verversen
+    // i.p.v. eenmalig bij laden is een vangnet tegen een gemiste/verbroken SSE-verbinding.
+    setInterval(haalStateOp, 15000);
+
+    function verbind() {
+        const bron = new EventSource(`${API_BASE}/api/alerts/stream`);
+        bron.onmessage = e => {
+            const event = JSON.parse(e.data);
+            if (event.type === 'herlaad' && (!event.extra?.kanaal || event.extra.kanaal === KANAAL)) return location.reload();
+            if (event.type !== 'lingo_state') return; // andere alert-types negeren
+            if (event.extra?.kanaal !== KANAAL) return; // niet voor ons kanaal
+            verwerkState(event.extra, event.naam);
+        };
+        bron.onerror = () => {
+            bron.close();
+            setTimeout(verbind, 3000);
+        };
+    }
+    verbind();
+</script>
+
+</body>
+</html>

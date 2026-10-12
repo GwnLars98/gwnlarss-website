@@ -314,17 +314,28 @@
     const ICOON_DISCORD = '<svg width="18" height="15" viewBox="0 0 26 22"><rect x="1" y="1" width="24" height="18" rx="9" fill="#fff"/><ellipse cx="9" cy="10" rx="1.8" ry="2.4" fill="#5865f2"/><ellipse cx="17" cy="10" rx="1.8" ry="2.4" fill="#5865f2"/></svg>';
     const ICOON_INSTAGRAM = '<svg width="16" height="16" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="17" rx="5" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12.5" r="4.2" fill="none" stroke="#fff" stroke-width="2"/><circle cx="17.5" cy="7.5" r="1.1" fill="#fff"/></svg>';
 
+    // Echte meldingsgeluiden per thema (first-chat-sounds/<thema>.mp3 op api.gwnlarss.nl,
+    // bijgesneden en op gelijk volume gezet). Lukt afspelen niet, dan valt het terug op het
+    // gesynthetiseerde geluidje.
+    const echteGeluiden = {};
+    function speelEchtGeluid(sleutel, terugval) {
+        const audio = (echteGeluiden[sleutel] ??= new Audio(`${API_BASE}/first-chat-sounds/${sleutel}.mp3`));
+        audio.volume = Math.max(0, Math.min(1, alertVolume));
+        audio.currentTime = 0;
+        audio.play().catch(() => terugval());
+    }
+
     const THEMAS = {
-        msn: { klasse: null, icoon: ICOON_MSN, titel: 'Nieuw bericht', geluid: speelMsnDing },
-        aim: { klasse: 'theme-aim', icoon: ICOON_AIM, titel: 'IM ontvangen', geluid: speelAimGeluid },
-        icq: { klasse: 'theme-icq', icoon: ICOON_ICQ, titel: 'Nieuw bericht', geluid: speelIcqGeluid },
-        yahoo: { klasse: 'theme-yahoo', icoon: ICOON_YAHOO, titel: 'Yahoo!-bericht', geluid: speelYahooGeluid },
-        xp: { klasse: 'theme-xp', icoon: ICOON_XP, titel: 'Bericht ontvangen', geluid: speelXpGeluid },
-        skype: { klasse: 'theme-skype', icoon: ICOON_SKYPE, titel: 'Skype-bericht', geluid: speelSkypeGeluid },
-        nokia: { klasse: 'theme-nokia', icoon: ICOON_NOKIA, titel: 'Nieuw bericht', geluid: speelNokiaGeluid },
-        bbm: { klasse: 'theme-bbm', icoon: ICOON_BBM, titel: 'BBM PING!', geluid: speelBbmGeluid },
-        discord: { klasse: 'theme-discord', icoon: ICOON_DISCORD, titel: 'Nieuw bericht', geluid: speelDiscordGeluid },
-        instagram: { klasse: 'theme-instagram', icoon: ICOON_INSTAGRAM, titel: 'Nieuw DM-bericht', geluid: speelInstagramGeluid },
+        msn: { klasse: null, icoon: ICOON_MSN, titel: 'Nieuw bericht', geluid: () => speelEchtGeluid('msn', speelMsnDing) },
+        aim: { klasse: 'theme-aim', icoon: ICOON_AIM, titel: 'IM ontvangen', geluid: () => speelEchtGeluid('aim', speelAimGeluid) },
+        icq: { klasse: 'theme-icq', icoon: ICOON_ICQ, titel: 'Nieuw bericht', geluid: () => speelEchtGeluid('icq', speelIcqGeluid) },
+        yahoo: { klasse: 'theme-yahoo', icoon: ICOON_YAHOO, titel: 'Yahoo!-bericht', geluid: () => speelEchtGeluid('yahoo', speelYahooGeluid) },
+        xp: { klasse: 'theme-xp', icoon: ICOON_XP, titel: 'Bericht ontvangen', geluid: () => speelEchtGeluid('xp', speelXpGeluid) },
+        skype: { klasse: 'theme-skype', icoon: ICOON_SKYPE, titel: 'Skype-bericht', geluid: () => speelEchtGeluid('skype', speelSkypeGeluid) },
+        nokia: { klasse: 'theme-nokia', icoon: ICOON_NOKIA, titel: 'Nieuw bericht', geluid: () => speelEchtGeluid('nokia', speelNokiaGeluid) },
+        bbm: { klasse: 'theme-bbm', icoon: ICOON_BBM, titel: 'BBM PING!', geluid: () => speelEchtGeluid('bbm', speelBbmGeluid) },
+        discord: { klasse: 'theme-discord', icoon: ICOON_DISCORD, titel: 'Nieuw bericht', geluid: () => speelEchtGeluid('discord', speelDiscordGeluid) },
+        instagram: { klasse: 'theme-instagram', icoon: ICOON_INSTAGRAM, titel: 'Nieuw DM-bericht', geluid: () => speelEchtGeluid('instagram', speelInstagramGeluid) },
     };
     // Thema/grootte komen voortaan uit de setup-pagina (opgeslagen server-side), niet meer uit
     // de URL, zo hoef je het OBS-linkje nooit aan te passen als je iets wijzigt. ?thema=... in

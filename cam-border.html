@@ -114,6 +114,8 @@
         color: #ffffff;
         letter-spacing: -0.01em;
     }
+    /* ?rand=uit: alleen het live-bordje met je naam, zonder rand om de camera. */
+    body.zonder-rand .frame::before { display: none; }
 </style>
 </head>
 <body>
@@ -135,6 +137,7 @@
     const kleur2 = params.get('kleur2');
     if (kleur1) document.documentElement.style.setProperty('--purple', `#${kleur1.replace('#', '')}`);
     if (kleur2) document.documentElement.style.setProperty('--pink', `#${kleur2.replace('#', '')}`);
+    if (params.get('rand') === 'uit') document.body.classList.add('zonder-rand');
 </script>
 
 </body>

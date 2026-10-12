@@ -421,7 +421,7 @@ a { color: inherit; text-decoration: none; }
 .showcase-controls { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
 .showcase-mute[aria-pressed="true"] { border-color: var(--purple); background: rgba(145, 70, 255, 0.1); }
 
-/* MSN Messenger-achtig toastje — zelfde stijl/markup als public/alerts.html, hier ter demonstratie */
+/* MSN Messenger-achtig toastje, zelfde stijl/markup als public/alerts.html, hier ter demonstratie */
 .msn-toast {
     position: absolute;
     right: 16px;
@@ -479,7 +479,7 @@ a { color: inherit; text-decoration: none; }
 .showcase-row .showcase-frame--verticaal { max-width: 280px; }
 
 /* Sub-count en streamstats zijn kleine widgets die in een standaardgrote 16:9/9:16-canvas
-   verhoudingsgewijs klein ogen — hier iets meer ruimte voor zodat de kaart zelf duidelijker is. */
+   verhoudingsgewijs klein ogen, hier iets meer ruimte voor zodat de kaart zelf duidelijker is. */
 .showcase-row--groot .showcase-frame { flex-basis: 700px; max-width: 900px; }
 .showcase-row--groot .showcase-frame--verticaal { max-width: 460px; }
 
@@ -518,7 +518,7 @@ a { color: inherit; text-decoration: none; }
 
 .cam-demo { position: absolute; inset: 0; }
 
-/* Nagebootste cameraplek i.p.v. een echte foto — laat zien waar je gezicht zou zitten
+/* Nagebootste cameraplek i.p.v. een echte foto, laat zien waar je gezicht zou zitten
    zonder een specifiek moment te bevriezen. */
 .cam-demo__face {
     position: absolute;
