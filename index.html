@@ -21,6 +21,33 @@
   .scroll-hint::after { content: ''; display: block; width: 1px; height: 34px; margin: 10px auto 0; background: linear-gradient(var(--roze), transparent); animation: zak 2s ease-in-out infinite; }
   @keyframes zak { 50% { transform: translateY(8px); opacity: 0.4; } }
 
+  /* live-status (zelfde /api/live als de oude site) */
+  .live-pil { display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 999px; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--dim); background: var(--glas-sterk); border: 1px solid var(--lijn); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .live-pil i { width: 9px; height: 9px; border-radius: 50%; background: #8b86a3; box-shadow: 0 0 8px #8b86a3; }
+  .live-pil.is-live { color: #fff; border-color: rgba(255, 46, 77, 0.55); background: rgba(255, 46, 77, 0.16); box-shadow: 0 0 34px -6px rgba(255, 46, 77, 0.8); }
+  .live-pil.is-live i { background: #ff2e4d; box-shadow: 0 0 12px #ff2e4d; animation: hartslag 1.4s ease-in-out infinite; }
+  @keyframes hartslag { 50% { transform: scale(1.5); opacity: 0.5; } }
+  .stream-titel { margin: -8px 0 0; max-width: 34rem; font-weight: 600; color: var(--tekst); text-wrap: balance; }
+  .stream-titel span { color: var(--dim); font-weight: 500; }
+  .knop .stip { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px #fff; animation: hartslag 1.4s ease-in-out infinite; }
+
+  /* livestream: de echte Twitch-speler in een kantelend glazen scherm */
+  .speler-wrap { margin-top: 30px; perspective: 1800px; }
+  .speler { position: relative; border-radius: 28px; padding: 14px; background: var(--glas-sterk); transform: rotateX(5deg) rotateY(-7deg); transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.2, 1, 0.3, 1), box-shadow 0.4s; box-shadow: 0 40px 120px -40px rgba(145, 70, 255, 0.7); }
+  .speler.is-live { box-shadow: 0 40px 120px -30px rgba(255, 46, 77, 0.75); }
+  .speler-scherm { position: relative; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: #0a0814; transform: translateZ(20px); }
+  .speler-scherm iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .live-tag { position: absolute; left: 16px; top: 16px; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 8px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.25em; color: #fff; background: #e91916; box-shadow: 0 0 20px rgba(233, 25, 22, 0.7); pointer-events: none; }
+  .live-tag[hidden] { display: none; }
+  .speler-info { display: flex; align-items: center; gap: 14px; padding: 16px 6px 4px; transform: translateZ(10px); }
+  .speler-info img, .avatar-leeg { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid var(--paars); box-shadow: 0 0 18px -4px var(--paars); flex-shrink: 0; }
+  .speler-info img[hidden], .avatar-leeg[hidden] { display: none; }
+  .avatar-leeg { display: grid; place-items: center; font-family: var(--display); font-weight: 800; background: linear-gradient(135deg, var(--paars), var(--roze)); }
+  .speler.is-live .speler-info img { border-color: #ff2e4d; box-shadow: 0 0 18px -2px #ff2e4d; }
+  .speler-info b { display: block; font-family: var(--display); font-size: 1.35rem; line-height: 1.1; }
+  .speler-info span { color: var(--dim); font-size: 0.92rem; }
+  .speler-info .knop { margin-left: auto; }
+
   .over { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
   .over .paneel { display: grid; gap: 18px; align-content: start; }
   .over p { margin: 0; color: var(--dim); }
@@ -45,6 +72,8 @@
 
   @media (max-width: 860px) {
     .over, .socials { grid-template-columns: 1fr; }
+    .speler { transform: none; padding: 8px; }
+    .speler-info .knop { display: none; }
     .tools-rij { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
@@ -57,20 +86,39 @@
 <nav class="top">
   <a class="merk" href="#top">GwnLarss<span>.</span></a>
   <div class="nav-links">
+    <a class="verberg-mobiel" href="#live">Live</a>
     <a class="verberg-mobiel" href="#over">Over mij</a>
     <a href="tools.html">Tools</a>
-    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+    <a class="knop knop--klein" id="nav-twitch" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
   </div>
 </nav>
 
 <main class="laag" id="top">
   <header class="held" data-vorm="stof">
     <div class="held-tekst">
+      <span class="live-pil" id="live-pil"><i></i><span id="live-tekst">Status laden...</span></span>
       <p class="slogan">Gamer en prutser. Kom gezellig kijken, kletsen en samen dingen kapot maken.</p>
-      <a class="knop" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Kijk mee op Twitch</a>
+      <p class="stream-titel" id="stream-titel" hidden></p>
+      <a class="knop" id="kijk-knop" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Kijk mee op Twitch</a>
       <span class="scroll-hint">Scroll</span>
     </div>
   </header>
+
+  <section class="blok" id="live" data-vorm="scherm">
+    <p class="label">Livestream</p>
+    <h2 id="live-kop">Kijk mee</h2>
+    <p class="intro" id="live-intro">Ben ik live? Dan zie je de stream hier meteen.</p>
+    <div class="speler-wrap">
+      <div class="speler rand" id="speler">
+        <div class="speler-scherm"><div id="twitch-embed"></div><span class="live-tag" id="live-tag" hidden>LIVE</span></div>
+        <div class="speler-info">
+          <img id="avatar" alt="Profielfoto van GwnLarss" hidden><div class="avatar-leeg" id="avatar-leeg">GL</div>
+          <div><b id="speler-naam">GwnLarss</b><span id="speler-sub">op Twitch</span></div>
+          <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Open op Twitch</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="blok" id="over" data-vorm="controller">
     <div class="over">
@@ -121,6 +169,60 @@
     catch { getSelection().selectAllChildren(document.getElementById('mail')); e.target.textContent = 'Druk Ctrl+C'; }
   });
 
+  // ---------- live-status en Twitch-speler (zelfde /api/live als de oude site) ----------
+  const $ = id => document.getElementById(id);
+  function plaatsSpeler(login) {
+    const houder = $('twitch-embed');
+    if (houder.dataset.login === login) return;
+    houder.innerHTML = '';
+    const f = document.createElement('iframe');
+    f.src = `https://player.twitch.tv/?channel=${encodeURIComponent(login)}&parent=${encodeURIComponent(location.hostname)}&muted=true`;
+    f.allowFullscreen = true;
+    f.title = `${login} op Twitch`;
+    houder.append(f);
+    houder.dataset.login = login;
+  }
+  const extra = d => [d.game, d.viewers != null ? `${d.viewers} kijkers` : null].filter(Boolean).join(' · ');
+  function toonLive(d) {
+    if (!d.geconfigureerd) { $('live-tekst').textContent = 'Live-status niet beschikbaar'; return; }
+    plaatsSpeler(d.twitchLogin);
+    $('speler-naam').textContent = d.displayName || 'GwnLarss';
+    if (d.profileImageUrl) { $('avatar').src = d.profileImageUrl; $('avatar').hidden = false; $('avatar-leeg').hidden = true; }
+    const live = Boolean(d.live);
+    $('live-pil').classList.toggle('is-live', live);
+    $('speler').classList.toggle('is-live', live);
+    $('live-tag').hidden = !live;
+    $('live-tekst').textContent = live ? 'Live nu' : 'Momenteel offline';
+    $('kijk-knop').textContent = live ? 'Kijk nu live mee' : 'Kijk mee op Twitch';
+    $('live-kop').textContent = live ? 'Nu live' : 'Kijk mee';
+    $('live-intro').textContent = live ? 'De stream loopt, kom gezellig kijken en kletsen.' : 'Ik ben nu offline. Volg me op Twitch, dan zie je wanneer ik weer live ga.';
+    const nav = $('nav-twitch');
+    nav.querySelector('.stip')?.remove();
+    if (live) nav.insertAdjacentHTML('afterbegin', '<i class="stip" aria-hidden="true"></i>');
+    const titel = $('stream-titel');
+    titel.hidden = !(live && d.title);
+    if (!titel.hidden) {
+      titel.textContent = d.title;
+      if (extra(d)) { const s = document.createElement('span'); s.textContent = ` · ${extra(d)}`; titel.append(s); }
+    }
+    $('speler-sub').textContent = live ? (extra(d) || 'is live') : 'op Twitch';
+  }
+  async function checkLive() {
+    try { toonLive(await (await fetch('https://api.gwnlarss.nl/api/live', { cache: 'no-store' })).json()); }
+    catch { $('live-tekst').textContent = 'Live-status kon niet geladen worden'; }
+  }
+  checkLive();
+  setInterval(checkLive, 20000);
+
+  // speler kantelt mee met de muis
+  const speler = $('speler');
+  speler.parentElement.addEventListener('pointermove', e => {
+    if (innerWidth < 860) return;
+    const r = speler.getBoundingClientRect();
+    speler.style.transform = `rotateX(${5 - ((e.clientY - r.top) / r.height - 0.5) * 8}deg) rotateY(${-7 + ((e.clientX - r.left) / r.width - 0.5) * 12}deg)`;
+  });
+  speler.parentElement.addEventListener('pointerleave', () => { speler.style.transform = ''; });
+
   // ---------- hero: het massieve 3D-logo uit versie 1 ----------
   const font = await laadFont('logo-font.json');
   logoPodium(document.getElementById('logo'), font);
@@ -130,12 +232,14 @@
   const secties = [...document.querySelectorAll('[data-vorm]')];
   const PLEK = {
     stof: () => ({ x: 0, y: 0, alpha: 0.55 }),
+    scherm: () => ({ x: 0, y: 0, alpha: 0.22 }),
     controller: () => (klein() ? { x: 0, y: 2.6, alpha: 0.45 } : { x: 4.2, y: 0, alpha: 1 }),
     bubbel: () => (klein() ? { x: 0, y: 2.6, alpha: 0.4 } : { x: 4.4, y: 2.2, alpha: 0.75 }),
     hart: () => (klein() ? { x: 0, y: 2.4, alpha: 0.5 } : { x: 3.6, y: 0, alpha: 1 }),
   };
   await deeltjesVeld(document.getElementById('veld'), {
     stof: { geo: VORM.stof(), breedte: 22 },
+    scherm: { geo: VORM.scherm(), breedte: 14 },
     controller: { geo: VORM.controller(), breedte: 4.6 },
     bubbel: { geo: VORM.bubbel(), breedte: 3.6 },
     hart: { geo: VORM.hart(), breedte: 4 },
