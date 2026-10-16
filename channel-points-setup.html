@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanaalpunten instellen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
+<link rel="stylesheet" href="setup.css">
+</head>
+<body>
+
+<canvas id="veld" aria-hidden="true"></canvas>
+<div class="page-wrap laag">
+<nav class="top">
+  <a class="merk" href="index.html">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a href="tools.html" aria-current="page">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
+</nav>
+
+<header class="held">
+    <a class="terug" href="tools.html">&larr; Alle tools</a>
+    <p class="label">Chatbericht</p>
+    <h1>Kanaalpunten</h1>
+    <p class="intro">Wisselt iemand een custom kanaalpunten-beloning bij je in (welke beloning maakt niet uit, dat stel je gewoon in Twitch's eigen dashboard in), dan post de bot automatisch een berichtje in je chat. Dit werkt anders dan de andere tools: Twitch vereist hiervoor dat je écht bij Twitch inlogt en toestemming geeft, een gebruikersnaam intypen is niet genoeg.</p>
+</header>
+
+<div class="opzet">
+<div class="card rand">
+
+    <div id="niet-verbonden">
+        <a class="btn btn--breed" id="verbind-link" href="https://api.gwnlarss.nl/api/channel-points/verbind">🪙 Verbind met Twitch</a>
+        <p class="veld-hint">Je wordt naar Twitch's eigen inlogpagina gestuurd. Daar log je in als jezelf en geef je toestemming, daarna kom je hier automatisch weer terug.</p>
+    </div>
+
+    <div id="wel-verbonden" hidden>
+        <p class="verbonden-badge">✅ Verbonden als <a id="verbonden-naam-link" href="#" target="_blank" rel="noopener"></a></p>
+
+        <p class="label">Welke beloning(en) triggeren dit?</p>
+        <div class="beloning-lijst" id="beloning-lijst">
+            <p class="beloning-leeg">Beloningen laden...</p>
+        </div>
+        <p class="veld-hint">Vink één of meerdere kanaalpunten-beloningen aan, of laat alles leeg om op elke ingewisselde custom beloning te reageren. Nieuwe beloning nog niet in het lijstje? Even de pagina verversen.</p>
+
+        <p class="label">Chatbericht bij inwisselen</p>
+        <input type="text" id="bericht-input" maxlength="200" autocomplete="off">
+        <p class="veld-hint">Gebruik <code>{naam}</code> voor wie 'm inwisselde en <code>{beloning}</code> voor de naam van de beloning zelf.</p>
+
+        <div class="knoppenrij">
+            <button type="button" class="btn" id="opslaan-btn">💾 Opslaan</button>
+            <button type="button" class="btn btn--ghost" id="loskoppel-btn">Loskoppelen</button>
+        </div>
+    </div>
+</div>
+<div class="podium">
+    <div class="podium-kop"><span>Zo ziet het eruit</span><span class="live">Live voorbeeld</span></div>
+    <div class="vv rand" id="vv"><div class="chat-kop">Streamchat</div><div class="chat" id="nep-chat"></div></div>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+    // Leeg = relatief (deze pagina draait dan op de bot's eigen server, api.gwnlarss.nl).
+    // De kopie op gwnlarss.nl zelf (Netlify, geen eigen backend) zet dit op de absolute
+    // 'https://api.gwnlarss.nl', dat is de enige regel die tussen die twee kopieën verschilt.
+    const API_BASE = 'https://api.gwnlarss.nl';
+    const KANAAL_OPSLAG_KEY = 'channelPointsSetupKanaal';
+
+    const nietVerbondenEl = document.getElementById('niet-verbonden');
+    const welVerbondenEl = document.getElementById('wel-verbonden');
+    const verbondenNaamLink = document.getElementById('verbonden-naam-link');
+    const beloningLijst = document.getElementById('beloning-lijst');
+    const berichtInput = document.getElementById('bericht-input');
+    const opslaanBtn = document.getElementById('opslaan-btn');
+    const loskoppelBtn = document.getElementById('loskoppel-btn');
+    const toastEl = document.getElementById('toast');
+
+    function toast(tekst) {
+        toastEl.textContent = tekst;
+        toastEl.classList.add('is-visible');
+        setTimeout(() => toastEl.classList.remove('is-visible'), 2500);
+    }
+
+    function toonVerbonden(login) {
+        nietVerbondenEl.hidden = true;
+        welVerbondenEl.hidden = false;
+        verbondenNaamLink.textContent = `twitch.tv/${login}`;
+        verbondenNaamLink.href = `https://twitch.tv/${login}`;
+    }
+
+    // Los van laadInstellingen, want dit vraagt Twitch zelf om de actuele beloningen op te
+    // halen (kan een netwerkhikje apart geven), het lijstje toont dan gewoon een foutje i.p.v.
+    // dat de hele pagina vastloopt.
+    async function laadBeloningen(login, gekozenIds) {
+        try {
+            const res = await fetch(`${API_BASE}/api/channel-points/beloningen?kanaal=${encodeURIComponent(login)}`);
+            const data = await res.json();
+            if (!data.ok) {
+                // niet stil 'geen beloningen' tonen als Twitch eigenlijk een fout gaf
+                const geenRechten = /scope/i.test(data.fout ?? '');
+                beloningLijst.innerHTML = geenRechten
+                    ? '<p class="beloning-leeg">Twitch geeft de bot nog geen toegang tot je kanaalpunten. Koppel je kanaal opnieuw (Loskoppelen en daarna weer verbinden) zodat je die toestemming geeft.</p>'
+                    : '<p class="beloning-leeg">Kon de beloningen niet ophalen bij Twitch, probeer de pagina te verversen.</p>';
+                return;
+            }
+            if (data.beloningen.length === 0) {
+                beloningLijst.innerHTML = '<p class="beloning-leeg">Nog geen eigen kanaalpunten-beloningen gevonden.</p>';
+                return;
+            }
+            beloningLijst.innerHTML = '';
+            for (const b of data.beloningen) {
+                const rij = document.createElement('label');
+                rij.className = 'beloning-rij';
+                rij.innerHTML = `
+                    <input type="checkbox" value="${b.id}" ${gekozenIds.includes(b.id) ? 'checked' : ''}>
+                    <span class="beloning-rij__titel">${b.titel}</span>
+                    <span class="beloning-rij__kosten">${b.kosten} punten</span>
+                `;
+                beloningLijst.appendChild(rij);
+            }
+        } catch {
+            beloningLijst.innerHTML = '<p class="beloning-leeg">Kon de beloningen niet laden, probeer de pagina te verversen.</p>';
+        }
+    }
+
+    async function laadInstellingen(login) {
+        try {
+            const res = await fetch(`${API_BASE}/api/channel-points/instellingen?kanaal=${encodeURIComponent(login)}`);
+            const data = await res.json();
+            if (!data.verbonden) { localStorage.removeItem(KANAAL_OPSLAG_KEY); return; }
+            berichtInput.value = data.bericht;
+            toonVerbonden(login);
+            laadBeloningen(login, data.rewardIds ?? []);
+        } catch { /* netwerkhikje: laat gewoon de "niet verbonden"-knop staan */ }
+    }
+
+    // Meteen na de OAuth-redirect staat het kanaal in de URL, vanaf dat moment onthouden we 'm
+    // ook lokaal, zodat een terugkerend bezoek (zonder die query-parameter) 'm nog steeds herkent.
+    const uitUrl = new URLSearchParams(location.search).get('verbonden');
+    if (uitUrl) {
+        localStorage.setItem(KANAAL_OPSLAG_KEY, uitUrl.toLowerCase());
+        history.replaceState(null, '', location.pathname);
+        toast('✅ Verbonden met Twitch!');
+    }
+    const onthoudenKanaal = uitUrl?.toLowerCase() || localStorage.getItem(KANAAL_OPSLAG_KEY);
+    if (onthoudenKanaal) laadInstellingen(onthoudenKanaal);
+
+    opslaanBtn.addEventListener('click', async () => {
+        const login = localStorage.getItem(KANAAL_OPSLAG_KEY);
+        if (!login || opslaanBtn.disabled) return;
+        opslaanBtn.disabled = true;
+        opslaanBtn.textContent = 'Bezig...';
+        try {
+            const [berichtRes, beloningRes] = await Promise.all([
+                fetch(`${API_BASE}/api/channel-points/bericht`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kanaal: login, bericht: berichtInput.value }),
+                }),
+                fetch(`${API_BASE}/api/channel-points/beloning`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        kanaal: login,
+                        rewardIds: [...beloningLijst.querySelectorAll('input:checked')].map(el => el.value),
+                    }),
+                }),
+            ]);
+            const berichtData = await berichtRes.json();
+            const beloningData = await beloningRes.json();
+            if (!berichtData.ok || !beloningData.ok) {
+                toast(`❌ ${berichtData.fout || beloningData.fout || 'Opslaan mislukt.'}`);
+                return;
+            }
+            toast('💾 Opgeslagen.');
+        } catch {
+            toast('❌ Netwerkfout, probeer het nog eens.');
+        } finally {
+            opslaanBtn.disabled = false;
+            opslaanBtn.textContent = '💾 Opslaan';
+        }
+    });
+
+    loskoppelBtn.addEventListener('click', async () => {
+        const login = localStorage.getItem(KANAAL_OPSLAG_KEY);
+        if (!login || loskoppelBtn.disabled) return;
+        if (!confirm(`Weet je zeker dat je de kanaalpunten-melding wil loskoppelen voor twitch.tv/${login}?`)) return;
+        loskoppelBtn.disabled = true;
+        loskoppelBtn.textContent = 'Bezig...';
+        try {
+            const res = await fetch(`${API_BASE}/api/channel-points/deactiveer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kanaal: login }),
+            });
+            const data = await res.json();
+            if (!data.ok) { toast(`❌ ${data.fout || 'Loskoppelen mislukt.'}`); return; }
+            localStorage.removeItem(KANAAL_OPSLAG_KEY);
+            welVerbondenEl.hidden = true;
+            nietVerbondenEl.hidden = false;
+            toast('🗑️ Losgekoppeld.');
+        } catch {
+            toast('❌ Netwerkfout, probeer het nog eens.');
+        } finally {
+            loskoppelBtn.disabled = false;
+            loskoppelBtn.textContent = 'Loskoppelen';
+        }
+    });
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+  import { $, startVeld, kantel, chatRegel, veilig, wacht } from './setup.js';
+  kantel($('vv'));
+  const chat = $('nep-chat');
+  const zeg = (wie, kleur, tekst, bot) => chatRegel(chat, `${bot ? '<span class="bot">BOT</span>' : ''}<span class="wie" style="color:${kleur}">${veilig(wie)}</span>: ${tekst}`);
+  const INWISSELINGEN = [['Bramble', '#ff7ac6', 'Hydrate!'], ['Pixelpiet', '#b98aff', 'Kies de volgende game'], ['Zoë_Speelt', '#7dffb0', 'Shoutout'], ['Noorderlicht', '#6ac8ff', 'Doe een dansje']];
+  (async () => {
+    for (let n = 0; ; n++) {
+      const [wie, kleur, beloning] = INWISSELINGEN[n % INWISSELINGEN.length];
+      chatRegel(chat, `<span class="punten">🪙 <b>${veilig(wie)}</b> wisselde <b>${veilig(beloning)}</b> in</span>`); await wacht(1300);
+      zeg('GwnBot', '#ffc94a', `${veilig(wie)} heeft "${veilig(beloning)}" ingewisseld! 🪙`, true); await wacht(2600);
+      if (n % 2) { zeg('Bramble', '#ff7ac6', 'haha yes 😂'); await wacht(1600); }
+    }
+  })();
+  startVeld('munt', 3);
+</script>
+
+</body>
+</html>

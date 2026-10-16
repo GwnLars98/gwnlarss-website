@@ -156,3 +156,4 @@ input[type="color"] { width: 44px; height: 32px; border: 0; background: none; pa
 @keyframes in { from { opacity: 0; transform: translateX(3cqw); } }
 
 @media (max-width: 860px) { .opzet { grid-template-columns: 1fr; } .podium { position: static; order: -1; } }
+.chat .punten { display: block; padding: 0.8cqw 1.4cqw; border-radius: 1.2cqw; background: rgba(145, 70, 255, 0.18); border-left: 0.5cqw solid #9146ff; color: #e6dcff; }
