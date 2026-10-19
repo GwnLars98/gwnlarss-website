@@ -9,48 +9,76 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
 <style>
-    /* Welke streamers GwnBot volgt in een server (?server=creatorcove), uit api.gwnlarss.nl/api/gwnbot/streamers.
-       Niet gelinkt vanaf de site zelf, alleen vanaf de statuspagina (api.gwnlarss.nl/status.html).
-       Wie live is staat bovenaan; per persoon de platformen met een link naar het kanaal. */
+    /* Streamerspagina van GwnBot (?server=creatorcove), in 3D. Niet gelinkt vanaf de site zelf, alleen
+       vanaf de statuspagina (api.gwnlarss.nl/status.html). Bovenaan een baai bij nacht:
+       elke streamer is een boei met zijn profielfoto op het water, wie live is komt omhoog en gloeit
+       rood, en de vuurtoren (GwnBot) houdt de wacht. Daaronder dezelfde lijst als de gewone pagina.
+       Gegevens uit api.gwnlarss.nl/api/gwnbot/streamers, ververst elke minuut. */
     :root { --bg: #0b0a14; --panel: #161427; --panel2: #1e1b33; --border: rgba(255,255,255,0.08); --text: #f2f0fb; --dim: #a5a1c0; --paars: #9146ff; --roze: #ff3ea5; --rood: #ff4d5e; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; color: var(--text); font-family: 'Inter', system-ui, sans-serif;
-        background: radial-gradient(60% 40% at 10% 0%, rgba(145,70,255,0.18), transparent 70%), radial-gradient(45% 35% at 100% 10%, rgba(255,62,165,0.12), transparent 70%), var(--bg); }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 44px 24px 80px; }
-    header { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-    header img { width: 74px; height: 74px; border-radius: 22px; box-shadow: 0 10px 30px rgba(145,70,255,0.35); }
-    h1 { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0; line-height: 1.05; }
-    h1 span { background: linear-gradient(90deg, #b98cff, var(--roze)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .sub { color: var(--dim); margin: 4px 0 0; }
-    .stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 26px 0 8px; }
-    .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px; min-width: 130px; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-height: 100vh; color: var(--text); font-family: 'Inter', system-ui, sans-serif; background: var(--bg); overflow-x: hidden; }
+
+    /* ---------- 3D-baai ---------- */
+    .baai { position: relative; height: min(620px, 86vh); min-height: 460px; overflow: hidden; }
+    .baai canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: default; }
+    .baai::after { content: ''; position: absolute; inset: auto 0 0 0; height: 140px; background: linear-gradient(transparent, var(--bg)); pointer-events: none; }
+    .kop { position: absolute; z-index: 2; top: 0; left: 0; right: 0; max-width: 1100px; margin: 0 auto; padding: 40px 24px; pointer-events: none; }
+    .kop > * { pointer-events: auto; }
+    .kop .merk { display: flex; align-items: center; gap: 14px; }
+    .kop img { width: 58px; height: 58px; border-radius: 18px; box-shadow: 0 10px 30px rgba(145,70,255,0.45); }
+    .label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+    h1 { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: clamp(2.1rem, 5.5vw, 3.6rem); margin: 14px 0 6px; line-height: 0.98; text-shadow: 0 4px 30px rgba(0,0,0,0.6); }
+    h1 span { background: linear-gradient(90deg, #c7a6ff, var(--roze)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sub { color: #cfcbe4; margin: 0; max-width: 520px; text-shadow: 0 2px 12px rgba(0,0,0,0.8); }
+    .tip { position: absolute; z-index: 5; pointer-events: none; padding: 7px 11px; border-radius: 10px; background: rgba(11,10,20,0.88); border: 1px solid var(--border); backdrop-filter: blur(8px); font-size: 0.82rem; font-weight: 600; white-space: nowrap; transform: translate(-50%, -130%); opacity: 0; transition: opacity 0.15s; }
+    .tip small { display: block; color: var(--dim); font-weight: 500; }
+    .tip.live small { color: var(--rood); }
+    .niemand { position: absolute; z-index: 2; top: 58%; left: 50%; transform: translate(-20%, -50%); padding: 10px 18px; border-radius: 14px; background: rgba(11,10,20,0.7); border: 1px solid var(--border); backdrop-filter: blur(8px); color: #cfcbe4; font-weight: 600; font-size: 0.92rem; white-space: nowrap; }
+    @media (max-width: 900px) { .niemand { transform: translate(-50%, -50%); } }
+    .niemand[hidden], .hint[hidden] { display: none; }
+    .hint { position: absolute; z-index: 2; bottom: 64px; left: 50%; transform: translateX(-50%); color: var(--dim); font-size: 0.78rem; pointer-events: none; text-shadow: 0 2px 8px #000; }
+
+    /* ---------- lijst ---------- */
+    .wrap { max-width: 1100px; margin: -10px auto 0; padding: 0 24px 80px; position: relative; z-index: 3; }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; }
+    .stat { background: rgba(22,20,39,0.85); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px; min-width: 130px; }
     .stat b { display: block; font-family: 'Baloo 2', sans-serif; font-size: 1.5rem; line-height: 1.1; }
     .stat span { color: var(--dim); font-size: 0.8rem; }
     .stat.live b { color: var(--rood); }
-    .balk { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 16px; }
+    .balk { position: sticky; top: 10px; z-index: 6; display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 16px; padding: 10px; border-radius: 16px; background: rgba(11,10,20,0.82); backdrop-filter: blur(12px); border: 1px solid var(--border); }
     .balk input { flex: 1 1 240px; font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
     .filters { display: flex; gap: 6px; flex-wrap: wrap; }
     .filters button { font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--dim); background: var(--panel2); border: 1px solid var(--border); border-radius: 999px; padding: 7px 13px; cursor: pointer; }
     .filters button.aan { color: #fff; border-color: var(--paars); background: rgba(145,70,255,0.25); }
-    .lijst { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-    .persoon { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; gap: 14px; align-items: flex-start; }
+    .lijst { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; perspective: 1200px; }
+    /* kaarten kantelen mee met de muis (--rx/--ry) en zweven bij het laden een voor een binnen */
+    .persoon { position: relative; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; gap: 14px; align-items: flex-start;
+        transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.15s ease-out, border-color 0.2s, box-shadow 0.2s; }
+    .persoon.binnen { animation: binnen 0.6s cubic-bezier(.2,.8,.2,1) backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+    @keyframes binnen { from { opacity: 0; transform: perspective(900px) translateY(30px) rotateX(18deg) translateZ(-60px); } }
+    .persoon:hover { border-color: rgba(145,70,255,0.45); box-shadow: 0 18px 40px rgba(0,0,0,0.45); }
+    .persoon::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%), rgba(145,70,255,0.13), transparent 45%); opacity: 0; transition: opacity 0.2s; }
+    .persoon:hover::before { opacity: 1; }
     .persoon.live { border-color: rgba(255,77,94,0.55); box-shadow: 0 0 0 1px rgba(255,77,94,0.2), 0 10px 30px rgba(255,77,94,0.12); }
+    .persoon.flits { animation: flits 1.4s ease-out; }
+    @keyframes flits { 0%, 30% { box-shadow: 0 0 0 3px var(--paars), 0 0 40px rgba(145,70,255,0.6); } }
     .foto { position: relative; flex-shrink: 0; width: 54px; height: 54px; border-radius: 50%; background: var(--panel2) center/cover; display: grid; place-items: center; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--dim); }
     .persoon.live .foto { box-shadow: 0 0 0 3px var(--rood); }
     .livebadge { position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); background: var(--rood); color: #fff; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 6px; }
     .naam { font-weight: 700; font-size: 1.05rem; margin: 2px 0 8px; display: flex; align-items: center; gap: 8px; }
     .accounts { display: flex; flex-wrap: wrap; gap: 6px; }
-    .acc { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); font-size: 0.8rem; font-weight: 600; border-radius: 999px; padding: 5px 10px; background: var(--panel2); border: 1px solid var(--border); }
+    .acc { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); font-size: 0.8rem; font-weight: 600; border-radius: 999px; padding: 5px 10px; background: var(--panel2); border: 1px solid var(--border); max-width: 100%; white-space: nowrap; }
     .acc:hover { border-color: rgba(255,255,255,0.3); }
     .acc i { width: 8px; height: 8px; border-radius: 50%; }
     .acc.twitch i { background: #9146ff; } .acc.youtube i { background: #ff0033; } .acc.kick i { background: #53fc18; } .acc.tiktok i { background: #fe2c55; }
     .acc.is-live { border-color: var(--rood); background: rgba(255,77,94,0.15); }
     .acc.is-live::after { content: 'LIVE'; font-size: 0.6rem; font-weight: 800; color: #fff; background: var(--rood); padding: 1px 5px; border-radius: 4px; }
     .acc small { color: var(--dim); font-weight: 500; }
-    .acc b { font-weight: 700; color: var(--dim); font-size: 0.74rem; white-space: nowrap; }
-    .acc { max-width: 100%; white-space: nowrap; }
     .acc small:first-of-type { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .acc b { font-weight: 700; color: var(--dim); font-size: 0.74rem; white-space: nowrap; }
     .persoon > div:last-child { min-width: 0; }
     /* onder de drempel: wel gevolgd, nog geen melding in Discord */
     .acc.wacht { border-style: dashed; }
@@ -64,15 +92,25 @@
     footer a { color: #c4a6ff; }
     @keyframes puls { 50% { opacity: 0.45; } }
     .stip { width: 9px; height: 9px; border-radius: 50%; background: var(--rood); animation: puls 1.2s infinite; }
-    @media (max-width: 520px) { .wrap { padding: 28px 16px 60px; } }
+    @media (max-width: 520px) { .wrap { padding: 0 16px 60px; } .kop { padding: 28px 16px; } .baai { height: 560px; } }
+    @media (prefers-reduced-motion: reduce) { .persoon, .persoon.binnen { animation: none; transition: none; } }
 </style>
 </head>
 <body>
+<section class="baai" id="baai">
+    <canvas id="doek" aria-hidden="true"></canvas>
+    <div class="kop">
+        <div class="merk"><img src="gwnbot-avatar.png" alt="GwnBot"><span class="label">GwnBot · live-meldingen</span></div>
+        <h1>Streamers in<br><span id="server">Creator Cove</span></h1>
+        <p class="sub">Elke boei in de baai is een streamer die nu live is. Hieronder staan alle streamers die GwnBot volgt.</p>
+    </div>
+    <div class="tip" id="tip"></div>
+    <div class="niemand" id="niemand" hidden>🌙 Het is stil in de baai: er is nu niemand live</div>
+    <div class="hint" id="hint" hidden>Beweeg over een boei voor de naam · klik om naar de streamer te gaan</div>
+    <script>if (matchMedia('(hover: none)').matches) document.getElementById('hint').textContent = 'Tik op een boei om naar de streamer te gaan';</script>
+</section>
+
 <div class="wrap">
-    <header>
-        <img src="gwnbot-avatar.png" alt="GwnBot">
-        <div><h1>Streamers in <span id="server">…</span></h1><p class="sub">Deze streamers volgt GwnBot voor de live-meldingen. Wie nu live is staat bovenaan, daarna wie het laatst live was.</p></div>
-    </header>
     <div class="stats" id="stats"></div>
     <div class="balk">
         <input type="search" id="zoek" placeholder="Zoek een streamer..." aria-label="Zoek een streamer">
@@ -84,13 +122,15 @@
     <div class="lijst" id="lijst"><p class="leeg">Laden...</p></div>
     <footer>GwnBot · Powered by <a href="https://gwnlarss.nl" target="_blank" rel="noopener">GwnLarss</a> · ververst elke minuut<span id="bijgewerkt"></span></footer>
 </div>
-<script>
+
+<script type="module">
     const API_BASE = 'https://api.gwnlarss.nl';   // de lijst komt van GwnBot via de API
     const SERVER = new URLSearchParams(location.search).get('server') || 'creatorcove';
     const NAMEN = { twitch: 'Twitch', youtube: 'YouTube', kick: 'Kick', tiktok: 'TikTok' };
+    const KLEUR = { twitch: 0x9146ff, youtube: 0xff0033, kick: 0x53fc18, tiktok: 0xfe2c55 };
     const $ = id => document.getElementById(id);
     const veilig = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    let data = null, filter = '', zoek = '';
+    let data = null, filter = '', zoek = '', eersteKeer = true;
     const getal = n => Number(n).toLocaleString('nl-NL');
     // "net", "12 min geleden", "3 uur geleden", "gisteren", "5 dagen geleden", daarna de datum
     function geleden(t) {
@@ -103,11 +143,13 @@
         if (d < 14) return `${d} dagen geleden`;
         return new Date(t).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: new Date(t).getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
     }
+    const laatstTekst = p => p.live ? '🔴 Nu live' : p.laatstLive ? `Laatst live: ${geleden(p.laatstLive)}` : 'Laatst live: nog niet gezien';
     const volgersTekst = a => a.volgers == null ? '' : `${getal(a.volgers)} ${a.platform === 'youtube' ? 'abonnees' : 'volgers'}`;
     function chip(a) {
         const titel = a.melding ? 'Live-melding in Discord staat aan' : `Nog geen live-melding: vanaf ${getal(a.drempel)} ${a.platform === 'youtube' ? 'abonnees' : 'volgers'}`;
         return `<a class="acc ${a.platform} ${a.live ? 'is-live' : ''} ${a.melding ? '' : 'wacht'}" href="${veilig(a.url)}" target="_blank" rel="noopener" title="${veilig(titel)}"><i></i>${NAMEN[a.platform]} <small>${veilig(a.login)}</small>${a.volgers != null ? ` <b>${a.melding ? '' : '⏳ '}${volgersTekst(a)}</b>` : ''}${a.uploads ? ' <small>+ video\'s</small>' : ''}</a>`;
     }
+    const sleutelVan = p => p.naam.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     function teken() {
         if (!data) return;
@@ -115,13 +157,14 @@
         const personen = data.personen.filter(p =>
             (!filter || (filter === 'live' ? p.live : p.accounts.some(a => a.platform === filter))) &&
             (!z || p.naam.toLowerCase().includes(z) || p.accounts.some(a => (a.login || '').toLowerCase().includes(z) || (a.naam || '').toLowerCase().includes(z))));
-        $('lijst').innerHTML = personen.length ? personen.map(p => `
-            <div class="persoon ${p.live ? 'live' : ''}">
+        $('lijst').innerHTML = personen.length ? personen.map((p, i) => `
+            <div class="persoon ${p.live ? 'live' : ''} ${eersteKeer ? 'binnen' : ''}" id="s-${sleutelVan(p)}" style="--i:${i}">
                 <div class="foto" style="${p.avatar ? `background-image:url('${veilig(p.avatar)}')` : ''}">${p.avatar ? '' : veilig(p.naam[0]?.toUpperCase())}${p.live ? '<span class="livebadge">LIVE</span>' : ''}</div>
                 <div><div class="naam">${veilig(p.naam)}${p.live ? '<span class="stip" title="Nu live"></span>' : ''}</div>
-                <div class="laatst" ${p.laatstLive ? `title="${new Date(p.laatstLive).toLocaleString('nl-NL')}"` : ''}>${p.live ? '🔴 Nu live' : p.laatstLive ? `Laatst live: ${geleden(p.laatstLive)}` : 'Laatst live: nog niet gezien'}</div>
+                <div class="laatst" ${p.laatstLive ? `title="${new Date(p.laatstLive).toLocaleString('nl-NL')}"` : ''}>${laatstTekst(p)}</div>
                 <div class="accounts">${p.accounts.map(chip).join('')}</div></div>
             </div>`).join('') : '<p class="leeg">Geen streamers gevonden.</p>';
+        eersteKeer = false;
     }
 
     async function laad() {
@@ -143,6 +186,10 @@
             ${Object.entries(NAMEN).filter(([p]) => perPlatform[p]).map(([p, n]) => `<div class="stat"><b>${perPlatform[p]}</b><span>op ${n}</span></div>`).join('')}`;
         $('bijgewerkt').textContent = data.bijgewerkt ? ` · laatste wijziging ${new Date(data.bijgewerkt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}` : '';
         teken();
+        zetBoeien(data.personen.filter(p => p.live));
+        const n = data.personen.filter(p => p.live).length;
+        $('niemand').hidden = n > 0;
+        $('hint').hidden = n === 0;
     }
     $('zoek').addEventListener('input', e => { zoek = e.target.value; teken(); });
     $('filters').addEventListener('click', e => {
@@ -150,6 +197,255 @@
         document.querySelectorAll('#filters button').forEach(x => x.classList.toggle('aan', x === b));
         filter = b.dataset.p; teken();
     });
+
+    // kaarten kantelen mee met de muis
+    const stil = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!stil) {
+        let vorige = null;
+        document.addEventListener('pointermove', e => {
+            const k = e.target.closest?.('.persoon');
+            if (vorige && vorige !== k) ['--rx', '--ry'].forEach(v => vorige.style.removeProperty(v));
+            vorige = k;
+            if (!k) return;
+            const r = k.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+            k.style.setProperty('--ry', `${(x - 0.5) * 7}deg`); k.style.setProperty('--rx', `${(0.5 - y) * 7}deg`);
+            k.style.setProperty('--mx', `${x * 100}%`); k.style.setProperty('--my', `${y * 100}%`);
+        });
+    }
+
+    // ---------- 3D-baai ----------
+    let zetBoeien = () => {};
+    (async () => {
+        let THREE;
+        try { THREE = await import('three'); } catch { return; }   // zonder 3D werkt de lijst gewoon
+        const doek = $('doek');
+        let r;
+        try { r = new THREE.WebGLRenderer({ canvas: doek, antialias: true }); } catch { return; }
+        r.setPixelRatio(Math.min(devicePixelRatio, 2));
+        r.outputColorSpace = THREE.SRGBColorSpace;
+        r.toneMapping = THREE.ACESFilmicToneMapping;
+        const scene = new THREE.Scene();
+        const HORIZON = new THREE.Color(0x3b1d63);
+        scene.fog = new THREE.Fog(0x241243, 30, 95);
+        const cam = new THREE.PerspectiveCamera(42, 1, 0.1, 400);
+        const kijkNaar = new THREE.Vector3(0, 4.2, -8);
+
+        // lucht: verloop van diep paars bovenin naar een roze gloed bij de horizon, plus sterren
+        const lucht = new THREE.Mesh(new THREE.SphereGeometry(200, 32, 16), new THREE.ShaderMaterial({
+            side: THREE.BackSide, depthWrite: false, fog: false,
+            uniforms: { boven: { value: new THREE.Color(0x07060f) }, midden: { value: new THREE.Color(0x1d0f3a) }, onder: { value: new THREE.Color(0x6a2a7a) } },
+            vertexShader: 'varying vec3 p; void main(){ p = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+            fragmentShader: `uniform vec3 boven, midden, onder; varying vec3 p;
+                void main(){ float h = p.y; vec3 c = mix(onder, midden, smoothstep(-0.02, 0.18, h)); c = mix(c, boven, smoothstep(0.18, 0.7, h));
+                c += vec3(0.55,0.2,0.45) * pow(max(0.0, 1.0 - abs(h) * 6.0), 3.0) * 0.35; gl_FragColor = vec4(c, 1.0); }`,
+        }));
+        scene.add(lucht);
+        { const g = new THREE.BufferGeometry(), pos = [];
+          for (let i = 0; i < 1400; i++) { const a = Math.random() * Math.PI * 2, b = Math.random() * 0.45 + 0.08, d = 180; pos.push(Math.cos(a) * Math.cos(b) * d, Math.sin(b) * d, Math.sin(a) * Math.cos(b) * d); }
+          g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+          scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xe6dcff, size: 0.55, sizeAttenuation: true, transparent: true, opacity: 0.85, fog: false }))); }
+
+        // gloed-textuur (zacht rondje), gebruikt voor maan, lampen en live-boeien
+        const gloedKaart = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const g = x.createRadialGradient(64, 64, 2, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.45)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
+        const gloed = (kleur, schaal, sterkte = 1) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: gloedKaart, color: kleur, transparent: true, opacity: sterkte, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })); s.scale.setScalar(schaal); return s; };
+
+        // maan
+        const MAAN = new THREE.Vector3(26, 30, -160);
+        const maan = new THREE.Mesh(new THREE.CircleGeometry(4.2, 48), new THREE.MeshBasicMaterial({ color: 0xfff1e0, fog: false }));
+        maan.position.copy(MAAN); maan.lookAt(0, 0, 0); scene.add(maan);
+        const maanGloed = gloed(0xd8b8ff, 60, 0.55); maanGloed.position.copy(MAAN); scene.add(maanGloed);
+
+        scene.add(new THREE.HemisphereLight(0x8a6cff, 0x10081f, 0.9));
+        const maanLicht = new THREE.DirectionalLight(0xe8d8ff, 1.1); maanLicht.position.copy(MAAN); scene.add(maanLicht);
+
+        // water: golven in de vertex shader, kleur met fresnel naar de lucht en een maanstreep
+        const water = new THREE.Mesh(new THREE.PlaneGeometry(260, 260, 200, 200), new THREE.ShaderMaterial({
+            fog: true,
+            uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { tijd: { value: 0 }, maan: { value: MAAN }, diep: { value: new THREE.Color(0x0b0820) }, lucht: { value: HORIZON }, rimpels: { value: Array(8).fill(0).map(() => new THREE.Vector4(0, 0, -99, 0)) } }]),
+            vertexShader: `uniform float tijd; varying vec3 wp; varying float h;
+                #include <fog_pars_vertex>
+                float golf(vec2 p){ return sin(p.x*0.35 + tijd*0.9)*0.12 + sin(p.y*0.5 - tijd*1.1)*0.09 + sin((p.x+p.y)*0.9 + tijd*1.7)*0.04 + sin((p.x*1.7-p.y*1.3) + tijd*2.3)*0.02; }
+                void main(){ vec4 w = modelMatrix * vec4(position, 1.0); h = golf(w.xz); w.y += h; wp = w.xyz;
+                    vec4 mvPosition = viewMatrix * w; gl_Position = projectionMatrix * mvPosition;
+                    #include <fog_vertex>
+                }`,
+            fragmentShader: `uniform vec3 maan, diep, lucht; uniform float tijd; uniform vec4 rimpels[8]; varying vec3 wp; varying float h;
+                #include <fog_pars_fragment>
+                float golf(vec2 p){ return sin(p.x*0.35 + tijd*0.9)*0.12 + sin(p.y*0.5 - tijd*1.1)*0.09 + sin((p.x+p.y)*0.9 + tijd*1.7)*0.04 + sin((p.x*1.7-p.y*1.3) + tijd*2.3)*0.02; }
+                void main(){
+                    vec2 e = vec2(0.15, 0.0);
+                    vec3 n = normalize(vec3(golf(wp.xz - e.xy) - golf(wp.xz + e.xy), 0.3, golf(wp.xz - e.yx) - golf(wp.xz + e.yx)));
+                    vec3 v = normalize(cameraPosition - wp);
+                    float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);
+                    vec3 c = mix(diep, lucht, 0.15 + fres * 0.85);
+                    vec3 l = normalize(maan - wp); vec3 hv = normalize(l + v);
+                    float glit = pow(max(dot(n, hv), 0.0), 220.0);
+                    c += vec3(1.0, 0.92, 0.85) * glit * 1.6 * smoothstep(9.0, 30.0, distance(wp, cameraPosition));
+                    c += vec3(0.35,0.25,0.55) * pow(max(dot(n, hv), 0.0), 18.0) * 0.25;
+                    // rimpels rond live-boeien: xy = plek, z = starttijd, w = sterkte
+                    for (int i = 0; i < 8; i++) { vec4 rp = rimpels[i]; float t = tijd - rp.z; if (t < 0.0 || t > 4.0) continue;
+                        float d = distance(wp.xz, rp.xy); float ring = exp(-pow((d - t * 1.3) * 3.0, 2.0)) * (1.0 - t / 4.0);
+                        c += vec3(1.0, 0.3, 0.38) * ring * 0.55 * rp.w; }
+                    gl_FragColor = vec4(c, 1.0);
+                    #include <fog_fragment>
+                }`,
+        }));
+        water.rotation.x = -Math.PI / 2;
+        scene.add(water);
+
+        // kliffen links en rechts van de baai: vervormde, lage-poly rotsen
+        const ruis = (x, y, z) => Math.sin(x * 1.7 + z * 0.6) * 0.5 + Math.sin(y * 2.3 + x * 0.8) * 0.35 + Math.sin(z * 2.9 - y) * 0.25;
+        function rots(schaal, plek, kleur = 0x1d1633) {
+            const g = new THREE.IcosahedronGeometry(1, 3);
+            const p = g.attributes.position;
+            for (let i = 0; i < p.count; i++) { const v = new THREE.Vector3().fromBufferAttribute(p, i); v.multiplyScalar(1 + ruis(v.x * 2, v.y * 2, v.z * 2) * 0.18); p.setXYZ(i, v.x, v.y, v.z); }
+            g.computeVertexNormals();
+            const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: kleur, roughness: 0.95, flatShading: true }));
+            m.scale.set(...schaal); m.position.set(...plek); m.rotation.y = plek[0] * 0.3;
+            scene.add(m); return m;
+        }
+        rots([10, 7, 9], [-21, 0.5, -16]); rots([7, 4.5, 6], [-17, -0.5, -8]); rots([13, 9, 10], [-30, 1, -30], 0x181229);
+        rots([9, 6, 8], [21, 0.2, -27]); rots([6, 3.5, 5], [23, -0.6, -11]); rots([14, 10, 11], [32, 1, -34], 0x181229);
+        rots([5, 2.5, 4], [-6, -1.2, -40], 0x150f24); rots([6, 3, 5], [9, -1.3, -46], 0x150f24);
+        // paarse randverlichting op de rotsen
+        const rand = new THREE.PointLight(0xb070ff, 260, 80); rand.position.set(0, 14, 4); scene.add(rand);
+
+        // vuurtoren (GwnBot) op de rechterrots, met een draaiende lichtbundel
+        const toren = new THREE.Group(); toren.position.set(21, 4.6, -27); toren.scale.setScalar(0.8); scene.add(toren);
+        const banden = [0xf2ecff, 0xff3ea5, 0xf2ecff, 0xff3ea5];
+        banden.forEach((k, i) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.95 - i * 0.12, 1.05 - i * 0.12, 1.4, 20), new THREE.MeshStandardMaterial({ color: k, roughness: 0.6 })); m.position.y = 0.7 + i * 1.4; toren.add(m); });
+        const lampHuis = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.9, 16), new THREE.MeshStandardMaterial({ color: 0xfff3c4, emissive: 0xffd36b, emissiveIntensity: 2.5 }));
+        lampHuis.position.y = 6.1; toren.add(lampHuis);
+        const dak = new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.9, 16), new THREE.MeshStandardMaterial({ color: 0x2a1f4d, roughness: 0.5 })); dak.position.y = 7; toren.add(dak);
+        const lampGloed = gloed(0xffd98a, 6, 0.9); lampGloed.position.y = 6.1; toren.add(lampGloed);
+        const bundel = new THREE.Group(); bundel.position.y = 6.1; toren.add(bundel);
+        { const g = new THREE.ConeGeometry(4.5, 46, 32, 1, true); g.translate(0, -23, 0); g.rotateZ(Math.PI / 2);
+          const m = new THREE.Mesh(g, new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+              vertexShader: 'varying vec3 lp; void main(){ lp = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+              fragmentShader: 'varying vec3 lp; void main(){ float a = (1.0 - clamp(lp.x / 46.0, 0.0, 1.0)); gl_FragColor = vec4(1.0, 0.86, 0.55, a * a * 0.22); }' }));
+          m.rotation.z = -0.08; bundel.add(m); }
+
+        // ---------- boeien ----------
+        // profielfoto als rond plaatje (met rand in de platformkleur, rood als live); lukt laden niet
+        // (andere site staat het niet toe), dan de eerste letter
+        function plaatje(p, kleur) {
+            const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+            const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+            const rand = () => { x.lineWidth = 16; x.strokeStyle = p.live ? '#ff4d5e' : '#b9a6ff'; x.beginPath(); x.arc(128, 128, 118, 0, Math.PI * 2); x.stroke(); };
+            const letter = () => { x.fillStyle = '#1e1b33'; x.beginPath(); x.arc(128, 128, 118, 0, Math.PI * 2); x.fill(); x.fillStyle = '#c4a6ff'; x.font = '800 120px "Baloo 2", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText((p.naam[0] || '?').toUpperCase(), 128, 138); rand(); tex.needsUpdate = true; };
+            letter();
+            if (p.avatar) {
+                const img = new Image(); img.crossOrigin = 'anonymous';
+                img.onload = () => { try { x.clearRect(0, 0, 256, 256); x.save(); x.beginPath(); x.arc(128, 128, 118, 0, Math.PI * 2); x.clip(); x.drawImage(img, 10, 10, 236, 236); x.restore(); rand(); tex.needsUpdate = true; } catch { letter(); } };
+                img.onerror = letter; img.src = p.avatar;
+            }
+            return tex;
+        }
+        const liveKaart = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 48; const x = c.getContext('2d'); x.fillStyle = '#ff4d5e'; x.beginPath(); x.roundRect(4, 4, 120, 40, 12); x.fill(); x.fillStyle = '#fff'; x.font = '800 26px Inter, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('LIVE', 64, 26); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+
+        const boeiGroep = new THREE.Group(); scene.add(boeiGroep);
+        let boeien = [], handtekening = '';
+        const rimpels = water.material.uniforms.rimpels.value;
+        zetBoeien = personen => {
+            const nieuw = personen.map(p => `${p.naam}:${p.live}:${p.avatar}`).join('|');
+            if (nieuw === handtekening) return;
+            handtekening = nieuw;
+            boeien.forEach(b => boeiGroep.remove(b.groep));
+            // in bogen over de baai: max. 7 per rij, live-streamers vooraan in het midden
+            // (plaats in een rij: 0, -1, +1, -2, +2 ...)
+            const volgorde = [...personen].sort((a, b) => b.live - a.live);
+            const PER_RIJ = 7;
+            boeien = volgorde.map((p, i) => {
+                const rij = Math.floor(i / PER_RIJ), k = i % PER_RIJ;
+                const plek = (k % 2 ? -1 : 1) * Math.ceil(k / 2) + (rij % 2 ? 0.5 : 0);
+                const x = plek * 3.9, z = -6 - rij * 5.5 - plek * plek * 0.22;
+                const kleur = KLEUR[p.accounts[0]?.platform] ?? 0x9146ff;
+                const groep = new THREE.Group(); groep.position.set(x, 0, z);
+                const drijver = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.8, 0.7, 20), new THREE.MeshStandardMaterial({ color: p.live ? 0xff4d5e : new THREE.Color(kleur).lerp(new THREE.Color(0x2a2150), 0.45), roughness: 0.45, emissive: p.live ? 0x801020 : 0x000000 }));
+                drijver.position.y = 0.05; groep.add(drijver);
+                const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0xd8d0f0 })); mast.position.y = 0.9; groep.add(mast);
+                const foto = new THREE.Sprite(new THREE.SpriteMaterial({ map: plaatje(p, kleur), transparent: true, fog: false }));
+                foto.scale.setScalar(2.5); foto.position.y = 3; groep.add(foto);
+                let halo = null, badge = null;
+                if (p.live) {
+                    halo = gloed(0xff4d5e, 5.5, 0.85); halo.position.y = 3; groep.add(halo);
+                    badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: liveKaart, transparent: true, depthTest: false, fog: false })); badge.scale.set(1.1, 0.42, 1); badge.position.y = 4.5; groep.add(badge);
+                    const l = new THREE.PointLight(0xff4d5e, 14, 9); l.position.y = 1.4; groep.add(l);
+                }
+                foto.userData.persoon = p;
+                boeiGroep.add(groep);
+                return { groep, foto, halo, p, fase: Math.random() * Math.PI * 2, maat: foto.scale.x, groei: 1 };
+            });
+        };
+        if (data?.personen) zetBoeien(data.personen.filter(p => p.live));
+
+        // muis: boeien tonen een naamkaartje en zijn klikbaar
+        const muis = new THREE.Vector2(9, 9); let onder = null;
+        const straal = new THREE.Raycaster();
+        doek.addEventListener('pointermove', e => {
+            const b = doek.getBoundingClientRect();
+            muis.set(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1);
+            const tip = $('tip'); tip.style.left = `${e.clientX - b.left}px`; tip.style.top = `${e.clientY - b.top}px`;
+        });
+        doek.addEventListener('pointerleave', () => { muis.set(9, 9); onder = null; $('tip').style.opacity = 0; });
+        doek.addEventListener('click', e => {
+            // zelf de boei bepalen: op een telefoon komt er geen "hover" voor de tik
+            const b = doek.getBoundingClientRect();
+            straal.setFromCamera(new THREE.Vector2(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1), cam);
+            const geraakt = straal.intersectObjects(boeien.map(x => x.foto))[0]?.object.userData.persoon;
+            if (!geraakt) return;
+            const kaart = document.getElementById(`s-${sleutelVan(geraakt)}`);
+            if (!kaart) return;
+            kaart.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            kaart.classList.remove('flits'); void kaart.offsetWidth; kaart.classList.add('flits');
+        });
+
+        const maatZet = () => { const w = doek.clientWidth, h = doek.clientHeight; r.setSize(w, h, false); cam.aspect = w / h; cam.fov = w < 640 ? 62 : 42; cam.updateProjectionMatrix(); boeiGroep.position.x = w > 900 ? 5 : 0; boeiGroep.position.z = w < 640 ? 2 : 0; };
+        maatZet(); addEventListener('resize', maatZet);
+        // alleen tekenen als de baai in beeld is
+        let zichtbaar = true;
+        new IntersectionObserver(([e]) => { zichtbaar = e.isIntersecting; }).observe($('baai'));
+
+        const klok = new THREE.Clock();
+        let volgendeRimpel = 0, rimpelNr = 0;
+        r.setAnimationLoop(() => {
+            if (!zichtbaar) return;
+            const t = stil ? 2 : klok.getElapsedTime();
+            water.material.uniforms.tijd.value = t;
+            cam.position.set(0, 4.6, 14);   // vaste camera: de wereld beweegt niet mee met de muis
+            cam.lookAt(kijkNaar);
+            bundel.rotation.y = stil ? 2.4 : t * 0.45;
+            lampGloed.material.opacity = 0.75 + Math.sin(t * 3) * 0.15;
+            for (const b of boeien) {
+                const deining = Math.sin(t * 1.3 + b.fase) * 0.16;
+                b.groep.position.y = deining;
+                b.groep.rotation.z = Math.sin(t * 1.1 + b.fase) * 0.07;
+                b.groep.rotation.x = Math.cos(t * 0.9 + b.fase) * 0.05;
+                if (b.halo) b.halo.material.opacity = 0.6 + Math.sin(t * 3 + b.fase) * 0.25;
+            }
+            // live-boeien sturen om de beurt een rode rimpel over het water
+            const levend = boeien.filter(b => b.p.live);
+            if (levend.length && t > volgendeRimpel && !stil) {
+                const b = levend[rimpelNr % levend.length]; rimpelNr++;
+                const wp = b.groep.getWorldPosition(new THREE.Vector3()); rimpels[rimpelNr % rimpels.length].set(wp.x, wp.z, t, 1);
+                volgendeRimpel = t + 1.1;
+            }
+            // naamkaartje bij de boei onder de muis
+            straal.setFromCamera(muis, cam);
+            const raak = straal.intersectObjects(boeien.map(b => b.foto))[0];
+            const nu = raak?.object.userData.persoon ?? null;
+            if (nu !== onder) {
+                onder = nu;
+                const tip = $('tip');
+                if (onder) { tip.innerHTML = `${veilig(onder.naam)}<small>${veilig(laatstTekst(onder))}</small>`; tip.className = `tip ${onder.live ? 'live' : ''}`; tip.style.opacity = 1; doek.style.cursor = 'pointer'; }
+                else { tip.style.opacity = 0; doek.style.cursor = 'default'; }
+            }
+            // boei onder de muis groeit een beetje
+            for (const b of boeien) { b.groei += ((b.p === onder ? 1.18 : 1) - b.groei) * 0.2; b.foto.scale.setScalar(b.maat * b.groei); }
+            r.render(scene, cam);
+        });
+    })();
+
     laad(); setInterval(laad, 60000);
 </script>
 </body>
