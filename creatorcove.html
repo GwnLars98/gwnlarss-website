@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streamers · GwnBot</title>
+<meta name="description" content="Welke streamers GwnBot volgt voor de live-meldingen, en wie er nu live is.">
+<link rel="icon" href="gwnbot-avatar.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    /* Welke streamers GwnBot volgt in een server (?server=creatorcove), uit api.gwnlarss.nl/api/gwnbot/streamers.
+       Niet gelinkt vanaf de site zelf, alleen vanaf de statuspagina (api.gwnlarss.nl/status.html).
+       Wie live is staat bovenaan; per persoon de platformen met een link naar het kanaal. */
+    :root { --bg: #0b0a14; --panel: #161427; --panel2: #1e1b33; --border: rgba(255,255,255,0.08); --text: #f2f0fb; --dim: #a5a1c0; --paars: #9146ff; --roze: #ff3ea5; --rood: #ff4d5e; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--text); font-family: 'Inter', system-ui, sans-serif;
+        background: radial-gradient(60% 40% at 10% 0%, rgba(145,70,255,0.18), transparent 70%), radial-gradient(45% 35% at 100% 10%, rgba(255,62,165,0.12), transparent 70%), var(--bg); }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 44px 24px 80px; }
+    header { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    header img { width: 74px; height: 74px; border-radius: 22px; box-shadow: 0 10px 30px rgba(145,70,255,0.35); }
+    h1 { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0; line-height: 1.05; }
+    h1 span { background: linear-gradient(90deg, #b98cff, var(--roze)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sub { color: var(--dim); margin: 4px 0 0; }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 26px 0 8px; }
+    .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px; min-width: 130px; }
+    .stat b { display: block; font-family: 'Baloo 2', sans-serif; font-size: 1.5rem; line-height: 1.1; }
+    .stat span { color: var(--dim); font-size: 0.8rem; }
+    .stat.live b { color: var(--rood); }
+    .balk { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 16px; }
+    .balk input { flex: 1 1 240px; font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+    .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filters button { font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--dim); background: var(--panel2); border: 1px solid var(--border); border-radius: 999px; padding: 7px 13px; cursor: pointer; }
+    .filters button.aan { color: #fff; border-color: var(--paars); background: rgba(145,70,255,0.25); }
+    .lijst { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+    .persoon { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; gap: 14px; align-items: flex-start; }
+    .persoon.live { border-color: rgba(255,77,94,0.55); box-shadow: 0 0 0 1px rgba(255,77,94,0.2), 0 10px 30px rgba(255,77,94,0.12); }
+    .foto { position: relative; flex-shrink: 0; width: 54px; height: 54px; border-radius: 50%; background: var(--panel2) center/cover; display: grid; place-items: center; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--dim); }
+    .persoon.live .foto { box-shadow: 0 0 0 3px var(--rood); }
+    .livebadge { position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); background: var(--rood); color: #fff; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 6px; }
+    .naam { font-weight: 700; font-size: 1.05rem; margin: 2px 0 8px; display: flex; align-items: center; gap: 8px; }
+    .accounts { display: flex; flex-wrap: wrap; gap: 6px; }
+    .acc { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); font-size: 0.8rem; font-weight: 600; border-radius: 999px; padding: 5px 10px; background: var(--panel2); border: 1px solid var(--border); }
+    .acc:hover { border-color: rgba(255,255,255,0.3); }
+    .acc i { width: 8px; height: 8px; border-radius: 50%; }
+    .acc.twitch i { background: #9146ff; } .acc.youtube i { background: #ff0033; } .acc.kick i { background: #53fc18; } .acc.tiktok i { background: #fe2c55; }
+    .acc.is-live { border-color: var(--rood); background: rgba(255,77,94,0.15); }
+    .acc.is-live::after { content: 'LIVE'; font-size: 0.6rem; font-weight: 800; color: #fff; background: var(--rood); padding: 1px 5px; border-radius: 4px; }
+    .acc small { color: var(--dim); font-weight: 500; }
+    .acc b { font-weight: 700; color: var(--dim); font-size: 0.74rem; white-space: nowrap; }
+    .acc { max-width: 100%; white-space: nowrap; }
+    .acc small:first-of-type { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .persoon > div:last-child { min-width: 0; }
+    /* onder de drempel: wel gevolgd, nog geen melding in Discord */
+    .acc.wacht { border-style: dashed; }
+    .acc.wacht b { color: #f0b84a; }
+    .laatst { color: var(--dim); font-size: 0.8rem; margin: -4px 0 9px; }
+    .persoon.live .laatst { color: var(--rood); font-weight: 600; }
+    .uitleg { color: var(--dim); font-size: 0.82rem; margin: 0 0 14px; }
+    .uitleg span { display: inline-block; border: 1px dashed rgba(255,255,255,0.3); border-radius: 999px; padding: 1px 8px; color: #f0b84a; font-weight: 600; }
+    .leeg { color: var(--dim); padding: 30px 0; text-align: center; grid-column: 1 / -1; }
+    footer { margin-top: 50px; color: var(--dim); font-size: 0.8rem; text-align: center; }
+    footer a { color: #c4a6ff; }
+    @keyframes puls { 50% { opacity: 0.45; } }
+    .stip { width: 9px; height: 9px; border-radius: 50%; background: var(--rood); animation: puls 1.2s infinite; }
+    @media (max-width: 520px) { .wrap { padding: 28px 16px 60px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <img src="gwnbot-avatar.png" alt="GwnBot">
+        <div><h1>Streamers in <span id="server">…</span></h1><p class="sub">Deze streamers volgt GwnBot voor de live-meldingen. Wie nu live is staat bovenaan, daarna wie het laatst live was.</p></div>
+    </header>
+    <div class="stats" id="stats"></div>
+    <div class="balk">
+        <input type="search" id="zoek" placeholder="Zoek een streamer..." aria-label="Zoek een streamer">
+        <div class="filters" id="filters">
+            <button data-p="" class="aan">Alle</button><button data-p="live">🔴 Nu live</button><button data-p="twitch">Twitch</button><button data-p="youtube">YouTube</button><button data-p="kick">Kick</button><button data-p="tiktok">TikTok</button>
+        </div>
+    </div>
+    <p class="uitleg" id="uitleg"></p>
+    <div class="lijst" id="lijst"><p class="leeg">Laden...</p></div>
+    <footer>GwnBot · Powered by <a href="https://gwnlarss.nl" target="_blank" rel="noopener">GwnLarss</a> · ververst elke minuut<span id="bijgewerkt"></span></footer>
+</div>
+<script>
+    const API_BASE = 'https://api.gwnlarss.nl';   // de lijst komt van GwnBot via de API
+    const SERVER = new URLSearchParams(location.search).get('server') || 'creatorcove';
+    const NAMEN = { twitch: 'Twitch', youtube: 'YouTube', kick: 'Kick', tiktok: 'TikTok' };
+    const $ = id => document.getElementById(id);
+    const veilig = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let data = null, filter = '', zoek = '';
+    const getal = n => Number(n).toLocaleString('nl-NL');
+    // "net", "12 min geleden", "3 uur geleden", "gisteren", "5 dagen geleden", daarna de datum
+    function geleden(t) {
+        const s = (Date.now() - t) / 1000;
+        if (s < 120) return 'net';
+        if (s < 3600) return `${Math.round(s / 60)} min geleden`;
+        if (s < 86400) return `${Math.round(s / 3600)} uur geleden`;
+        const d = Math.floor(s / 86400);
+        if (d === 1) return 'gisteren';
+        if (d < 14) return `${d} dagen geleden`;
+        return new Date(t).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: new Date(t).getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+    }
+    const volgersTekst = a => a.volgers == null ? '' : `${getal(a.volgers)} ${a.platform === 'youtube' ? 'abonnees' : 'volgers'}`;
+    function chip(a) {
+        const titel = a.melding ? 'Live-melding in Discord staat aan' : `Nog geen live-melding: vanaf ${getal(a.drempel)} ${a.platform === 'youtube' ? 'abonnees' : 'volgers'}`;
+        return `<a class="acc ${a.platform} ${a.live ? 'is-live' : ''} ${a.melding ? '' : 'wacht'}" href="${veilig(a.url)}" target="_blank" rel="noopener" title="${veilig(titel)}"><i></i>${NAMEN[a.platform]} <small>${veilig(a.login)}</small>${a.volgers != null ? ` <b>${a.melding ? '' : '⏳ '}${volgersTekst(a)}</b>` : ''}${a.uploads ? ' <small>+ video\'s</small>' : ''}</a>`;
+    }
+
+    function teken() {
+        if (!data) return;
+        const z = zoek.toLowerCase();
+        const personen = data.personen.filter(p =>
+            (!filter || (filter === 'live' ? p.live : p.accounts.some(a => a.platform === filter))) &&
+            (!z || p.naam.toLowerCase().includes(z) || p.accounts.some(a => (a.login || '').toLowerCase().includes(z) || (a.naam || '').toLowerCase().includes(z))));
+        $('lijst').innerHTML = personen.length ? personen.map(p => `
+            <div class="persoon ${p.live ? 'live' : ''}">
+                <div class="foto" style="${p.avatar ? `background-image:url('${veilig(p.avatar)}')` : ''}">${p.avatar ? '' : veilig(p.naam[0]?.toUpperCase())}${p.live ? '<span class="livebadge">LIVE</span>' : ''}</div>
+                <div><div class="naam">${veilig(p.naam)}${p.live ? '<span class="stip" title="Nu live"></span>' : ''}</div>
+                <div class="laatst" ${p.laatstLive ? `title="${new Date(p.laatstLive).toLocaleString('nl-NL')}"` : ''}>${p.live ? '🔴 Nu live' : p.laatstLive ? `Laatst live: ${geleden(p.laatstLive)}` : 'Laatst live: nog niet gezien'}</div>
+                <div class="accounts">${p.accounts.map(chip).join('')}</div></div>
+            </div>`).join('') : '<p class="leeg">Geen streamers gevonden.</p>';
+    }
+
+    async function laad() {
+        const res = await fetch(`${API_BASE}/api/gwnbot/streamers/${encodeURIComponent(SERVER)}`, { cache: 'no-store' });
+        data = await res.json();
+        if (!res.ok) { $('lijst').innerHTML = `<p class="leeg">${veilig(data.fout || 'Onbekende server.')}</p>`; return; }
+        $('server').textContent = data.server;
+        document.title = `Streamers in ${data.server} · GwnBot`;
+        const perPlatform = {};
+        data.personen.forEach(p => p.accounts.forEach(a => perPlatform[a.platform] = (perPlatform[a.platform] || 0) + 1));
+        const live = data.personen.filter(p => p.live).length;
+        const drempels = {};
+        data.personen.forEach(p => p.accounts.forEach(a => drempels[a.platform] = a.drempel));
+        const delen = Object.entries(NAMEN).filter(([p]) => drempels[p] > 0).map(([p, n]) => `${n} ${getal(drempels[p])}`);
+        $('uitleg').innerHTML = delen.length ? `Live-meldingen in Discord komen vanaf een minimum aantal volgers (${delen.join(' · ')}, YouTube in abonnees). Accounts met <span>⏳</span> zitten daar nog onder: ze worden wel gevolgd en de melding gaat vanzelf aan zodra ze de drempel halen.` : '';
+        $('stats').innerHTML = `
+            <div class="stat"><b>${data.personen.length}</b><span>streamers</span></div>
+            <div class="stat live"><b>${live}</b><span>nu live</span></div>
+            ${Object.entries(NAMEN).filter(([p]) => perPlatform[p]).map(([p, n]) => `<div class="stat"><b>${perPlatform[p]}</b><span>op ${n}</span></div>`).join('')}`;
+        $('bijgewerkt').textContent = data.bijgewerkt ? ` · laatste wijziging ${new Date(data.bijgewerkt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}` : '';
+        teken();
+    }
+    $('zoek').addEventListener('input', e => { zoek = e.target.value; teken(); });
+    $('filters').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        document.querySelectorAll('#filters button').forEach(x => x.classList.toggle('aan', x === b));
+        filter = b.dataset.p; teken();
+    });
+    laad(); setInterval(laad, 60000);
+</script>
+</body>
+</html>
