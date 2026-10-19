@@ -102,7 +102,7 @@
     <div class="kop">
         <div class="merk"><img src="gwnbot-avatar.png" alt="GwnBot"><span class="label">GwnBot · live-meldingen</span></div>
         <h1>Streamers in<br><span id="server">Creator Cove</span></h1>
-        <p class="sub">Elke boei in de baai is een streamer die nu live is. Hieronder staan alle streamers die GwnBot volgt.</p>
+        <p class="sub">Elke boei in de baai is een streamer die nu live is met een live-melding in Discord. Hieronder staan alle streamers die GwnBot volgt.</p>
     </div>
     <div class="tip" id="tip"></div>
     <div class="niemand" id="niemand" hidden>🌙 Het is stil in de baai: er is nu niemand live</div>
@@ -149,6 +149,9 @@
         const titel = a.melding ? 'Live-melding in Discord staat aan' : `Nog geen live-melding: vanaf ${getal(a.drempel)} ${a.platform === 'youtube' ? 'abonnees' : 'volgers'}`;
         return `<a class="acc ${a.platform} ${a.live ? 'is-live' : ''} ${a.melding ? '' : 'wacht'}" href="${veilig(a.url)}" target="_blank" rel="noopener" title="${veilig(titel)}"><i></i>${NAMEN[a.platform]} <small>${veilig(a.login)}</small>${a.volgers != null ? ` <b>${a.melding ? '' : '⏳ '}${volgersTekst(a)}</b>` : ''}${a.uploads ? ' <small>+ video\'s</small>' : ''}</a>`;
     }
+    // in de baai alleen wie live is op een account met een live-melding (dus niet de ⏳-accounts),
+    // net als in Discord
+    const inBaai = p => p.accounts.some(a => a.live && a.melding);
     const sleutelVan = p => p.naam.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     function teken() {
@@ -186,8 +189,8 @@
             ${Object.entries(NAMEN).filter(([p]) => perPlatform[p]).map(([p, n]) => `<div class="stat"><b>${perPlatform[p]}</b><span>op ${n}</span></div>`).join('')}`;
         $('bijgewerkt').textContent = data.bijgewerkt ? ` · laatste wijziging ${new Date(data.bijgewerkt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}` : '';
         teken();
-        zetBoeien(data.personen.filter(p => p.live));
-        const n = data.personen.filter(p => p.live).length;
+        zetBoeien(data.personen.filter(inBaai));
+        const n = data.personen.filter(inBaai).length;
         $('niemand').hidden = n > 0;
         $('hint').hidden = n === 0;
     }
@@ -377,7 +380,7 @@
                 return { groep, foto, halo, p, fase: Math.random() * Math.PI * 2, maat: foto.scale.x, groei: 1 };
             });
         };
-        if (data?.personen) zetBoeien(data.personen.filter(p => p.live));
+        if (data?.personen) zetBoeien(data.personen.filter(inBaai));
 
         // muis: boeien tonen een naamkaartje en zijn klikbaar
         const muis = new THREE.Vector2(9, 9); let onder = null;
