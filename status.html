@@ -174,7 +174,8 @@
         try { r = new THREE.WebGLRenderer({ canvas: doek, antialias: true, alpha: true }); } catch { return; }
         r.setPixelRatio(Math.min(devicePixelRatio, 2));
         const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(40, 1, 0.1, 100), groep = new THREE.Group(); scene.add(groep);
-        const maat = () => { const w = doek.clientWidth, h = doek.clientHeight; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); groep.position.x = w > 760 ? 3 : 0.8; cam.position.set(0, 0.2, w > 760 ? 11 : 14); };
+        const maat = () => { const w = doek.clientWidth, h = doek.clientHeight; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); // breed: rechts naast de tekst; telefoon: onder de samenvatting, niet achter de titel
+            if (w > 760) { groep.position.set(3, 0, 0); cam.position.set(0, 0.2, 11); } else { groep.position.set(0.4, -3.4, 0); cam.position.set(0, 0.2, 15); } };
         maat(); addEventListener('resize', maat);
         scene.add(new THREE.AmbientLight(0x6b5a9a, 0.6));
         const l1 = new THREE.PointLight(0x9146ff, 60, 30); l1.position.set(-4, 3, 5); scene.add(l1);
