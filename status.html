@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Status van de tools · GwnLarss</title>
+<meta name="description" content="Werken de gratis stream-tools van GwnLarss, de CreatorSMP-clips en GwnBot? Hier zie je het live.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
+<style>
+    /* Publieke statuspagina (gwnlarss.nl/status, gelinkt vanuit de GwnLarss-Discord): alleen de gratis
+       stream-tools, de CreatorSMP-clips en GwnBot in Creator Cove, uit api.gwnlarss.nl/api/tools-status. De volledige statuspagina
+       met overlays en beheer is api.gwnlarss.nl/status.html. Ververst elke 30 seconden. */
+    :root {
+        --bg: #08070f; --panel: rgba(22, 20, 38, 0.78); --panel-vast: #161426; --panel2: #1f1c35; --border: rgba(255, 255, 255, 0.08);
+        --text: #f2f0fa; --dim: #a29eba; --paars: #9146ff; --roze: #ff3ea5; --groen: #24d17e; --rood: #ff5c7a; --goud: #ffc94a;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-height: 100vh; color: var(--text); font-family: 'Inter', system-ui, sans-serif; background: var(--bg); overflow-x: hidden; }
+    a { color: inherit; }
+    h1, h2 { font-family: 'Baloo 2', sans-serif; font-weight: 800; margin: 0; }
+
+    .held { position: relative; min-height: min(500px, 78vh); display: grid; align-items: center; overflow: hidden; }
+    .held canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .held::after { content: ''; position: absolute; inset: auto 0 0 0; height: 150px; background: linear-gradient(transparent, var(--bg)); pointer-events: none; }
+    .held-tekst { position: relative; z-index: 2; max-width: 1100px; width: 100%; margin: 0 auto; padding: 56px 24px; pointer-events: none; }
+    .held-tekst > * { pointer-events: auto; }
+    .label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+    h1 { font-size: clamp(2.4rem, 6.5vw, 4.2rem); line-height: 0.95; margin: 10px 0 18px; }
+    h1 span { background: linear-gradient(90deg, #c7a6ff, var(--roze)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .samenvatting { display: inline-flex; align-items: center; gap: 14px; padding: 14px 20px 14px 16px; border-radius: 18px; background: var(--panel); border: 1px solid var(--border); backdrop-filter: blur(12px); }
+    .samenvatting .groot { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 1.25rem; }
+    .samenvatting small { display: block; color: var(--dim); font-size: 0.82rem; }
+    .samenvatting.op { border-color: rgba(36, 209, 126, 0.4); } .samenvatting.op .groot { color: var(--groen); }
+    .samenvatting.af { border-color: rgba(255, 92, 122, 0.45); } .samenvatting.af .groot { color: var(--rood); }
+    .lamp { width: 14px; height: 14px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+    .op .lamp { background: var(--groen); animation: puls 2s infinite; }
+    .af .lamp { background: var(--rood); animation: puls 1.2s infinite; }
+    @keyframes puls { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.35); } 70% { box-shadow: 0 0 0 12px rgba(0,0,0,0); } }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; position: relative; z-index: 2; }
+    section { margin-top: 48px; }
+    .kop { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    h2 { font-size: 1.55rem; }
+    .kop p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+    .raster { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+    .raster.groot { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    .kaart { position: relative; background: var(--panel-vast); border: 1px solid var(--border); border-radius: 18px; padding: 18px; text-decoration: none; display: flex; flex-direction: column; gap: 8px;
+        transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.15s ease-out, border-color 0.2s, box-shadow 0.2s; }
+    .kaart:hover { border-color: rgba(145, 70, 255, 0.45); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
+    .kaart::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 0%), rgba(145, 70, 255, 0.12), transparent 45%); opacity: 0; transition: opacity 0.2s; }
+    .kaart:hover::before { opacity: 1; }
+    .kaart .bovenaan { display: flex; align-items: center; gap: 12px; }
+    .icoon { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 1.3rem; background: var(--panel2); flex-shrink: 0; }
+    .naam { font-weight: 700; font-size: 1.05rem; }
+    .status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .status i { width: 8px; height: 8px; border-radius: 50%; }
+    .status.op { color: var(--groen); background: rgba(36, 209, 126, 0.12); } .status.op i { background: var(--groen); }
+    .status.af { color: var(--rood); background: rgba(255, 92, 122, 0.12); } .status.af i { background: var(--rood); }
+    .uitleg { color: var(--dim); font-size: 0.86rem; line-height: 1.45; margin: 0; }
+    .voet { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.8rem; color: var(--dim); padding-top: 6px; }
+    .knop { color: #d9c7ff; font-weight: 700; white-space: nowrap; }
+    .cijfers { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
+    .cijfers b { display: block; font-family: 'Baloo 2', sans-serif; font-size: 1.5rem; line-height: 1.1; color: var(--text); }
+    .cijfers span { font-size: 0.78rem; color: var(--dim); }
+    .skelet { height: 150px; border-radius: 18px; background: linear-gradient(90deg, var(--panel-vast) 0%, var(--panel2) 50%, var(--panel-vast) 100%); background-size: 200% 100%; animation: glans 1.2s infinite; }
+    @keyframes glans { to { background-position: -200% 0; } }
+    footer { text-align: center; color: var(--dim); font-size: 0.8rem; margin-top: 60px; }
+    footer a { color: #c7a6ff; }
+    @media (max-width: 560px) { main, .held-tekst { padding-left: 16px; padding-right: 16px; } }
+    @media (prefers-reduced-motion: reduce) { .kaart { transition: none; } .op .lamp, .af .lamp { animation: none; } }
+</style>
+</head>
+<body>
+<header class="held">
+    <canvas id="kern" aria-hidden="true"></canvas>
+    <div class="held-tekst">
+        <span class="label">📡 GwnLarss</span>
+        <h1>Status van<br><span>de tools</span></h1>
+        <div class="samenvatting" id="samenvatting">
+            <span class="lamp"></span>
+            <div><div class="groot" id="samen-titel">Status ophalen...</div><small id="samen-sub">Even geduld</small></div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section>
+        <div class="kop"><h2>🧰 Gratis stream-tools</h2><p>Instellen doe je op <a href="https://gwnlarss.nl/tools.html" target="_blank" rel="noopener">gwnlarss.nl</a>.</p></div>
+        <div class="raster" id="tools"><div class="skelet"></div><div class="skelet"></div><div class="skelet"></div></div>
+    </section>
+    <section>
+        <div class="kop"><h2>⛏️ CreatorSMP & 🤖 GwnBot</h2><p id="ververst">Elke 30 seconden gecontroleerd</p></div>
+        <div class="raster groot" id="extra"><div class="skelet"></div><div class="skelet"></div></div>
+    </section>
+    <footer>Gemaakt door <a href="https://gwnlarss.nl" target="_blank" rel="noopener">GwnLarss</a></footer>
+</main>
+
+<script type="module">
+    const $ = id => document.getElementById(id);
+    const veilig = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const getal = n => Number(n).toLocaleString('nl-NL');
+    const geleden = t => { const m = Math.round((Date.now() - t) / 60000); return m < 2 ? 'net' : m < 60 ? `${m} min geleden` : `${Math.round(m / 60)} uur geleden`; };
+    const status = op => `<span class="status ${op ? 'op' : 'af'}"><i></i>${op ? 'Werkt' : 'Storing'}</span>`;
+    let zetBollen = () => {}, laatste = [];   // laatste: voor als de 3D later klaar is dan de gegevens
+
+    async function laad() {
+        try {
+            const d = await (await fetch('https://api.gwnlarss.nl/api/tools-status', { cache: 'no-store' })).json();
+            $('tools').innerHTML = d.tools.map(t => `
+                <a class="kaart" href="${veilig(t.url)}" target="_blank" rel="noopener">
+                    <div class="bovenaan"><span class="icoon">${t.emoji}</span><span class="naam">${veilig(t.naam)}</span>${status(t.online)}</div>
+                    <p class="uitleg">${veilig(t.uitleg)}</p>
+                    <div class="voet"><span>${t.kanalen ? `Gebruikt door ${t.kanalen} kana${t.kanalen === 1 ? 'al' : 'len'}` : ''}</span><span class="knop">Instellen →</span></div>
+                </a>`).join('');
+            const c = d.creatorsmp, g = d.creatorcove;
+            $('extra').innerHTML = `
+                <a class="kaart" href="${veilig(c.url)}" target="_blank" rel="noopener">
+                    <div class="bovenaan"><span class="icoon">⛏️</span><span class="naam">CreatorSMP clips</span>${status(c.online)}</div>
+                    <p class="uitleg">Alle Twitch-clips uit de categorie CreatorSMP, de top clips bovenaan.</p>
+                    <div class="cijfers"><div><b>${getal(c.totaal ?? 0)}</b><span>clips</span></div><div><b>${getal(c.streamers ?? 0)}</b><span>streamers</span></div></div>
+                    <div class="voet"><span>${c.bijgewerkt ? `Bijgewerkt ${geleden(c.bijgewerkt)}` : ''}</span><span class="knop">Bekijken →</span></div>
+                </a>
+                <a class="kaart" href="${veilig(g.url)}" target="_blank" rel="noopener">
+                    <div class="bovenaan"><span class="icoon">🤖</span><span class="naam">GwnBot · Creator Cove</span>${status(g.online)}</div>
+                    <p class="uitleg">Welke streamers GwnBot volgt voor de live-meldingen in Creator Cove, en wie er nu live is.</p>
+                    <div class="cijfers"><div><b>${getal(g.streamers ?? 0)}</b><span>streamers</span></div><div><b style="color:var(--rood)">${getal(g.live ?? 0)}</b><span>nu live</span></div></div>
+                    <div class="voet"><span></span><span class="knop">Bekijken →</span></div>
+                </a>`;
+            const alles = [...d.tools.map(t => ({ naam: t.naam, online: t.online })), { naam: 'CreatorSMP clips', online: c.online }, { naam: 'GwnBot', online: g.online }];
+            const af = alles.filter(x => !x.online);
+            const tijd = new Date(d.opgehaald).toLocaleTimeString('nl-NL');
+            $('samenvatting').className = `samenvatting ${af.length ? 'af' : 'op'}`;
+            $('samen-titel').textContent = af.length ? `Storing: ${af.map(x => x.naam).join(', ')}` : 'Alles werkt';
+            $('samen-sub').textContent = `${alles.length} onderdelen · gecheckt om ${tijd}`;
+            $('ververst').textContent = `Gecheckt om ${tijd} · elke 30 seconden`;
+            laatste = alles; zetBollen(alles);
+        } catch {
+            $('samenvatting').className = 'samenvatting af';
+            $('samen-titel').textContent = 'Kon de status niet ophalen';
+            $('samen-sub').textContent = 'Probeer het zo nog eens';
+            zetBollen(null);
+        }
+    }
+
+    // kaarten kantelen mee met de muis
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        let vorige = null;
+        document.addEventListener('pointermove', e => {
+            const k = e.target.closest?.('.kaart');
+            if (vorige && vorige !== k) ['--rx', '--ry'].forEach(v => vorige.style.removeProperty(v));
+            vorige = k;
+            if (!k) return;
+            const r = k.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+            k.style.setProperty('--ry', `${(x - 0.5) * 8}deg`); k.style.setProperty('--rx', `${(0.5 - y) * 8}deg`);
+            k.style.setProperty('--mx', `${x * 100}%`); k.style.setProperty('--my', `${y * 100}%`);
+        });
+    }
+
+    // 3D-kern met een bolletje per onderdeel (groen = werkt, rood = storing)
+    (async () => {
+        let THREE;
+        try { THREE = await import('three'); } catch { return; }
+        const doek = $('kern');
+        let r;
+        try { r = new THREE.WebGLRenderer({ canvas: doek, antialias: true, alpha: true }); } catch { return; }
+        r.setPixelRatio(Math.min(devicePixelRatio, 2));
+        const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(40, 1, 0.1, 100), groep = new THREE.Group(); scene.add(groep);
+        const maat = () => { const w = doek.clientWidth, h = doek.clientHeight; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); groep.position.x = w > 760 ? 3 : 0.8; cam.position.set(0, 0.2, w > 760 ? 11 : 14); };
+        maat(); addEventListener('resize', maat);
+        scene.add(new THREE.AmbientLight(0x6b5a9a, 0.6));
+        const l1 = new THREE.PointLight(0x9146ff, 60, 30); l1.position.set(-4, 3, 5); scene.add(l1);
+        const l2 = new THREE.PointLight(0xff3ea5, 40, 30); l2.position.set(4, -2, 4); scene.add(l2);
+        const kern = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 5), new THREE.MeshPhysicalMaterial({ color: 0x2a1f55, emissive: 0x3a1a7a, emissiveIntensity: 0.6, roughness: 0.15, metalness: 0.4, clearcoat: 1, iridescence: 0.8 }));
+        groep.add(kern);
+        const kaartTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); const g = x.createRadialGradient(128, 128, 10, 128, 128, 128); g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.4, 'rgba(255,255,255,0.3)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); return new THREE.CanvasTexture(c); })();
+        const gloed = new THREE.Sprite(new THREE.SpriteMaterial({ map: kaartTex, color: 0x9a64ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); gloed.scale.setScalar(6); groep.add(gloed);
+        const BANEN = [{ straal: 2.3, kanteling: 0.25 }, { straal: 3.2, kanteling: -0.35 }];
+        const ringen = BANEN.map((b, i) => { const ring = new THREE.Mesh(new THREE.TorusGeometry(b.straal, 0.012, 8, 160), new THREE.MeshBasicMaterial({ color: i ? 0xff3ea5 : 0x9146ff, transparent: true, opacity: 0.5 })); ring.rotation.x = Math.PI / 2 + b.kanteling; groep.add(ring); return ring; });
+        const sterGeo = new THREE.BufferGeometry(), pos = new Float32Array(900);
+        for (let i = 0; i < 900; i += 3) { const a = Math.random() * Math.PI * 2, b = Math.acos(2 * Math.random() - 1), d = 6 + Math.random() * 14; pos.set([Math.sin(b) * Math.cos(a) * d, Math.cos(b) * d * 0.6, Math.sin(b) * Math.sin(a) * d - 6], i); }
+        sterGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        scene.add(new THREE.Points(sterGeo, new THREE.PointsMaterial({ color: 0xcfc2ff, size: 0.045, transparent: true, opacity: 0.8 })));
+        let bollen = [];
+        const groen = new THREE.Color(0x24d17e), rood = new THREE.Color(0xff5c7a), as = new THREE.Vector3(1, 0, 0);
+        zetBollen = lijst => {
+            laatste = lijst ?? [];
+            bollen.forEach(b => groep.remove(b.bol, b.halo));
+            bollen = laatste.map((x, i) => {
+                const k = x.online ? groen : rood, baan = BANEN[i % 2];
+                const bol = new THREE.Mesh(new THREE.SphereGeometry(0.15, 24, 16), new THREE.MeshStandardMaterial({ color: k, emissive: k, emissiveIntensity: 1.2, roughness: 0.3 }));
+                const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: kaartTex, color: k, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+                halo.scale.setScalar(x.online ? 0.8 : 1.3); groep.add(bol, halo);
+                return { bol, halo, ...baan, hoek: (i / laatste.length) * Math.PI * 2, snel: 0.22 + (i % 3) * 0.06, af: !x.online };
+            });
+        };
+        if (laatste.length) zetBollen(laatste);
+        const stil = matchMedia('(prefers-reduced-motion: reduce)').matches, klok = new THREE.Clock(), p = new THREE.Vector3();
+        r.setAnimationLoop(() => {
+            const t = stil ? 0 : klok.getElapsedTime();
+            kern.rotation.y = t * 0.15; kern.rotation.x = Math.sin(t * 0.3) * 0.2;
+            ringen[0].rotation.z = t * 0.1; ringen[1].rotation.z = -t * 0.07;
+            gloed.material.opacity = 0.8 + Math.sin(t * 2) * 0.15;
+            for (const b of bollen) {
+                const h = b.hoek + t * b.snel;
+                p.set(Math.cos(h) * b.straal, 0, Math.sin(h) * b.straal).applyAxisAngle(as, b.kanteling);
+                b.bol.position.copy(p); b.halo.position.copy(p);
+                if (b.af) b.halo.material.opacity = 0.5 + Math.sin(t * 6) * 0.5;
+            }
+            r.render(scene, cam);
+        });
+    })();
+
+    laad();
+    setInterval(laad, 30000);
+</script>
+</body>
+</html>
