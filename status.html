@@ -47,22 +47,23 @@
     .kop { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
     h2 { font-size: 1.55rem; }
     .kop p { margin: 0; color: var(--dim); font-size: 0.9rem; }
-    .raster { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    .raster { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
     .raster.groot { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
     .kaart { position: relative; background: var(--panel-vast); border: 1px solid var(--border); border-radius: 18px; padding: 18px; text-decoration: none; display: flex; flex-direction: column; gap: 8px;
         transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.15s ease-out, border-color 0.2s, box-shadow 0.2s; }
     .kaart:hover { border-color: rgba(145, 70, 255, 0.45); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
     .kaart::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 0%), rgba(145, 70, 255, 0.12), transparent 45%); opacity: 0; transition: opacity 0.2s; }
     .kaart:hover::before { opacity: 1; }
-    .kaart .bovenaan { display: flex; align-items: center; gap: 12px; }
+    .kaart .bovenaan { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .icoon { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 1.3rem; background: var(--panel2); flex-shrink: 0; }
-    .naam { font-weight: 700; font-size: 1.05rem; }
-    .status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .naam { font-weight: 700; font-size: 1.12rem; margin-top: 4px; }
+    .status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
     .status i { width: 8px; height: 8px; border-radius: 50%; }
     .status.op { color: var(--groen); background: rgba(36, 209, 126, 0.12); } .status.op i { background: var(--groen); }
     .status.af { color: var(--rood); background: rgba(255, 92, 122, 0.12); } .status.af i { background: var(--rood); }
     .uitleg { color: var(--dim); font-size: 0.86rem; line-height: 1.45; margin: 0; }
-    .voet { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.8rem; color: var(--dim); padding-top: 6px; }
+    .voet { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.8rem; color: var(--dim); padding-top: 10px; border-top: 1px solid var(--border); }
+    .voet span { white-space: nowrap; }
     .knop { color: #d9c7ff; font-weight: 700; white-space: nowrap; }
     .cijfers { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
     .cijfers b { display: block; font-family: 'Baloo 2', sans-serif; font-size: 1.5rem; line-height: 1.1; color: var(--text); }
@@ -113,20 +114,23 @@
             const d = await (await fetch('https://api.gwnlarss.nl/api/tools-status', { cache: 'no-store' })).json();
             $('tools').innerHTML = d.tools.map(t => `
                 <a class="kaart" href="${veilig(t.url)}" target="_blank" rel="noopener">
-                    <div class="bovenaan"><span class="icoon">${t.emoji}</span><span class="naam">${veilig(t.naam)}</span>${status(t.online)}</div>
+                    <div class="bovenaan"><span class="icoon">${t.emoji}</span>${status(t.online)}</div>
+                    <span class="naam">${veilig(t.naam)}</span>
                     <p class="uitleg">${veilig(t.uitleg)}</p>
-                    <div class="voet"><span>${t.kanalen ? `Gebruikt door ${t.kanalen} kana${t.kanalen === 1 ? 'al' : 'len'}` : ''}</span><span class="knop">Instellen →</span></div>
+                    <div class="voet"><span>${t.kanalen ? `${t.kanalen} kana${t.kanalen === 1 ? 'al' : 'len'}` : ''}</span><span class="knop">Instellen →</span></div>
                 </a>`).join('');
             const c = d.creatorsmp, g = d.creatorcove;
             $('extra').innerHTML = `
                 <a class="kaart" href="${veilig(c.url)}" target="_blank" rel="noopener">
-                    <div class="bovenaan"><span class="icoon">⛏️</span><span class="naam">CreatorSMP clips</span>${status(c.online)}</div>
+                    <div class="bovenaan"><span class="icoon">⛏️</span>${status(c.online)}</div>
+                    <span class="naam">CreatorSMP clips</span>
                     <p class="uitleg">Alle Twitch-clips uit de categorie CreatorSMP, de top clips bovenaan.</p>
                     <div class="cijfers"><div><b>${getal(c.totaal ?? 0)}</b><span>clips</span></div><div><b>${getal(c.streamers ?? 0)}</b><span>streamers</span></div></div>
                     <div class="voet"><span>${c.bijgewerkt ? `Bijgewerkt ${geleden(c.bijgewerkt)}` : ''}</span><span class="knop">Bekijken →</span></div>
                 </a>
                 <a class="kaart" href="${veilig(g.url)}" target="_blank" rel="noopener">
-                    <div class="bovenaan"><span class="icoon">🤖</span><span class="naam">GwnBot · Creator Cove</span>${status(g.online)}</div>
+                    <div class="bovenaan"><span class="icoon">🤖</span>${status(g.online)}</div>
+                    <span class="naam">GwnBot · Creator Cove</span>
                     <p class="uitleg">Welke streamers GwnBot volgt voor de live-meldingen in Creator Cove, en wie er nu live is.</p>
                     <div class="cijfers"><div><b>${getal(g.streamers ?? 0)}</b><span>streamers</span></div><div><b style="color:var(--rood)">${getal(g.live ?? 0)}</b><span>nu live</span></div></div>
                     <div class="voet"><span></span><span class="knop">Bekijken →</span></div>
