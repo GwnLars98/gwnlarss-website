@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CreatorSMP clips · GwnLarss</title>
+<meta name="description" content="Alle Twitch-clips uit de categorie CreatorSMP, met de best bekeken clips bovenaan.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    /* Alle clips uit de Twitch-categorie CreatorSMP (gwnlarss.nl/creatorsmp). Data uit api.gwnlarss.nl/api/categorie-clips/creatorsmp
+       (utils/categorieClips.js): bovenaan de top 12, daaronder alles met zoeken, filteren en sorteren.
+       Een klik speelt de clip af in een venster op de pagina. */
+    :root {
+        --bg: #0a0d0b; --panel: #141a16; --panel2: #1b231e; --border: rgba(255, 255, 255, 0.08);
+        --text: #f0f4f1; --dim: #9fb0a5; --groen: #5fd36a; --groen-d: #2f8f3c; --paars: #9146ff;
+        --goud: #ffcb3d; --zilver: #d6dde3; --brons: #e0995a;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; min-height: 100vh; color: var(--text); font-family: 'Inter', system-ui, sans-serif;
+        background:
+            radial-gradient(60% 40% at 15% 0%, rgba(95, 211, 106, 0.13), transparent 70%),
+            radial-gradient(45% 35% at 95% 10%, rgba(145, 70, 255, 0.12), transparent 70%),
+            var(--bg);
+    }
+    /* subtiel blokjespatroon, knipoog naar Minecraft */
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; opacity: 0.35;
+        background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+        background-size: 32px 32px; }
+    .wrap { position: relative; max-width: 1240px; margin: 0 auto; padding: 44px 24px 80px; }
+    a { color: inherit; }
+    h1, h2 { font-family: 'Baloo 2', sans-serif; font-weight: 800; margin: 0; }
+    h1 { font-size: clamp(2rem, 4.5vw, 3.1rem); line-height: 1.05; }
+    h1 span { color: var(--groen); }
+    h2 { font-size: 1.45rem; margin: 46px 0 16px; display: flex; align-items: center; gap: 10px; }
+    .sub { color: var(--dim); margin: 10px 0 22px; max-width: 62ch; }
+    .stats { display: flex; flex-wrap: wrap; gap: 10px; }
+    .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px; min-width: 140px; }
+    .stat b { display: block; font-family: 'Baloo 2', sans-serif; font-size: 1.5rem; line-height: 1.1; }
+    .stat span { color: var(--dim); font-size: 0.8rem; }
+
+    /* ---------- kaarten ---------- */
+    .kaart { position: relative; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s; text-align: left; color: inherit; font: inherit; padding: 0; display: flex; flex-direction: column; }
+    .kaart:hover, .kaart:focus-visible { transform: translateY(-3px); border-color: rgba(95, 211, 106, 0.5); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35); outline: none; }
+    .beeld { position: relative; aspect-ratio: 16 / 9; background: #0f1411; overflow: hidden; }
+    .beeld img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
+    .kaart:hover .beeld img { transform: scale(1.04); }
+    .beeld::after { content: '▶'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.2rem; color: #fff; background: rgba(0, 0, 0, 0.25); opacity: 0; transition: opacity 0.2s; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+    .kaart:hover .beeld::after { opacity: 1; }
+    .badge { position: absolute; bottom: 8px; padding: 3px 8px; border-radius: 8px; background: rgba(0, 0, 0, 0.75); font-size: 0.75rem; font-weight: 600; }
+    .badge.duur { right: 8px; } .badge.views { left: 8px; }
+    .plek { position: absolute; top: 8px; left: 8px; min-width: 34px; height: 34px; padding: 0 8px; border-radius: 10px; display: grid; place-items: center; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 1.05rem; background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255,255,255,0.15); }
+    .plek.p1 { background: linear-gradient(135deg, #ffe17a, #e0a800); color: #2a1d00; border: 0; }
+    .plek.p2 { background: linear-gradient(135deg, #f2f6f9, #a9b3bb); color: #1d2328; border: 0; }
+    .plek.p3 { background: linear-gradient(135deg, #f0b27a, #b86b2c); color: #2a1404; border: 0; }
+    .info { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .titel { font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .meta { color: var(--dim); font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meta b { color: var(--groen); font-weight: 600; }
+
+    /* top: #1 groot, #2-3 middel, rest klein */
+    .top { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; }
+    .top .eerste { grid-row: span 2; }
+    .top .eerste .beeld { aspect-ratio: auto; flex: 1; min-height: 240px; }
+    .top .eerste .titel { font-size: 1.25rem; -webkit-line-clamp: 3; }
+    .top .eerste .plek { min-width: 46px; height: 46px; font-size: 1.4rem; }
+    .rest { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-top: 14px; }
+    @media (max-width: 760px) { .top { grid-template-columns: 1fr; } .top .eerste { grid-row: auto; } }
+
+    /* ---------- filters ---------- */
+    .balk { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px; margin: 0 -12px 16px; border-radius: 16px; background: rgba(10, 13, 11, 0.86); backdrop-filter: blur(10px); border: 1px solid var(--border); }
+    .balk input, .balk select { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; }
+    .balk input { flex: 1 1 220px; min-width: 0; }
+    .balk select { flex: 0 1 220px; max-width: 100%; }
+    .knoppen { display: flex; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+    .knoppen button { font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--dim); background: none; border: 0; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+    .knoppen button.aan { background: var(--groen-d); color: #fff; }
+    .aantal { color: var(--dim); font-size: 0.85rem; margin: 0 0 14px; }
+    .raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+    .meer { display: block; margin: 26px auto 0; font: inherit; font-weight: 700; color: #fff; background: var(--groen-d); border: 0; border-radius: 12px; padding: 12px 26px; cursor: pointer; }
+    .meer[hidden] { display: none; }
+    .leeg { color: var(--dim); padding: 30px 0; text-align: center; }
+    .skelet { border-radius: 16px; background: linear-gradient(90deg, var(--panel) 0%, var(--panel2) 50%, var(--panel) 100%); background-size: 200% 100%; animation: glans 1.2s infinite; aspect-ratio: 16 / 12; }
+    @keyframes glans { to { background-position: -200% 0; } }
+
+    /* ---------- speler ---------- */
+    .venster { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(4px); }
+    .venster[hidden] { display: none; }
+    .speler { width: min(1000px, 100%); background: var(--panel); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .speler iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; background: #000; }
+    .speler-info { padding: 14px 18px 18px; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+    .speler-info h3 { margin: 0; font-size: 1.1rem; }
+    .speler-info .meta { white-space: normal; }
+    .links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .links a, .sluit { font: inherit; font-size: 0.85rem; font-weight: 700; text-decoration: none; border-radius: 10px; padding: 8px 14px; border: 1px solid var(--border); background: var(--panel2); color: var(--text); cursor: pointer; }
+    .links a.twitch { background: var(--paars); border-color: var(--paars); }
+    footer { margin-top: 60px; color: var(--dim); font-size: 0.8rem; text-align: center; }
+    footer a { color: var(--groen); }
+    @media (max-width: 520px) { .wrap { padding: 28px 16px 60px; } .balk { margin: 0 -6px 16px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <h1>⛏️ <span>CreatorSMP</span> clips</h1>
+    <p class="sub">Alle Twitch-clips uit de categorie CreatorSMP, van alle streamers. De best bekeken clips staan bovenaan; klik op een clip om hem hier af te spelen.</p>
+    <div class="stats" id="stats">
+        <div class="stat"><b>…</b><span>clips</span></div><div class="stat"><b>…</b><span>streamers</span></div><div class="stat"><b>…</b><span>keer bekeken</span></div>
+    </div>
+
+    <h2>🏆 Top clips</h2>
+    <div class="top" id="top"><div class="skelet eerste" style="grid-row:span 2"></div><div class="skelet"></div><div class="skelet"></div></div>
+    <div class="rest" id="top-rest"></div>
+
+    <h2>🎬 Alle clips</h2>
+    <div class="balk">
+        <input type="search" id="zoek" placeholder="Zoek op titel, streamer of clipper..." aria-label="Zoeken">
+        <select id="streamer" aria-label="Streamer"><option value="">Alle streamers</option></select>
+        <div class="knoppen" id="sort" role="group" aria-label="Sorteren">
+            <button data-sort="views" class="aan">Meest bekeken</button><button data-sort="nieuw">Nieuwste</button><button data-sort="oud">Oudste</button>
+        </div>
+        <select id="periode" aria-label="Periode">
+            <option value="">Alle tijd</option><option value="dag">Laatste 24 uur</option><option value="week">Laatste week</option>
+        </select>
+    </div>
+    <p class="aantal" id="aantal"></p>
+    <div class="raster" id="raster"></div>
+    <button class="meer" id="meer" hidden>Meer clips laden</button>
+
+    <footer>Gemaakt door <a href="https://gwnlarss.nl" target="_blank" rel="noopener">GwnLarss</a> · clips van Twitch, elke 15 minuten bijgewerkt<span id="bijgewerkt"></span></footer>
+</div>
+
+<div class="venster" id="venster" hidden>
+    <div class="speler" role="dialog" aria-modal="true" aria-labelledby="speler-titel">
+        <iframe id="speler-frame" title="Clip" allowfullscreen allow="autoplay; fullscreen"></iframe>
+        <div class="speler-info">
+            <div><h3 id="speler-titel"></h3><div class="meta" id="speler-meta"></div></div>
+            <div class="links"><a class="twitch" id="speler-twitch" target="_blank" rel="noopener">Open op Twitch</a><a id="speler-kanaal" target="_blank" rel="noopener">Kanaal</a><button class="sluit" id="sluit">Sluiten ✕</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API = 'https://api.gwnlarss.nl/api/categorie-clips/creatorsmp';   // de clips komen van de API
+    const $ = id => document.getElementById(id);
+    const veilig = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const getal = n => Number(n).toLocaleString('nl-NL');
+    const kort = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : getal(n);
+    const duur = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    function geleden(ms) {
+        const s = (Date.now() - ms) / 1000;
+        if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min geleden`;
+        if (s < 86400) return `${Math.round(s / 3600)} uur geleden`;
+        const d = Math.round(s / 86400);
+        return d === 1 ? 'gisteren' : d < 31 ? `${d} dagen geleden` : new Date(ms).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    const alleClips = new Map();   // id -> clip, voor de speler en #clip=links
+
+    function kaart(c, plek) {
+        alleClips.set(c.id, c);
+        const k = document.createElement('button');
+        k.className = 'kaart'; k.dataset.id = c.id;
+        k.innerHTML = `
+            <div class="beeld"><img loading="lazy" src="${veilig(c.beeld)}" alt="">
+                ${plek ? `<span class="plek ${plek <= 3 ? 'p' + plek : ''}">${plek <= 3 ? ['🥇', '🥈', '🥉'][plek - 1] : '#' + plek}</span>` : ''}
+                <span class="badge views">👁 ${kort(c.views)}</span><span class="badge duur">${duur(c.duur)}</span></div>
+            <div class="info"><div class="titel">${veilig(c.titel)}</div>
+                <div class="meta"><b>${veilig(c.streamer)}</b> · ${geleden(c.op)}</div>
+                <div class="meta">✂️ geclipt door ${veilig(c.maker)}</div></div>`;
+        k.addEventListener('click', () => speel(c.id));
+        return k;
+    }
+
+    // ---------- overzicht: totalen, top 12, streamerlijst ----------
+    async function laadOverzicht() {
+        const d = await (await fetch(API + '/overzicht')).json();
+        if (!d.totaal) {
+            $('top').innerHTML = `<p class="leeg">${d.bezig ? 'De clips worden voor het eerst opgehaald, een momentje...' : 'Nog geen clips gevonden.'}</p>`;
+            if (d.bezig) setTimeout(() => { laadOverzicht(); laadClips(true); }, 8000);
+            return;
+        }
+        $('stats').innerHTML = `
+            <div class="stat"><b>${getal(d.totaal)}</b><span>clips</span></div>
+            <div class="stat"><b>${getal(d.streamers.length)}</b><span>streamers</span></div>
+            <div class="stat"><b>${kort(d.views)}</b><span>keer bekeken</span></div>`;
+        $('bijgewerkt').textContent = d.bijgewerkt ? ` · laatst bijgewerkt ${geleden(d.bijgewerkt)}` : '';
+        const top = $('top'); top.innerHTML = '';
+        d.top.slice(0, 3).forEach((c, i) => { const k = kaart(c, i + 1); if (i === 0) k.classList.add('eerste'); top.appendChild(k); });
+        const rest = $('top-rest'); rest.innerHTML = '';
+        d.top.slice(3).forEach((c, i) => rest.appendChild(kaart(c, i + 4)));
+        const sel = $('streamer'), gekozen = sel.value;
+        sel.innerHTML = '<option value="">Alle streamers (' + d.streamers.length + ')</option>' + d.streamers.map(s => `<option value="${veilig(s.naam)}">${veilig(s.naam)} · ${getal(s.clips)} clips</option>`).join('');
+        sel.value = gekozen;
+    }
+
+    // ---------- alle clips: per 48, met filters ----------
+    const filter = { zoek: '', streamer: '', sort: 'views', periode: '', pagina: 0 };
+    let laden = false, klaar = false, versie = 0;
+    async function laadClips(opnieuw) {
+        if (opnieuw) { filter.pagina = 0; klaar = false; versie++; $('raster').innerHTML = '<div class="skelet"></div>'.repeat(8); }
+        if (laden || klaar) return;
+        laden = true;
+        const mijnVersie = versie;
+        const q = new URLSearchParams({ ...filter, per: 48 });
+        try {
+            const d = await (await fetch(`${API}?${q}`)).json();
+            if (mijnVersie !== versie) return;   // intussen een ander filter gekozen
+            const raster = $('raster');
+            if (filter.pagina === 0) raster.innerHTML = '';
+            d.clips.forEach(c => raster.appendChild(kaart(c)));
+            $('aantal').textContent = d.totaal ? `${getal(d.totaal)} clip${d.totaal === 1 ? '' : 's'}${filter.streamer ? ` van ${filter.streamer}` : ''}` : '';
+            if (!d.totaal) raster.innerHTML = '<p class="leeg">Geen clips gevonden met deze filters.</p>';
+            filter.pagina++;
+            klaar = filter.pagina * d.per >= d.totaal;
+            $('meer').hidden = klaar;
+        } finally { laden = false; }
+    }
+    let wacht;
+    $('zoek').addEventListener('input', e => { clearTimeout(wacht); wacht = setTimeout(() => { filter.zoek = e.target.value; laadClips(true); }, 250); });
+    $('streamer').addEventListener('change', e => { filter.streamer = e.target.value; laadClips(true); });
+    $('periode').addEventListener('change', e => { filter.periode = e.target.value; laadClips(true); });
+    $('sort').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        document.querySelectorAll('#sort button').forEach(x => x.classList.toggle('aan', x === b));
+        filter.sort = b.dataset.sort; laadClips(true);
+    });
+    $('meer').addEventListener('click', () => laadClips());
+    // automatisch verder laden als je onderaan komt
+    new IntersectionObserver(e => { if (e[0].isIntersecting && !$('meer').hidden) laadClips(); }, { rootMargin: '600px' }).observe($('meer'));
+
+    // ---------- speler ----------
+    function speel(id) {
+        const c = alleClips.get(id);
+        if (!c) return;
+        $('speler-frame').src = `https://clips.twitch.tv/embed?clip=${encodeURIComponent(id)}&parent=${location.hostname}&autoplay=true`;
+        $('speler-titel').textContent = c.titel;
+        $('speler-meta').innerHTML = `<b>${veilig(c.streamer)}</b> · ${getal(c.views)} keer bekeken · ${geleden(c.op)} · geclipt door ${veilig(c.maker)}`;
+        $('speler-twitch').href = c.url;
+        $('speler-kanaal').href = `https://twitch.tv/${encodeURIComponent(c.streamer.toLowerCase())}`;
+        $('speler-kanaal').textContent = `Kanaal van ${c.streamer}`;
+        $('venster').hidden = false;
+        history.replaceState(null, '', `#clip=${id}`);
+    }
+    function sluit() { $('venster').hidden = true; $('speler-frame').src = 'about:blank'; history.replaceState(null, '', location.pathname); }
+    $('sluit').addEventListener('click', sluit);
+    $('venster').addEventListener('click', e => { if (e.target === $('venster')) sluit(); });
+    addEventListener('keydown', e => { if (e.key === 'Escape' && !$('venster').hidden) sluit(); });
+
+    (async () => {
+        await Promise.all([laadOverzicht(), laadClips(true)]);
+        const gedeeld = location.hash.match(/clip=([\w-]+)/)?.[1];
+        if (gedeeld && alleClips.has(gedeeld)) speel(gedeeld);
+    })();
+</script>
+</body>
+</html>
