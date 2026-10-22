@@ -45,6 +45,17 @@
     .slot { display: none; }
     .geen-sleutel .slot { display: block; }
     .geen-sleutel .beheer { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }
+    .stijlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .stijl { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: var(--panel2); border: 2px solid var(--rand); cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
+    .stijl:hover { transform: translateY(-2px); }
+    .stijl input { position: absolute; opacity: 0; }
+    .stijl:has(input:checked) { border-color: var(--oranje); box-shadow: 0 0 0 3px rgba(244, 165, 74, 0.25); }
+    .stijl:has(input:checked)::after { content: '✓ Gekozen'; position: absolute; top: 18px; right: 18px; font-size: 0.75rem; font-weight: 800; color: #2a1030; background: var(--oranje); padding: 2px 8px; border-radius: 99px; }
+    .stijl small { color: var(--dim); line-height: 1.4; }
+    .plaatje { height: 86px; border-radius: 10px; position: relative; overflow: hidden; }
+    .plaatje.zonsondergang { background: linear-gradient(180deg, var(--paars), var(--magenta) 45%, var(--koraal) 75%, var(--oranje)); }
+    .plaatje.zonsondergang::after { content: ''; position: absolute; left: 16px; bottom: -14px; width: 60px; height: 60px; border-radius: 50%; background: #fff8f2; box-shadow: 0 0 24px rgba(255,200,120,0.8); }
+    .plaatje.drie { background: radial-gradient(circle at 22% 50%, #ffd27a 0 18%, #c9822a 19% 22%, transparent 23%), linear-gradient(100deg, transparent 30%, var(--magenta) 31%, var(--koraal) 70%, transparent 71%), #241638; }
     .soorten { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-bottom: 16px; }
     .soorten label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--rand); cursor: pointer; font-weight: 600; }
     .soorten input { width: 18px; height: 18px; accent-color: var(--oranje); }
@@ -98,7 +109,11 @@
 
     <section class="stap beheer">
         <h2><span class="nr">3</span>Instellingen</h2>
-        <p>Welke alerts wil je in beeld? Wijzigingen staan binnen 30 seconden in OBS.</p>
+        <p>Kies de stijl en welke alerts je in beeld wilt. Wijzigingen staan meteen in OBS, met dezelfde link.</p>
+        <div class="stijlen" id="stijlen">
+            <label class="stijl"><input type="radio" name="stijl" value="zonsondergang"><span class="plaatje zonsondergang"></span><b>🌅 Zonsondergang</b><small>Kaart met golven, je B-zon komt op uit het water en je emotes regenen omlaag.</small></label>
+            <label class="stijl"><input type="radio" name="stijl" value="3d"><span class="plaatje drie"></span><b>🪙 3D</b><small>Je logo als gouden 3D-munt, een wapperend lint met je naam en emotes die uit de munt spatten.</small></label>
+        </div>
         <div class="soorten" id="soorten"></div>
         <div class="schuif"><span>Volume</span><input type="range" id="volume" min="0" max="1" step="0.05"><span id="volumeTekst"></span></div>
         <div class="schuif"><span>Hoe lang in beeld</span><input type="range" id="duur" min="3000" max="15000" step="500"><span id="duurTekst"></span></div>
@@ -143,6 +158,7 @@
         $('koppelStatus').className = `status ${d.gekoppeld ? 'ok' : 'nee'}`;
         $('koppelStatus').innerHTML = `<i></i>${d.gekoppeld ? `Gekoppeld als ${d.naam}` : 'Nog niet gekoppeld'}`;
         const i = d.instellingen;
+        document.querySelectorAll('[name=stijl]').forEach(r => { r.checked = r.value === (i.stijl ?? 'zonsondergang'); });
         $('soorten').innerHTML = Object.entries(SOORTEN).map(([s, naam]) => `<label><input type="checkbox" data-soort="${s}" ${i.aan[s] ? 'checked' : ''}>${naam}</label>`).join('');
         $('volume').value = i.volume; $('volumeTekst').textContent = Math.round(i.volume * 100) + '%';
         $('duur').value = i.duur; $('duurTekst').textContent = (i.duur / 1000).toLocaleString('nl-NL') + ' s';
@@ -213,6 +229,7 @@
         if (d?.ok) { toon(d); melding('💾 Opgeslagen'); } else melding('❌ Opslaan mislukt');
     }
     $('soorten').addEventListener('change', () => bewaarInstellingen());
+    $('stijlen').addEventListener('change', e => { if (e.target.name === 'stijl') bewaarInstellingen({ stijl: e.target.value }); });
     $('volume').addEventListener('input', e => $('volumeTekst').textContent = Math.round(e.target.value * 100) + '%');
     $('duur').addEventListener('input', e => $('duurTekst').textContent = (e.target.value / 1000).toLocaleString('nl-NL') + ' s');
     $('volume').addEventListener('change', () => bewaarInstellingen());
