@@ -115,6 +115,7 @@
             <label class="stijl"><input type="radio" name="stijl" value="3d"><span class="plaatje drie"></span><b>🪙 3D</b><small>Je logo als gouden 3D-munt, een wapperend lint met je naam en emotes die uit de munt spatten.</small></label>
         </div>
         <div class="soorten" id="soorten"></div>
+        <div class="schuif"><span>Grootte</span><input type="range" id="grootte" min="0.5" max="1.5" step="0.05"><span id="grootteTekst"></span></div>
         <div class="schuif"><span>Volume</span><input type="range" id="volume" min="0" max="1" step="0.05"><span id="volumeTekst"></span></div>
         <div class="schuif"><span>Hoe lang in beeld</span><input type="range" id="duur" min="3000" max="15000" step="500"><span id="duurTekst"></span></div>
         <p style="margin:18px 0 4px;color:var(--dim)"><b style="color:var(--tekst)">Donaties via StreamElements</b> (optioneel). Plak je JWT-token uit StreamElements (Account → Channels → Show secrets). Status: <span id="seStatus">uit</span></p>
@@ -160,6 +161,7 @@
         const i = d.instellingen;
         document.querySelectorAll('[name=stijl]').forEach(r => { r.checked = r.value === (i.stijl ?? 'zonsondergang'); });
         $('soorten').innerHTML = Object.entries(SOORTEN).map(([s, naam]) => `<label><input type="checkbox" data-soort="${s}" ${i.aan[s] ? 'checked' : ''}>${naam}</label>`).join('');
+        $('grootte').value = i.grootte ?? 1; $('grootteTekst').textContent = Math.round((i.grootte ?? 1) * 100) + '%';
         $('volume').value = i.volume; $('volumeTekst').textContent = Math.round(i.volume * 100) + '%';
         $('duur').value = i.duur; $('duurTekst').textContent = (i.duur / 1000).toLocaleString('nl-NL') + ' s';
         tekenGeluiden(d.geluiden ?? {});
@@ -225,7 +227,7 @@
 
     async function bewaarInstellingen(extra = {}) {
         const aan = Object.fromEntries([...document.querySelectorAll('[data-soort]')].map(c => [c.dataset.soort, c.checked]));
-        const d = await post('instellingen', { aan, volume: Number($('volume').value), duur: Number($('duur').value), ...extra }).catch(() => null);
+        const d = await post('instellingen', { aan, grootte: Number($('grootte').value), volume: Number($('volume').value), duur: Number($('duur').value), ...extra }).catch(() => null);
         if (d?.ok) { toon(d); melding('💾 Opgeslagen'); } else melding('❌ Opslaan mislukt');
     }
     $('soorten').addEventListener('change', () => bewaarInstellingen());
@@ -233,6 +235,8 @@
     $('volume').addEventListener('input', e => $('volumeTekst').textContent = Math.round(e.target.value * 100) + '%');
     $('duur').addEventListener('input', e => $('duurTekst').textContent = (e.target.value / 1000).toLocaleString('nl-NL') + ' s');
     $('volume').addEventListener('change', () => bewaarInstellingen());
+    $('grootte').addEventListener('input', e => $('grootteTekst').textContent = Math.round(e.target.value * 100) + '%');
+    $('grootte').addEventListener('change', () => bewaarInstellingen());
     $('duur').addEventListener('change', () => bewaarInstellingen());
     $('seOpslaan').addEventListener('click', async () => { await bewaarInstellingen({ seJwt: $('seJwt').value }); $('seJwt').value = ''; setTimeout(laad, 3000); });
     $('sleutelOpslaan').addEventListener('click', () => { sleutel = $('sleutelInvoer').value.trim(); try { localStorage.setItem('boris-sleutel', sleutel); } catch {} laad(); });
