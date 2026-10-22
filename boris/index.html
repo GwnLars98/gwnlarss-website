@@ -51,6 +51,13 @@
     .schuif { display: grid; grid-template-columns: 120px 1fr 70px; gap: 12px; align-items: center; margin-bottom: 10px; }
     .schuif input { accent-color: var(--oranje); }
     .veld { display: flex; gap: 8px; margin-top: 8px; }
+    .geluiden { display: grid; gap: 8px; }
+    .geluid { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--rand); }
+    .geluid b { min-width: 130px; }
+    .geluid span { flex: 1; min-width: 140px; color: var(--dim); font-size: 0.86rem; }
+    .geluid span.eigen { color: var(--groen); }
+    .geluid .knop { padding: 8px 12px; font-size: 0.86rem; }
+    .geluid input[type=file] { display: none; }
     .tests { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .voorbeeld { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; border: 1px solid var(--rand); background: #000; }
     .voorbeeld iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; }
@@ -100,6 +107,12 @@
     </section>
 
     <section class="stap beheer">
+        <h2><span class="nr">🔊</span>Eigen geluiden</h2>
+        <p>Kies per alert je eigen geluid (mp3, wav of ogg, max 8 MB). Zonder eigen geluid speelt de zonsondergang-melodie. Het volume stel je hierboven in.</p>
+        <div class="geluiden" id="geluiden"></div>
+    </section>
+
+    <section class="stap beheer">
         <h2><span class="nr">4</span>Testen</h2>
         <p>Klik op een knop: de alert verschijnt hieronder én in OBS. <span id="verbondenTekst"></span></p>
         <div class="tests" id="tests"></div>
@@ -133,6 +146,7 @@
         $('soorten').innerHTML = Object.entries(SOORTEN).map(([s, naam]) => `<label><input type="checkbox" data-soort="${s}" ${i.aan[s] ? 'checked' : ''}>${naam}</label>`).join('');
         $('volume').value = i.volume; $('volumeTekst').textContent = Math.round(i.volume * 100) + '%';
         $('duur').value = i.duur; $('duurTekst').textContent = (i.duur / 1000).toLocaleString('nl-NL') + ' s';
+        tekenGeluiden(d.geluiden ?? {});
         $('seStatus').textContent = { uit: 'uit', ok: '✅ verbonden', fout: '❌ token geweigerd', bezig: 'verbinden...' }[d.streamElements] ?? d.streamElements;
     }
     async function laad() {
@@ -145,6 +159,28 @@
         const d = await fetch(API, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
         if (d) toon(d);
     }
+
+    function tekenGeluiden(g) {
+        $('geluiden').innerHTML = Object.entries(SOORTEN).map(([s, naam]) => `
+            <div class="geluid"><b>${naam}</b><span class="${g[s] ? 'eigen' : ''}">${g[s] ? '🎵 Eigen geluid' : 'Standaard melodie'}</span>
+            <label class="knop zacht">📁 Kies bestand<input type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/webm,.mp3,.wav,.ogg" data-upload="${s}"></label>
+            ${g[s] ? `<button class="knop zacht" data-luister="${s}" data-v="${g[s]}">▶ Luister</button><button class="knop zacht" data-wis="${s}">✕ Weg</button>` : ''}</div>`).join('');
+    }
+    $('geluiden').addEventListener('change', async e => {
+        const inp = e.target.closest('[data-upload]'); if (!inp?.files[0]) return;
+        const f = inp.files[0], type = f.type || ({ mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg' }[f.name.split('.').pop().toLowerCase()] ?? '');
+        melding('⏳ Uploaden...');
+        const d = await fetch(`${API}/geluid/${inp.dataset.upload}`, { method: 'POST', headers: { 'Content-Type': type, 'X-Sleutel': sleutel }, body: f }).then(r => r.json()).catch(() => null);
+        if (d?.ok) { tekenGeluiden(d.geluiden ?? {}); melding('🎵 Geluid opgeslagen, binnen 30 seconden actief in OBS'); } else melding('❌ ' + (d?.fout ?? 'Uploaden mislukt'));
+    });
+    $('geluiden').addEventListener('click', async e => {
+        const l = e.target.closest('[data-luister]'), w = e.target.closest('[data-wis]');
+        if (l) { const a = new Audio(`${API}/geluid/${l.dataset.luister}?v=${l.dataset.v}`); a.volume = Number($('volume').value); a.play().catch(() => melding('❌ Kan niet afspelen')); }
+        if (w) {
+            const d = await fetch(`${API}/geluid/${w.dataset.wis}`, { method: 'DELETE', headers: { 'X-Sleutel': sleutel } }).then(r => r.json()).catch(() => null);
+            if (d?.ok) { tekenGeluiden(d.geluiden ?? {}); melding('🗑️ Eigen geluid weg, de melodie speelt weer'); }
+        }
+    });
 
     async function bewaarInstellingen(extra = {}) {
         const aan = Object.fromEntries([...document.querySelectorAll('[data-soort]')].map(c => [c.dataset.soort, c.checked]));
