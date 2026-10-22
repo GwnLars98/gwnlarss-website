@@ -14,8 +14,11 @@
        bits-badge bij bits, RAID bij een raid). Gegevens komen live van
        api.gwnlarss.nl/api/streamer-alerts/borisferreiro/stream; instellen en testen op gwnlarss.nl/boris. */
     :root { --paars: #3b2a63; --magenta: #8a3b7a; --koraal: #e0605a; --oranje: #f4a54a; --wit: #fff8f2; }
-    html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: transparent; font-family: 'Baloo 2', system-ui, sans-serif; }
-    body.voorbeeld { background: #222 url('https://static-cdn.jtvnw.net/jtv_user_pictures/81a5a7a9-9ba4-41da-9621-54d3a23eb7bd-channel_offline_image-1920x1080.png') center/cover; }
+    /* alles staat op een vast podium van 1920x1080 dat zich passend over elk venster schaalt (OBS-bron
+       van een andere maat, browser met schermschaal): nooit afgesneden, altijd hetzelfde beeld */
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Baloo 2', system-ui, sans-serif; }
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; }
+    body.voorbeeld #podium { background: #222 url('https://static-cdn.jtvnw.net/jtv_user_pictures/81a5a7a9-9ba4-41da-9621-54d3a23eb7bd-channel_offline_image-1920x1080.png') center/cover; }
 
     /* grootte (instelpagina): het hele alert-blok schaalt vanuit het midden bovenaan, de emote-regen blijft schermvullend */
     #alles { position: absolute; inset: 0; transform: scale(var(--grootte, 1)); transform-origin: 50% 40px; transition: transform 0.4s; }
@@ -66,6 +69,7 @@
 </style>
 </head>
 <body>
+<div id="podium">
 <div id="regen"></div>
 <div id="alles">
 <div class="alert" id="alert">
@@ -75,6 +79,16 @@
 <div class="bericht" id="bericht"></div>
 <canvas id="drie" width="1920" height="1080"></canvas>
 </div>
+</div>
+<script>
+    // podium passend maken: zo groot mogelijk binnen het venster, in het midden (in OBS op 1920x1080 precies 1 op 1)
+    function pasPodiumAan() {
+        const s = Math.min(innerWidth / 1920, innerHeight / 1080), p = document.getElementById('podium');
+        p.style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+        window.podiumSchaal = s; dispatchEvent(new Event('podium'));
+    }
+    addEventListener('resize', pasPodiumAan); pasPodiumAan();
+</script>
 
 <script type="module">
     // 3D-stijl (window.drieD.toon): gouden munt met zijn logo vliegt draaiend binnen, een 3D-vlag met zijn
@@ -83,7 +97,9 @@
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     const doek = document.getElementById('drie');
     const r = new THREE.WebGLRenderer({ canvas: doek, antialias: true, alpha: true });
-    r.setSize(1920, 1080, false); r.setPixelRatio(1);
+    // 3D scherp houden als het podium groter dan 1920x1080 wordt weergegeven (bijv. een 2560x1440-bron)
+    const scherpte = () => { r.setPixelRatio(Math.min(2, Math.max(1, (window.podiumSchaal ?? 1) * devicePixelRatio))); r.setSize(1920, 1080, false); };
+    scherpte(); addEventListener('podium', scherpte);
     r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
     const scene = new THREE.Scene();
     scene.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
