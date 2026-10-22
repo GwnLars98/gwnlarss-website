@@ -127,6 +127,7 @@
     function melodie(soort, volume) {
         try {
             ac ??= new (window.AudioContext || window.webkitAudioContext)();
+            if (ac.state === 'suspended') ac.resume();   // door de browser gepauzeerd: weer starten
             const noten = { follower: [72, 76, 79], subscriber: [72, 76, 79, 84], resub: [72, 76, 79, 84], gift: [72, 76, 79, 84, 88], cheer: [74, 78, 81, 86], raid: [67, 72, 76, 79, 84], donatie: [72, 77, 81, 84] }[soort] ?? [72, 76, 79];
             const t0 = ac.currentTime + 0.05, hoofd = ac.createGain(); hoofd.gain.value = 0.5 * volume; hoofd.connect(ac.destination);
             noten.forEach((n, i) => {
@@ -145,6 +146,7 @@
     const haalInstellingen = () => fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => { if (d?.instellingen) instellingen = d.instellingen; geluiden = d?.geluiden ?? {}; }).catch(() => {});
     // eigen geluid als hij dat heeft geüpload, anders de zonsondergang-melodie
     function geluid(soort, volume) {
+        if (VOORBEELD) return;   // in de instelpagina speelt de pagina zelf het geluid af (zie boris/index.html)
         if (!geluiden[soort]) return melodie(soort, volume);
         const a = new Audio(`${API}/geluid/${soort}?v=${geluiden[soort]}`);
         a.volume = Math.min(1, Math.max(0, volume));

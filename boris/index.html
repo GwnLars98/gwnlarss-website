@@ -160,7 +160,32 @@
         if (d) toon(d);
     }
 
+    // Geluid bij een test: de pagina speelt het zelf af, want alleen de pagina heeft de klik (een browser
+    // laat het voorbeeldkader zonder eigen klik geen geluid maken). Zelfde melodie als de overlay.
+    let huidigeGeluiden = {}, ac = null;
+    function speelTestGeluid(soort) {
+        const volume = Number($('volume').value);
+        if (huidigeGeluiden[soort]) { const a = new Audio(`${API}/geluid/${soort}?v=${huidigeGeluiden[soort]}`); a.volume = volume; return a.play().catch(() => melodie(soort, volume)); }
+        melodie(soort, volume);
+    }
+    function melodie(soort, volume) {
+        ac ??= new (window.AudioContext || window.webkitAudioContext)();
+        if (ac.state === 'suspended') ac.resume();
+        const noten = { follower: [72, 76, 79], subscriber: [72, 76, 79, 84], resub: [72, 76, 79, 84], gift: [72, 76, 79, 84, 88], cheer: [74, 78, 81, 86], raid: [67, 72, 76, 79, 84], donatie: [72, 77, 81, 84] }[soort] ?? [72, 76, 79];
+        const t0 = ac.currentTime + 0.05, hoofd = ac.createGain(); hoofd.gain.value = 0.5 * volume; hoofd.connect(ac.destination);
+        noten.forEach((n, i) => {
+            const f = 440 * 2 ** ((n - 69) / 12), t = t0 + i * 0.11;
+            for (const [type, mul, g] of [['triangle', 1, 0.35], ['sine', 2, 0.12]]) {
+                const o = ac.createOscillator(), v = ac.createGain();
+                o.type = type; o.frequency.value = f * mul;
+                v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g, t + 0.015); v.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+                o.connect(v).connect(hoofd); o.start(t); o.stop(t + 1.3);
+            }
+        });
+    }
+
     function tekenGeluiden(g) {
+        huidigeGeluiden = g;
         $('geluiden').innerHTML = Object.entries(SOORTEN).map(([s, naam]) => `
             <div class="geluid"><b>${naam}</b><span class="${g[s] ? 'eigen' : ''}">${g[s] ? '🎵 Eigen geluid' : 'Standaard melodie'}</span>
             <label class="knop zacht">📁 Kies bestand<input type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/webm,.mp3,.wav,.ogg" data-upload="${s}"></label>
@@ -200,6 +225,7 @@
     $('tests').addEventListener('click', async e => {
         const b = e.target.closest('[data-test]'); if (!b) return;
         const [soort, , extra] = TESTS[b.dataset.test];
+        speelTestGeluid(soort);   // meteen, binnen de klik (anders blokkeert de browser het geluid)
         const d = await post('test', { soort, extra }).catch(() => null);
         if (d?.ok) $('verbondenTekst').textContent = `(${d.kijkers} overlay${d.kijkers === 1 ? '' : 's'} verbonden, inclusief dit voorbeeld)`;
         else melding('❌ Testen mislukt');
