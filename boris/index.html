@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alerts · Boris Ferreiro</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="https://static-cdn.jtvnw.net/jtv_user_pictures/f935070f-68b8-446d-95a4-9885ffbad080-profile_image-300x300.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    /* Instelpagina voor de alerts van Boris Ferreiro (gwnlarss.nl/boris): Twitch koppelen, OBS-link,
+       instellingen en testknoppen met een live voorbeeld. Beheer met een sleutel die je na het koppelen
+       krijgt (of van Lars); die wordt alleen in deze browser bewaard. Data: api.gwnlarss.nl/api/streamer-alerts. */
+    :root { --bg: #160f22; --panel: rgba(36, 24, 54, 0.82); --panel2: #2c1f44; --rand: rgba(255, 255, 255, 0.09); --tekst: #fff8f2; --dim: #cbb9d6;
+        --paars: #3b2a63; --magenta: #8a3b7a; --koraal: #e0605a; --oranje: #f4a54a; --groen: #4fd18b; --rood: #ff6b6b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--tekst); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh;
+        background: linear-gradient(180deg, #1c1230 0%, var(--bg) 40%), var(--bg); }
+    .lucht { position: absolute; inset: 0 0 auto 0; height: 360px; z-index: -1; overflow: hidden;
+        background: linear-gradient(180deg, var(--paars) 0%, var(--magenta) 45%, var(--koraal) 75%, var(--oranje) 100%); }
+    .lucht::after { content: ''; position: absolute; inset: auto 0 0 0; height: 160px; background: linear-gradient(transparent, var(--bg)); }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 80px; }
+    header { display: flex; align-items: center; gap: 20px; padding: 48px 0 34px; }
+    header img { width: 96px; height: 96px; border-radius: 50%; box-shadow: 0 0 0 5px rgba(255,248,242,0.9), 0 0 50px rgba(255,196,120,0.6); }
+    h1 { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: clamp(2rem, 5vw, 3rem); line-height: 1; margin: 0; text-shadow: 0 4px 20px rgba(40,10,40,0.45); }
+    header p { margin: 6px 0 0; color: #ffe4c7; }
+    .stap { background: var(--panel); border: 1px solid var(--rand); border-radius: 22px; padding: 22px 24px; margin-bottom: 16px; backdrop-filter: blur(10px); }
+    .stap h2 { font-family: 'Baloo 2', sans-serif; font-size: 1.35rem; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+    .stap h2 .nr { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 0.95rem; background: linear-gradient(135deg, var(--koraal), var(--oranje)); color: #2a1030; }
+    .stap > p { color: var(--dim); margin: 0 0 14px; line-height: 1.5; }
+    .knop { display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; font: inherit; font-weight: 700; padding: 11px 18px; border-radius: 12px; text-decoration: none;
+        background: linear-gradient(135deg, var(--koraal), var(--oranje)); color: #2a1030; }
+    .knop.twitch { background: #9146ff; color: #fff; }
+    .knop.zacht { background: var(--panel2); color: var(--tekst); border: 1px solid var(--rand); }
+    .knop:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; margin-left: 10px; }
+    .status i { width: 10px; height: 10px; border-radius: 50%; background: var(--dim); }
+    .status.ok { color: var(--groen); } .status.ok i { background: var(--groen); }
+    .status.nee { color: #ffb38a; } .status.nee i { background: #ffb38a; }
+    .link { display: flex; gap: 8px; }
+    .link input, .veld input { flex: 1; min-width: 0; font: inherit; color: var(--tekst); background: var(--panel2); border: 1px solid var(--rand); border-radius: 12px; padding: 11px 14px; }
+    .tip { color: var(--dim); font-size: 0.85rem; margin-top: 8px; }
+    .slot { display: none; }
+    .geen-sleutel .slot { display: block; }
+    .geen-sleutel .beheer { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }
+    .soorten { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-bottom: 16px; }
+    .soorten label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--rand); cursor: pointer; font-weight: 600; }
+    .soorten input { width: 18px; height: 18px; accent-color: var(--oranje); }
+    .schuif { display: grid; grid-template-columns: 120px 1fr 70px; gap: 12px; align-items: center; margin-bottom: 10px; }
+    .schuif input { accent-color: var(--oranje); }
+    .veld { display: flex; gap: 8px; margin-top: 8px; }
+    .tests { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .voorbeeld { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; border: 1px solid var(--rand); background: #000; }
+    .voorbeeld iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; }
+    .melding { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 20px; border-radius: 14px; background: #2c1f44; border: 1px solid var(--rand); font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .melding.aan { opacity: 1; }
+    footer { text-align: center; color: var(--dim); font-size: 0.82rem; margin-top: 40px; }
+    footer a { color: #ffd7a8; }
+    @media (max-width: 560px) { .schuif { grid-template-columns: 1fr 60px; } .schuif span:first-child { grid-column: 1 / -1; } }
+</style>
+</head>
+<body class="geen-sleutel">
+<div class="lucht"></div>
+<div class="wrap">
+    <header>
+        <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/f935070f-68b8-446d-95a4-9885ffbad080-profile_image-300x300.png" alt="Boris Ferreiro">
+        <div><h1>Alerts voor Boris Ferreiro</h1><p>Zonsondergang-alerts met je eigen emotes, voor volgers, subs, gifts, bits, raids en donaties.</p></div>
+    </header>
+
+    <section class="stap">
+        <h2><span class="nr">1</span>Koppel je Twitch</h2>
+        <p>Eén keer inloggen met je Twitch-account, zodat de alerts je volgers, subs en bits zien. Raids werken ook zonder koppeling.</p>
+        <a class="knop twitch" href="https://api.gwnlarss.nl/api/streamer-alerts/verbind">🟣 Koppel met Twitch</a>
+        <span class="status" id="koppelStatus"><i></i>Laden...</span>
+    </section>
+
+    <section class="stap">
+        <h2><span class="nr">2</span>Zet de alerts in OBS</h2>
+        <p>Voeg in OBS een <b>Browserbron</b> toe met deze link, breedte <b>1920</b> en hoogte <b>1080</b>. Zet hem bovenaan in je scènes.</p>
+        <div class="link"><input id="obsLink" readonly value="https://gwnlarss.nl/boris/alerts.html"><button class="knop zacht" id="kopieer">Kopieer</button></div>
+        <div class="tip">Hoor je geen geluid? Vink in OBS bij de browserbron "Audio regelen via OBS" aan en zet het volume hoger.</div>
+    </section>
+
+    <section class="stap slot">
+        <h2><span class="nr">🔑</span>Beheersleutel</h2>
+        <p>Instellingen aanpassen en testen kan met je beheersleutel. Die krijg je automatisch na het koppelen (stap 1), of van Lars.</p>
+        <div class="veld"><input id="sleutelInvoer" type="password" placeholder="Plak hier je beheersleutel"><button class="knop" id="sleutelOpslaan">Opslaan</button></div>
+    </section>
+
+    <section class="stap beheer">
+        <h2><span class="nr">3</span>Instellingen</h2>
+        <p>Welke alerts wil je in beeld? Wijzigingen staan binnen 30 seconden in OBS.</p>
+        <div class="soorten" id="soorten"></div>
+        <div class="schuif"><span>Volume</span><input type="range" id="volume" min="0" max="1" step="0.05"><span id="volumeTekst"></span></div>
+        <div class="schuif"><span>Hoe lang in beeld</span><input type="range" id="duur" min="3000" max="15000" step="500"><span id="duurTekst"></span></div>
+        <p style="margin:18px 0 4px;color:var(--dim)"><b style="color:var(--tekst)">Donaties via StreamElements</b> (optioneel). Plak je JWT-token uit StreamElements (Account → Channels → Show secrets). Status: <span id="seStatus">uit</span></p>
+        <div class="veld"><input id="seJwt" type="password" placeholder="JWT-token van StreamElements (leeg = donaties uit)" autocomplete="off"><button class="knop zacht" id="seOpslaan">Opslaan</button></div>
+    </section>
+
+    <section class="stap beheer">
+        <h2><span class="nr">4</span>Testen</h2>
+        <p>Klik op een knop: de alert verschijnt hieronder én in OBS. <span id="verbondenTekst"></span></p>
+        <div class="tests" id="tests"></div>
+        <div class="voorbeeld" id="voorbeeld"><iframe id="frame" src="alerts.html?voorbeeld" title="Voorbeeld van de alerts" allow="autoplay"></iframe></div>
+    </section>
+
+    <footer>Gemaakt door <a href="https://gwnlarss.nl" target="_blank" rel="noopener">GwnLarss</a></footer>
+</div>
+<div class="melding" id="melding"></div>
+
+<script>
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/borisferreiro';
+    const $ = id => document.getElementById(id);
+    const SOORTEN = { follower: '💜 Volgers', subscriber: '👑 Subs', resub: '🔁 Resubs', gift: '🎁 Gifted subs', cheer: '💎 Bits', raid: '🚨 Raids', donatie: '💸 Donaties' };
+    const TESTS = [['follower', 'Volger'], ['subscriber', 'Sub'], ['resub', 'Resub'], ['gift', '5 gifted subs', { aantal: 5 }], ['cheer', '1.000 bits', { bits: 1000 }],
+        ['cheer', '5.000 bits', { bits: 5000 }], ['cheer', '10.000 bits', { bits: 10000 }], ['raid', 'Raid'], ['donatie', 'Donatie']];
+    const melding = tekst => { const m = $('melding'); m.textContent = tekst; m.classList.add('aan'); clearTimeout(melding.t); melding.t = setTimeout(() => m.classList.remove('aan'), 2600); };
+
+    // sleutel: uit de link na het koppelen (#sleutel=...), anders uit deze browser
+    const hash = new URLSearchParams(location.hash.slice(1));
+    if (hash.get('sleutel')) { try { localStorage.setItem('boris-sleutel', hash.get('sleutel')); } catch {} history.replaceState(null, '', location.pathname + location.search); }
+    let sleutel = (() => { try { return localStorage.getItem('boris-sleutel'); } catch { return null; } })();
+    if (new URLSearchParams(location.search).has('verbonden')) melding('✅ Je Twitch is gekoppeld!');
+
+    const post = (pad, body) => fetch(`${API}/${pad}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, ...body }) }).then(r => r.json());
+
+    function toon(d) {
+        $('koppelStatus').className = `status ${d.gekoppeld ? 'ok' : 'nee'}`;
+        $('koppelStatus').innerHTML = `<i></i>${d.gekoppeld ? `Gekoppeld als ${d.naam}` : 'Nog niet gekoppeld'}`;
+        const i = d.instellingen;
+        $('soorten').innerHTML = Object.entries(SOORTEN).map(([s, naam]) => `<label><input type="checkbox" data-soort="${s}" ${i.aan[s] ? 'checked' : ''}>${naam}</label>`).join('');
+        $('volume').value = i.volume; $('volumeTekst').textContent = Math.round(i.volume * 100) + '%';
+        $('duur').value = i.duur; $('duurTekst').textContent = (i.duur / 1000).toLocaleString('nl-NL') + ' s';
+        $('seStatus').textContent = { uit: 'uit', ok: '✅ verbonden', fout: '❌ token geweigerd', bezig: 'verbinden...' }[d.streamElements] ?? d.streamElements;
+    }
+    async function laad() {
+        if (sleutel) {
+            const d = await post('controleer', {}).catch(() => null);
+            if (d?.ok) { document.body.classList.remove('geen-sleutel'); return toon(d); }
+            sleutel = null; try { localStorage.removeItem('boris-sleutel'); } catch {}
+        }
+        document.body.classList.add('geen-sleutel');
+        const d = await fetch(API, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+        if (d) toon(d);
+    }
+
+    async function bewaarInstellingen(extra = {}) {
+        const aan = Object.fromEntries([...document.querySelectorAll('[data-soort]')].map(c => [c.dataset.soort, c.checked]));
+        const d = await post('instellingen', { aan, volume: Number($('volume').value), duur: Number($('duur').value), ...extra }).catch(() => null);
+        if (d?.ok) { toon(d); melding('💾 Opgeslagen'); } else melding('❌ Opslaan mislukt');
+    }
+    $('soorten').addEventListener('change', () => bewaarInstellingen());
+    $('volume').addEventListener('input', e => $('volumeTekst').textContent = Math.round(e.target.value * 100) + '%');
+    $('duur').addEventListener('input', e => $('duurTekst').textContent = (e.target.value / 1000).toLocaleString('nl-NL') + ' s');
+    $('volume').addEventListener('change', () => bewaarInstellingen());
+    $('duur').addEventListener('change', () => bewaarInstellingen());
+    $('seOpslaan').addEventListener('click', async () => { await bewaarInstellingen({ seJwt: $('seJwt').value }); $('seJwt').value = ''; setTimeout(laad, 3000); });
+    $('sleutelOpslaan').addEventListener('click', () => { sleutel = $('sleutelInvoer').value.trim(); try { localStorage.setItem('boris-sleutel', sleutel); } catch {} laad(); });
+    $('kopieer').addEventListener('click', () => { navigator.clipboard?.writeText($('obsLink').value); melding('📋 Link gekopieerd'); });
+
+    $('tests').innerHTML = TESTS.map(([s, naam], i) => `<button class="knop zacht" data-test="${i}">${naam}</button>`).join('');
+    $('tests').addEventListener('click', async e => {
+        const b = e.target.closest('[data-test]'); if (!b) return;
+        const [soort, , extra] = TESTS[b.dataset.test];
+        const d = await post('test', { soort, extra }).catch(() => null);
+        if (d?.ok) $('verbondenTekst').textContent = `(${d.kijkers} overlay${d.kijkers === 1 ? '' : 's'} verbonden, inclusief dit voorbeeld)`;
+        else melding('❌ Testen mislukt');
+    });
+
+    // voorbeeld: de overlay op schaal in het kader
+    const schaal = () => { const w = $('voorbeeld').clientWidth; $('frame').style.transform = `scale(${w / 1920})`; };
+    addEventListener('resize', schaal); schaal();
+    laad();
+</script>
+</body>
+</html>
