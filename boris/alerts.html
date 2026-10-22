@@ -115,7 +115,8 @@
             img.style.width = img.style.height = grootte + 'px';
             img.style.left = x + 'px';
             doos.appendChild(img);
-            const val = 1080 + 300, start = Math.random() * Math.min(2600, duur * 0.45), snelheid = 2300 + Math.random() * 2000;
+            // verspreid over (bijna) de hele alert en rustig vallend, zodat het blijft regenen zolang de kaart in beeld is
+            const val = 1080 + 300, start = Math.random() * duur * 0.72, snelheid = 3600 + Math.random() * 2600;
             img.animate([{ transform: `translateY(0) rotate(0deg)` }, { transform: `translateY(${val}px) rotate(${draai}deg)` }],
                 { duration: snelheid, delay: start, easing: 'cubic-bezier(.35,.05,.6,1)', fill: 'both' }).onfinish = () => img.remove();
         }
