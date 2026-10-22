@@ -23,7 +23,7 @@
     /* grootte (instelpagina): het hele alert-blok schaalt vanuit het midden bovenaan, de emote-regen blijft schermvullend */
     #alles { position: absolute; inset: 0; transform: scale(var(--grootte, 1)); transform-origin: 50% 40px; transition: transform 0.4s; }
     #regen { position: absolute; inset: 0; pointer-events: none; }
-    .emote { position: absolute; top: -140px; width: 112px; height: 112px; will-change: transform; filter: drop-shadow(0 8px 14px rgba(0,0,0,0.35)); }
+    .emote { position: absolute; top: -140px; width: 112px; height: 112px; will-change: transform; }
 
     .alert { position: absolute; left: 50%; top: 90px; width: 860px; height: 250px; transform: translateX(-50%) translateY(-40px) scale(0.92); opacity: 0;
         transition: transform 0.6s cubic-bezier(.2,1.4,.4,1), opacity 0.35s; }
@@ -97,9 +97,14 @@
     import * as THREE from 'three';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     const doek = document.getElementById('drie');
+    // zuinige stand voor een mindere pc: lagere 3D-resolutie, geen glinsters, minder emotes. Gaat vanzelf aan
+    // als het tekenen te lang duurt (en wordt dan onthouden), of met ?zuinig in de link (?zuinig=0 zet hem uit)
+    const ZP = new URLSearchParams(location.search).get('zuinig');
+    let zuinig = ZP !== null ? ZP !== '0' : (() => { try { return localStorage.getItem('boris-zuinig') === '1'; } catch { return false; } })();
+    window.zuinig = () => zuinig;
     const r = new THREE.WebGLRenderer({ canvas: doek, antialias: true, alpha: true });
     // 3D scherp houden als het podium groter dan 1920x1080 wordt weergegeven (bijv. een 2560x1440-bron)
-    const scherpte = () => { r.setPixelRatio(Math.min(1.5, Math.max(1, window.podiumSchaal ?? 1))); r.setSize(1920, 1080, false); };
+    const scherpte = () => { r.setPixelRatio(zuinig ? 0.75 : Math.min(1.5, Math.max(1, window.podiumSchaal ?? 1))); r.setSize(1920, 1080, false); };
     scherpte(); addEventListener('podium', scherpte);
     r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
     const scene = new THREE.Scene();
@@ -119,10 +124,10 @@
     const kant = new THREE.MeshStandardMaterial({ map: logo, metalness: 0.15, roughness: 0.35 });
     const munt = new THREE.Group();
     // rand als open cilinder, voor- en achterkant als losse cirkels zodat het logo rechtop staat
-    const randCil = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.55, 72, 1, true), goud); randCil.rotation.x = Math.PI / 2; munt.add(randCil);
-    const voor = new THREE.Mesh(new THREE.CircleGeometry(3, 72), kant); voor.position.z = 0.28; munt.add(voor);
-    const achter = new THREE.Mesh(new THREE.CircleGeometry(3, 72), kant); achter.position.z = -0.28; achter.rotation.y = Math.PI; munt.add(achter);
-    munt.add(new THREE.Mesh(new THREE.TorusGeometry(3.02, 0.22, 20, 96), goud));
+    const randCil = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.55, 48, 1, true), goud); randCil.rotation.x = Math.PI / 2; munt.add(randCil);
+    const voor = new THREE.Mesh(new THREE.CircleGeometry(3, 48), kant); voor.position.z = 0.28; munt.add(voor);
+    const achter = new THREE.Mesh(new THREE.CircleGeometry(3, 48), kant); achter.position.z = -0.28; achter.rotation.y = Math.PI; munt.add(achter);
+    munt.add(new THREE.Mesh(new THREE.TorusGeometry(3.02, 0.22, 12, 64), goud));
     munt.visible = false; geheel.add(munt);
 
     // de vlag: een echt doek met reliëf. De voorkant is een canvas met zijn zonsondergang, golven en de tekst
@@ -151,8 +156,8 @@
     }; return mat; };
 
     // voorkant: kleuren-canvas + reliëf-canvas met dezelfde opmaak
-    const W = 2048, H = 576, R = 112;
-    const maakDoek = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+    const W = 2048, H = 576, R = 112, DK = 0.75;   // getekend in 2048x576-maten, opgeslagen op 75%
+    const maakDoek = () => { const c = document.createElement('canvas'); c.width = W * DK; c.height = H * DK; return c; };
     const kleurDoek = maakDoek(), reliefDoek = maakDoek();
     const kleurTex = new THREE.CanvasTexture(kleurDoek); kleurTex.colorSpace = THREE.SRGBColorSpace;
     const reliefTex = new THREE.CanvasTexture(reliefDoek);
@@ -164,7 +169,7 @@
     }
     function teken(c, reliëf, o, naam) {
         const K = (kleur, grijs) => reliëf ? grijs : kleur;
-        c.clearRect(0, 0, W, H); c.save();
+        c.setTransform(DK, 0, 0, DK, 0, 0); c.clearRect(0, 0, W, H); c.save();
         c.beginPath(); c.roundRect(0, 0, W, H, R); c.clip();
         if (reliëf) { c.fillStyle = '#000'; c.fillRect(0, 0, W, H); }
         else {
@@ -213,11 +218,10 @@
     const vulDoek = (o, naam) => { teken(kleurDoek.getContext('2d'), false, o, naam); teken(reliefDoek.getContext('2d'), true, o, naam); kleurTex.needsUpdate = reliefTex.needsUpdate = true; };
     const lettertype = Promise.all([document.fonts.load('800 100px "Baloo 2"'), document.fonts.load('600 56px "Baloo 2"')]).catch(() => {});
 
-    const doekGeo = new THREE.PlaneGeometry(LB, LH, 180, 24);
-    vlag.add(new THREE.Mesh(doekGeo, golvend(new THREE.MeshPhysicalMaterial({
-        map: kleurTex, emissiveMap: kleurTex, emissive: 0xffffff, emissiveIntensity: 0.2,
-        bumpMap: reliefTex, bumpScale: 3.2, roughness: 0.5, sheen: 0.55, sheenRoughness: 0.4, sheenColor: 0xff9a7a,
-        clearcoat: 0.18, clearcoatRoughness: 0.3, envMapIntensity: 0.35, alphaTest: 0.5, side: THREE.DoubleSide }))));
+    const doekGeo = new THREE.PlaneGeometry(LB, LH, 96, 10);
+    vlag.add(new THREE.Mesh(doekGeo, golvend(new THREE.MeshStandardMaterial({
+        map: kleurTex, emissiveMap: kleurTex, emissive: 0xffffff, emissiveIntensity: 0.22,
+        bumpMap: reliefTex, bumpScale: 3.2, roughness: 0.42, metalness: 0.05, envMapIntensity: 0.45, alphaTest: 0.5, side: THREE.DoubleSide }))));
     // achterkant iets naar achteren: het doek krijgt zo echte dikte
     const achterGeo = doekGeo.clone(); achterGeo.translate(0, 0, -0.16);
     vlag.add(new THREE.Mesh(achterGeo, golvend(new THREE.MeshStandardMaterial({ map: kleurTex, color: 0x5a3a66, roughness: 0.6, alphaTest: 0.5, side: THREE.BackSide }))));
@@ -229,7 +233,7 @@
     const lijstPad = new THREE.CurvePath();
     for (let i = 0; i < lijst.length; i++) lijstPad.add(new THREE.LineCurve3(lijst[i], lijst[(i + 1) % lijst.length]));
     const goudGolf = golvend(new THREE.MeshStandardMaterial({ color: 0xf4a54a, metalness: 0.95, roughness: 0.2 }));
-    vlag.add(new THREE.Mesh(new THREE.TubeGeometry(lijstPad, 900, 0.2, 14, true), goudGolf));
+    vlag.add(new THREE.Mesh(new THREE.TubeGeometry(lijstPad, 360, 0.2, 8, true), goudGolf));
 
     // twee zwaluwstaarten achter het eind van de vlag
     const staartDoek = document.createElement('canvas'); staartDoek.width = 512; staartDoek.height = 256;
@@ -238,9 +242,9 @@
       c.beginPath(); c.moveTo(0, 30); c.lineTo(512, 30); c.lineTo(392, 128); c.lineTo(512, 226); c.lineTo(0, 226); c.closePath();
       c.fillStyle = g; c.fill(); c.lineWidth = 14; c.strokeStyle = '#f4b860'; c.stroke(); }
     const staartTex = new THREE.CanvasTexture(staartDoek); staartTex.colorSpace = THREE.SRGBColorSpace;
-    const staartMat = golvend(new THREE.MeshPhysicalMaterial({ map: staartTex, roughness: 0.5, sheen: 1, sheenColor: 0xffb08a, alphaTest: 0.5, side: THREE.DoubleSide }));
+    const staartMat = golvend(new THREE.MeshStandardMaterial({ map: staartTex, roughness: 0.45, alphaTest: 0.5, side: THREE.DoubleSide }));
     for (const [y, z, kantel] of [[1.25, -0.45, 0.13], [-1.3, -0.6, -0.15]]) {
-        const g = new THREE.PlaneGeometry(3.4, 2.0, 30, 4); g.rotateZ(kantel); g.translate(HB + 0.4, y, z);
+        const g = new THREE.PlaneGeometry(3.4, 2.0, 16, 2); g.rotateZ(kantel); g.translate(HB + 0.4, y, z);
         vlag.add(new THREE.Mesh(g, staartMat));
     }
 
@@ -285,8 +289,9 @@
             geheel.scale.setScalar(s); geheel.position.copy(ANKER).multiplyScalar(1 - s);
             anim = { start: performance.now(), duur };
             munt.visible = true; munt.scale.setScalar(1); starten();
-            vulDoek(o, e.naam); lettertype.then(() => vulDoek(o, e.naam));   // opnieuw zodra Baloo 2 zeker geladen is
-            setTimeout(() => spat(urls, o.aantal, munt.getWorldPosition(new THREE.Vector3())), 850);
+            if (document.fonts.check('800 100px "Baloo 2"')) vulDoek(o, e.naam);
+            else { vulDoek(o, e.naam); lettertype.then(() => vulDoek(o, e.naam)); }   // nog eens zodra Baloo 2 geladen is
+            setTimeout(() => spat(urls, zuinig ? Math.ceil(o.aantal / 2) : o.aantal, munt.getWorldPosition(new THREE.Vector3())), 850);
         },
     };
 
@@ -295,8 +300,11 @@
     function starten() { if (loopt) return; loopt = true; vorige = performance.now(); r.setAnimationLoop(stap); }
     // shaders alvast klaarzetten, zodat de eerste alert niet hapert
     munt.visible = vlag.visible = true; r.compile(scene, cam); munt.visible = vlag.visible = false;
+    let meting = { frames: 0, werk: 0 };
     function stap() {
-        const nu = performance.now(), dt = Math.min(0.05, (nu - vorige) / 1000); vorige = nu;
+        const nu = performance.now();
+        if (nu - vorige < 15) return;   // hooguit ~60 beelden per seconde, ook op een 144Hz-scherm
+        const dt = Math.min(0.05, (nu - vorige) / 1000); vorige = nu;
         golfU.tijd.value = nu / 1000;
         if (anim) {
             const t = (nu - anim.start) / 1000, eind = anim.duur / 1000;
@@ -325,6 +333,7 @@
             golfU.open.value = open; vlag.visible = open > 0.001;
             strijk.position.x = -HB - 2 + ((t * 7) % 26);   // strijklicht trekt elke ~3,7 s van links naar rechts
             for (const g of glinsters) {
+                g.s.visible = !zuinig;
                 g.s.position.set(-HB + (g.x + HB) * open, g.y, 0.25);
                 g.s.material.opacity = Math.pow(Math.max(0, Math.sin(t * g.snel + g.fase)), 6) * open;
             }
@@ -339,6 +348,14 @@
             return true;
         });
         r.render(scene, cam);
+        // houdt deze pc het bij? Kost één beeld gemiddeld meer dan 14 ms rekenwerk, dan voortaan zuinig
+        if (!zuinig && anim) {
+            meting.frames++; meting.werk += performance.now() - nu;
+            if (meting.frames === 40) {
+                if (meting.werk / 40 > 14) { zuinig = true; scherpte(); try { localStorage.setItem('boris-zuinig', '1'); } catch { } }
+                meting = { frames: 0, werk: 0 };
+            }
+        }
         if (!anim && !deeltjes.length) { loopt = false; r.setAnimationLoop(null); }
     }
 
@@ -455,7 +472,7 @@
         bericht.textContent = o.bericht || ''; bericht.classList.toggle('aan', Boolean(o.bericht));
         alert.classList.remove('weg'); void alert.offsetWidth; alert.classList.add('zichtbaar');
         geluid(e.soort, instellingen.volume ?? 0.7);
-        regen(o.emotes, o.aantal, duur);
+        regen(o.emotes, window.zuinig?.() ? Math.ceil(o.aantal / 2) : o.aantal, duur);
         setTimeout(() => { alert.classList.add('weg'); alert.classList.remove('zichtbaar'); bericht.classList.remove('aan'); }, duur);
         setTimeout(() => { bezig = false; volgende(); }, duur + 700);
     }
