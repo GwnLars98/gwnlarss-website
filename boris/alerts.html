@@ -61,7 +61,7 @@
 
     /* ---------- 3D-stijl: gouden munt met zijn logo, wapperend zonsondergang-lint, emotes die eruit spatten ---------- */
     #drie { position: absolute; inset: 0; width: 1920px; height: 1080px; pointer-events: none; }
-    .tekst3d { position: absolute; left: 600px; top: 112px; width: 1080px; color: var(--wit); opacity: 0; transform: perspective(900px) rotateY(-28deg) translateX(-40px); transform-origin: left center;
+    .tekst3d { position: absolute; left: 600px; top: 190px; width: 1080px; color: var(--wit); opacity: 0; transform: perspective(900px) rotateY(-28deg) translateX(-40px); transform-origin: left center;
         transition: opacity 0.4s, transform 0.7s cubic-bezier(.2,1.3,.4,1); }
     .tekst3d.aan { opacity: 1; transform: perspective(900px) rotateY(-6deg); }
     .tekst3d .soort { font-size: 32px; }
@@ -101,8 +101,10 @@
     const goud = new THREE.MeshStandardMaterial({ color: 0xf4a54a, metalness: 0.95, roughness: 0.22 });
     const kant = new THREE.MeshStandardMaterial({ map: logo, metalness: 0.15, roughness: 0.35 });
     const munt = new THREE.Group();
-    const schijf = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.55, 72), [goud, kant, kant]);
-    schijf.rotation.x = Math.PI / 2; munt.add(schijf);
+    // rand als open cilinder, voor- en achterkant als losse cirkels zodat het logo rechtop staat
+    const randCil = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.55, 72, 1, true), goud); randCil.rotation.x = Math.PI / 2; munt.add(randCil);
+    const voor = new THREE.Mesh(new THREE.CircleGeometry(3, 72), kant); voor.position.z = 0.28; munt.add(voor);
+    const achter = new THREE.Mesh(new THREE.CircleGeometry(3, 72), kant); achter.position.z = -0.28; achter.rotation.y = Math.PI; munt.add(achter);
     munt.add(new THREE.Mesh(new THREE.TorusGeometry(3.02, 0.22, 20, 96), goud));
     munt.visible = false; scene.add(munt);
 
@@ -125,7 +127,7 @@
                 k = mix(k, vec3(1.0, 0.97, 0.94), wit * 0.85);
                 gl_FragColor = vec4(k * vSchaduw, randje * smoothstep(1.0, 0.92, vUv.x)); }`,
     }));
-    lint.position.set(3.2, 6.2, -0.6); lint.visible = false; scene.add(lint);
+    lint.position.set(3.2, 4.8, -0.6); lint.visible = false; scene.add(lint);
 
     // emotes als 3D-deeltjes die uit de munt spatten en vallen
     const texCache = new Map();
@@ -136,7 +138,7 @@
             const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(urls[i % urls.length]), transparent: true, depthWrite: false }));
             const g = 1.1 + Math.random() * 1.2; s.scale.set(g, g, 1); s.position.copy(waar);
             const h = Math.random() * Math.PI * 2, kracht = 7 + Math.random() * 11;
-            deeltjes.push({ s, v: new THREE.Vector3(Math.cos(h) * kracht, Math.sin(h) * kracht * 0.8 + 5, 4 + Math.random() * 10), draai: (Math.random() - 0.5) * 6, start: performance.now() + Math.random() * 2400 });
+            deeltjes.push({ s, v: new THREE.Vector3(Math.cos(h) * kracht, Math.sin(h) * kracht * 0.8 + 5, 4 + Math.random() * 10), draai: (Math.random() - 0.5) * 6, start: performance.now() + Math.random() * Math.random() * 2200 });   // vooral meteen een flinke knal, daarna nog wat nadruppelen
             s.visible = false; scene.add(s);
         }
     }
@@ -144,7 +146,7 @@
     let anim = null;
     const ease = t => 1 - Math.pow(1 - t, 3);
     const terug = t => { const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
-    const DOEL = new THREE.Vector3(-10.4, 6.2, 0.6), VAN = new THREE.Vector3(-2, 2, -90);
+    const DOEL = new THREE.Vector3(-10.4, 4.8, 0.6), VAN = new THREE.Vector3(-2, 2, -90);
     window.drieD = {
         toon(e, o, duur, urls) {
             anim = { start: performance.now(), duur };
