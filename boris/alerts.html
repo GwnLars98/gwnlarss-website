@@ -49,6 +49,7 @@
     @keyframes schuif { to { transform: translateX(-50%); } }
     /* lichtstreep die over de kaart glijdt */
     .glans { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.28) 50%, transparent 65%); transform: translateX(-120%); }
+    .alert:not(.zichtbaar) .golf, .alert:not(.zichtbaar) .zon { animation-play-state: paused; }   /* onzichtbaar: niets laten doorlopen */
     .alert.zichtbaar .glans { animation: glans 1.6s 0.5s ease-out; }
     @keyframes glans { to { transform: translateX(120%); } }
 
@@ -77,8 +78,8 @@
     <div class="tekst"><div class="soort" id="soort"></div><div class="naam" id="naam"></div><div class="extra" id="extra"></div></div>
 </div>
 <div class="bericht" id="bericht"></div>
-<canvas id="drie" width="1920" height="1080"></canvas>
 </div>
+<canvas id="drie" width="1920" height="1080"></canvas>
 </div>
 <script>
     // podium passend maken: zo groot mogelijk binnen het venster, in het midden (in OBS op 1920x1080 precies 1 op 1)
@@ -98,7 +99,7 @@
     const doek = document.getElementById('drie');
     const r = new THREE.WebGLRenderer({ canvas: doek, antialias: true, alpha: true });
     // 3D scherp houden als het podium groter dan 1920x1080 wordt weergegeven (bijv. een 2560x1440-bron)
-    const scherpte = () => { r.setPixelRatio(Math.min(2, Math.max(1, (window.podiumSchaal ?? 1) * devicePixelRatio))); r.setSize(1920, 1080, false); };
+    const scherpte = () => { r.setPixelRatio(Math.min(1.5, Math.max(1, window.podiumSchaal ?? 1))); r.setSize(1920, 1080, false); };
     scherpte(); addEventListener('podium', scherpte);
     r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
     const scene = new THREE.Scene();
@@ -106,6 +107,9 @@
     const cam = new THREE.PerspectiveCamera(35, 1920 / 1080, 0.1, 300); cam.position.set(0, 0, 33);   // iets verder weg: ook op 130% blijft er rand over
     scene.add(new THREE.HemisphereLight(0xffe2c4, 0x3b2a63, 1.1));
     const zon = new THREE.DirectionalLight(0xffd2a0, 2.2); zon.position.set(-6, 8, 10); scene.add(zon);
+    // munt en vlag samen in één groep: die schaalt met de grootte-instelling vanuit het midden bovenaan
+    // (zelfde punt als de zonsondergang-kaart); de emotes vallen daarbuiten over het hele beeld
+    const geheel = new THREE.Group(), ANKER = new THREE.Vector3(0, 9.63, 0); scene.add(geheel);
     const laden = new THREE.TextureLoader(); laden.setCrossOrigin('anonymous');
 
     // munt: gouden rand, zijn logo op beide kanten
@@ -119,14 +123,14 @@
     const voor = new THREE.Mesh(new THREE.CircleGeometry(3, 72), kant); voor.position.z = 0.28; munt.add(voor);
     const achter = new THREE.Mesh(new THREE.CircleGeometry(3, 72), kant); achter.position.z = -0.28; achter.rotation.y = Math.PI; munt.add(achter);
     munt.add(new THREE.Mesh(new THREE.TorusGeometry(3.02, 0.22, 20, 96), goud));
-    munt.visible = false; scene.add(munt);
+    munt.visible = false; geheel.add(munt);
 
     // de vlag: een echt doek met reliëf. De voorkant is een canvas met zijn zonsondergang, golven en de tekst
     // (die dus meewappert en via een bumpmap reliëf krijgt), eromheen een gouden buis als lijst (zoals de munt),
     // achteraan twee zwaluwstaarten, een lichtje dat er glanzend overheen strijkt en glinsters langs de rand.
     // Munt + vlag + staarten samen zijn ~25 eenheden breed en staan gecentreerd, ook op 130% nog in beeld.
     const LB = 18, LH = 5.6, LX = 1.35, LY = 4.8, HB = LB / 2;
-    const vlag = new THREE.Group(); vlag.position.set(LX, LY, -0.9); vlag.rotation.y = 0.12; vlag.visible = false; scene.add(vlag);
+    const vlag = new THREE.Group(); vlag.position.set(LX, LY, -0.9); vlag.rotation.y = 0.12; vlag.visible = false; geheel.add(vlag);
     const golfU = { tijd: { value: 0 }, open: { value: 0 } };
     // laat een standaard-materiaal golven (en uitrollen vanaf de munt), met meegedraaide normalen voor het licht
     const golvend = mat => { mat.onBeforeCompile = s => {
@@ -277,15 +281,21 @@
     const DOEL = new THREE.Vector3(-9.25, 4.8, 1.1), VAN = new THREE.Vector3(-2, 2, -90);
     window.drieD = {
         toon(e, o, duur, urls) {
+            const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--grootte')) || 1;
+            geheel.scale.setScalar(s); geheel.position.copy(ANKER).multiplyScalar(1 - s);
             anim = { start: performance.now(), duur };
-            munt.visible = true; munt.scale.setScalar(1);
+            munt.visible = true; munt.scale.setScalar(1); starten();
             vulDoek(o, e.naam); lettertype.then(() => vulDoek(o, e.naam));   // opnieuw zodra Baloo 2 zeker geladen is
-            setTimeout(() => spat(urls, o.aantal, DOEL.clone()), 850);
+            setTimeout(() => spat(urls, o.aantal, munt.getWorldPosition(new THREE.Vector3())), 850);
         },
     };
 
-    let vorige = performance.now();
-    r.setAnimationLoop(() => {
+    // alleen tekenen zolang er iets in beeld is: daarna stopt de lus (stil kost de overlay dan niets)
+    let vorige = performance.now(), loopt = false;
+    function starten() { if (loopt) return; loopt = true; vorige = performance.now(); r.setAnimationLoop(stap); }
+    // shaders alvast klaarzetten, zodat de eerste alert niet hapert
+    munt.visible = vlag.visible = true; r.compile(scene, cam); munt.visible = vlag.visible = false;
+    function stap() {
         const nu = performance.now(), dt = Math.min(0.05, (nu - vorige) / 1000); vorige = nu;
         golfU.tijd.value = nu / 1000;
         if (anim) {
@@ -323,13 +333,14 @@
         deeltjes = deeltjes.filter(d => {
             if (nu < d.start) return true;
             d.s.visible = true;
-            d.v.y -= 16 * dt; d.s.position.addScaledVector(d.v, dt); d.s.material.rotation += d.draai * dt;
-            const leeftijd = (nu - d.start) / 1000; d.s.material.opacity = Math.min(1, 3.2 - leeftijd);
-            if (leeftijd > 3.2 || d.s.position.y < -14) { scene.remove(d.s); d.s.material.dispose(); return false; }
+            d.v.y -= 11 * dt; d.v.x *= 1 - 0.35 * dt; d.s.position.addScaledVector(d.v, dt); d.s.material.rotation += d.draai * dt;
+            const leeftijd = (nu - d.start) / 1000;
+            if (leeftijd > 8 || d.s.position.y < -13) { scene.remove(d.s); d.s.material.dispose(); return false; }   // pas weg als hij onder uit beeld is gevallen
             return true;
         });
         r.render(scene, cam);
-    });
+        if (!anim && !deeltjes.length) { loopt = false; r.setAnimationLoop(null); }
+    }
 
 </script>
 <script>
