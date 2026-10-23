@@ -7,94 +7,78 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
 <style>
-    /* Stream stats voor Boris Ferreiro (OBS-browserbron, 1920x1080, transparant). Een strakke balk in zijn
-       zonsondergang-stijl met zijn laatste volger, sub, bits en donatie (raids bewust niet), plus zijn
-       totalen volgers en subs met wat er deze stream bij kwam. Werkt live mee met zijn alerts (zelfde
-       live-verbinding); zet hem in OBS onder de alerts-bron, dan komen de alerts (ook volledig scherm)
-       eroverheen. ?plek=boven zet de balk bovenin, ?grootte=0.7 maakt hem kleiner (0.5 t/m 1.2),
+    /* Stream stats voor Boris Ferreiro (OBS-browserbron, 1920x1080, transparant). Een rustige balk in zijn
+       kleuren met zijn logo in het midden: links de laatste volger en sub, rechts de laatste gifter en bits
+       (en de laatste donatie zodra StreamElements aan staat). Elke tegel: een klein label en de naam, met
+       eventueel een gouden labeltje (x50, 1.000 bits). Werkt live mee met zijn alerts; zet hem in OBS onder
+       de alerts-bron. ?plek=boven zet de balk bovenin, ?grootte=0.7 maakt hem kleiner (0.5 t/m 1.2),
        ?voorbeeld toont zijn offline-scherm erachter. */
-    :root { --goud: #ffd27a; --zacht: #ffd7a8; --wit: #fff8f2; }
+    :root { --goud: #ffd27a; --label: #f3c48f; --wit: #fff8f2; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Baloo 2', system-ui, sans-serif; }
     #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; }
     body.voorbeeld #podium { background: #222 url('https://static-cdn.jtvnw.net/jtv_user_pictures/81a5a7a9-9ba4-41da-9621-54d3a23eb7bd-channel_offline_image-1920x1080.png') center/cover; }
 
-    /* grootte: de hele balk schaalt vanuit het midden onderin (of bovenin bij ?plek=boven) */
-    #schaal { position: absolute; inset: 0; transform: scale(var(--schaal, 1)); transform-origin: 50% calc(100% - 34px); }
-    body.boven #schaal { transform-origin: 50% 34px; }
+    /* grootte: de hele balk schaalt vanuit zijn eigen midden onderin (of bovenin bij ?plek=boven) */
+    #schaal { position: absolute; inset: 0; transform: scale(var(--schaal, 1)); transform-origin: 50% calc(100% - 36px); }
+    body.boven #schaal { transform-origin: 50% 36px; }
 
-    /* drie kolommen: links en rechts even breed (de breedste bepaalt), het logo precies in het midden */
-    .balk { position: absolute; left: 50%; bottom: 34px; height: 92px; transform: translateX(-50%); display: grid; grid-template-columns: 1fr 132px 1fr; align-items: center;
-        padding: 0 8px; box-sizing: border-box; border-radius: 24px; color: var(--wit); white-space: nowrap;
-        background: linear-gradient(180deg, rgba(34, 23, 64, 0.95), rgba(74, 36, 98, 0.95) 55%, rgba(128, 54, 116, 0.95));
-        box-shadow: 0 14px 40px rgba(20, 6, 30, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-        animation: binnen 0.9s cubic-bezier(.2, 1.3, .4, 1) both; }
-    body.boven .balk { bottom: auto; top: 34px; animation-name: binnenBoven; }
-    @keyframes binnen { from { transform: translateX(-50%) translateY(150px); opacity: 0; } }
-    @keyframes binnenBoven { from { transform: translateX(-50%) translateY(-150px); opacity: 0; } }
-    /* gouden rand, zoals de munt en de vlag */
-    .balk::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 2.5px; pointer-events: none;
-        background: linear-gradient(90deg, #c9702a, #ffd27a, #f4a54a, #ffe9b8, #f4a54a, #ffd27a, #c9702a);
+    /* drie kolommen: links en rechts even breed, het logo precies in het midden */
+    .balk { position: absolute; left: 50%; bottom: 36px; height: 80px; transform: translateX(-50%); display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center;
+        padding: 0 6px; box-sizing: border-box; border-radius: 40px; color: var(--wit); white-space: nowrap;
+        background: linear-gradient(180deg, rgba(40, 26, 72, 0.96), rgba(70, 34, 94, 0.96));
+        box-shadow: 0 12px 34px rgba(16, 4, 26, 0.45);
+        animation: binnen 0.8s cubic-bezier(.2, 1.25, .4, 1) both; }
+    body.boven .balk { bottom: auto; top: 36px; animation-name: binnenBoven; }
+    @keyframes binnen { from { transform: translateX(-50%) translateY(140px); opacity: 0; } }
+    @keyframes binnenBoven { from { transform: translateX(-50%) translateY(-140px); opacity: 0; } }
+    /* dunne gouden rand */
+    .balk::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 2px; pointer-events: none;
+        background: linear-gradient(90deg, rgba(201, 112, 42, 0.9), #ffd27a 30%, #f4a54a 50%, #ffd27a 70%, rgba(201, 112, 42, 0.9));
         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-    /* zijn golven onderin, langzaam schuivend (één element, alleen transform: licht) */
-    .zee { position: absolute; inset: 2.5px; border-radius: 21.5px; overflow: hidden; pointer-events: none; }
-    .golven { position: absolute; left: 0; bottom: -2px; width: 200%; height: 30px; opacity: 0.4; animation: schuif 26s linear infinite;
-        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 44' preserveAspectRatio='none'%3E%3Cpath d='M0 22 Q100 6 200 22 T400 22 T600 22 T800 22 V44 H0Z' fill='%23e0605a' opacity='0.55'/%3E%3Cpath d='M0 30 Q100 18 200 30 T400 30 T600 30 T800 30 V44 H0Z' fill='%23f4a54a' opacity='0.6'/%3E%3C/svg%3E") repeat-x 0 0 / 50% 100%; }
-    @keyframes schuif { to { transform: translateX(-50%); } }
 
-    .kant { display: flex; align-items: center; }
+    .kant { display: flex; align-items: center; height: 100%; }
     .kant.links { justify-content: flex-end; } .kant.rechts { justify-content: flex-start; }
-    /* zijn logo als munt in het midden, net boven en onder de balk uit */
-    .munt { position: relative; justify-self: center; width: 118px; height: 118px; border-radius: 50%;
+
+    /* zijn logo in het midden, net boven en onder de balk uit */
+    .munt { position: relative; justify-self: center; width: 104px; height: 104px; border-radius: 50%;
         background: url('https://static-cdn.jtvnw.net/jtv_user_pictures/f935070f-68b8-446d-95a4-9885ffbad080-profile_image-300x300.png') center / cover;
-        box-shadow: 0 0 0 4px #f4a54a, 0 0 0 6.5px #ffe3a8, 0 10px 24px rgba(20, 6, 30, 0.55); }
-    .munt.puls { animation: puls 0.9s cubic-bezier(.2, 1.6, .4, 1); }
-    @keyframes puls { 40% { transform: scale(1.12) rotate(-8deg); } }
-    .live { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); padding: 0 9px; border-radius: 99px; font-size: 13px; font-weight: 800; letter-spacing: 0.12em;
-        background: #e0475a; color: #fff; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35); display: none; }
+        box-shadow: 0 0 0 3px #f4a54a, 0 0 0 5px #ffe3a8, 0 8px 22px rgba(16, 4, 26, 0.5); }
+    .munt.puls { animation: puls 0.8s cubic-bezier(.2, 1.6, .4, 1); }
+    @keyframes puls { 40% { transform: scale(1.1) rotate(-6deg); } }
+    .live { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); padding: 0 8px; border-radius: 99px; font-size: 12px; font-weight: 800; letter-spacing: 0.12em;
+        background: #e0475a; color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); display: none; }
     .munt.aan .live { display: block; }
 
-    /* tegels: allemaal even breed, met korte zachte scheidingslijnen */
-    .tegel { position: relative; width: 300px; height: 66px; padding: 0 24px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+    /* tegels: even breed, gecentreerd, twee regels; korte zachte scheidingslijn ertussen */
+    .tegel { position: relative; width: 280px; height: 56px; padding: 0 18px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
     .tegel[hidden] { display: none; }   /* anders wint display: flex van het hidden-attribuut */
-    .tegel:not([hidden]) ~ .tegel::before, .tellers::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 1px;
-        background: linear-gradient(180deg, transparent, rgba(255, 220, 170, 0.4), transparent); }
-    .label { font-size: 12.5px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--zacht); line-height: 1.3; }
-    .naam { font-size: 29px; font-weight: 800; line-height: 1.05; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 0 rgba(90, 30, 70, 0.6); }
-    .extra { font-size: 14.5px; font-weight: 600; color: rgba(255, 248, 242, 0.7); overflow: hidden; text-overflow: ellipsis; line-height: 1.3; min-height: 19px; }
-    .leeg .naam { color: rgba(255, 248, 242, 0.4); font-size: 22px; }
-    /* nieuw: naam springt erin, gouden veeg over de tegel */
-    .tegel.nieuw .naam { animation: erin 0.65s cubic-bezier(.2, 1.5, .4, 1); color: var(--goud); }
-    .tegel.nieuw::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 25%, rgba(255, 226, 160, 0.45) 50%, transparent 75%); animation: veeg 1.2s ease-out forwards; }
-    @keyframes erin { from { transform: translateY(26px) scale(0.92); opacity: 0; } }
+    .tegel:not([hidden]) ~ .tegel::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 1px; background: rgba(255, 220, 170, 0.22); }
+    .label { font-size: 11.5px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--label); line-height: 1.4; }
+    .regel { display: flex; align-items: center; justify-content: center; gap: 8px; max-width: 100%; min-width: 0; }
+    .naam { font-size: 26px; font-weight: 800; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .badge { flex-shrink: 0; font-size: 13px; font-weight: 800; color: #2c1236; background: var(--goud); padding: 1px 8px 0; border-radius: 99px; line-height: 1.5; }
+    .badge:empty { display: none; }
+    .leeg .naam { color: rgba(255, 248, 242, 0.38); font-size: 20px; font-weight: 600; }
+    /* nieuw: naam springt erin, zachte gouden veeg over de tegel */
+    .tegel.nieuw .regel { animation: erin 0.6s cubic-bezier(.2, 1.5, .4, 1); }
+    .tegel.nieuw .naam { color: var(--goud); transition: color 2.5s 1.5s; }
+    .tegel.nieuw::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 25%, rgba(255, 226, 160, 0.35) 50%, transparent 75%); animation: veeg 1.1s ease-out forwards; }
+    @keyframes erin { from { transform: translateY(22px); opacity: 0; } }
     @keyframes veeg { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-
-    /* tellers: groot getal, klein label eronder, wat er deze stream bij kwam als gouden pil */
-    .tellers { position: relative; display: flex; gap: 30px; padding: 0 26px 0 28px; height: 66px; align-items: center; }
-    .teller { display: grid; grid-template-columns: auto auto; align-items: end; column-gap: 7px; }
-    .teller b { font-size: 33px; font-weight: 800; line-height: 0.95; text-shadow: 0 2px 0 rgba(90, 30, 70, 0.6); }
-    .teller i { font-style: normal; font-size: 12.5px; font-weight: 800; color: var(--goud); background: rgba(255, 210, 122, 0.16); padding: 0 7px; border-radius: 99px; margin-bottom: 4px; }
-    .teller i:empty { display: none; }
-    .teller span { grid-column: 1 / 3; font-size: 12.5px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--zacht); margin-top: 3px; }
-    .teller.op b { animation: op 0.8s cubic-bezier(.2, 1.6, .4, 1); color: var(--goud); }
-    @keyframes op { 35% { transform: scale(1.22); } }
 </style>
 </head>
 <body>
 <div id="podium"><div id="schaal">
     <div class="balk">
-        <div class="zee"><div class="golven"></div></div>
         <div class="kant links">
-            <div class="tegel leeg" id="t-donatie" hidden><div class="label">💸 Laatste donatie</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
-            <div class="tegel leeg" id="t-volger"><div class="label">💜 Laatste volger</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
-            <div class="tegel leeg" id="t-sub"><div class="label">⭐ Laatste sub</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
+            <div class="tegel leeg" id="t-donatie" hidden><div class="label">Laatste donatie</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
+            <div class="tegel leeg" id="t-volger"><div class="label">Laatste volger</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
+            <div class="tegel leeg" id="t-sub"><div class="label">Laatste sub</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
         </div>
         <div class="munt" id="munt"><div class="live">LIVE</div></div>
         <div class="kant rechts">
-            <div class="tegel leeg" id="t-bits"><div class="label">💎 Laatste bits</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
-            <div class="tellers">
-                <div class="teller" id="c-volgers"><b>…</b><i></i><span>Volgers</span></div>
-                <div class="teller" id="c-subs"><b>…</b><i></i><span>Subs</span></div>
-            </div>
+            <div class="tegel leeg" id="t-gift"><div class="label">Laatste gifter</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
+            <div class="tegel leeg" id="t-bits"><div class="label">Laatste bits</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
         </div>
     </div>
 </div></div>
@@ -108,11 +92,6 @@
     const $ = id => document.getElementById(id);
     const getal = n => Number(n ?? 0).toLocaleString('nl-NL');
     const geld = (b, v) => { try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: v || 'EUR' }).format(b ?? 0); } catch { return `${b} ${v ?? ''}`; } };
-    const geleden = op => {
-        if (!op) return '';
-        const m = Math.round((Date.now() - op) / 60000), d = Math.round(m / 1440);
-        return m < 1 ? 'Zojuist' : m < 60 ? `${m} min geleden` : m < 1440 ? `${Math.round(m / 60)} uur geleden` : `${d} dag${d === 1 ? '' : 'en'} geleden`;
-    };
 
     // podium passend in elk venster (in OBS op 1920x1080 precies 1 op 1)
     function pasPodiumAan() {
@@ -121,76 +100,50 @@
     }
     addEventListener('resize', pasPodiumAan); pasPodiumAan();
 
-    function zet(id, naam, extra, nieuw) {
-        const t = $(id);
-        const n = t.querySelector('.naam'), x = t.querySelector('.extra');
-        if (!naam) { t.classList.add('leeg'); n.textContent = 'Nog niemand'; x.textContent = ''; return; }
-        if (!nieuw && n.textContent === naam && x.textContent === (extra ?? '')) return;
-        t.classList.remove('leeg'); n.textContent = naam; x.textContent = extra ?? '';
-        if (nieuw) { t.classList.remove('nieuw'); void t.offsetWidth; t.classList.add('nieuw'); setTimeout(() => t.classList.remove('nieuw'), 4000);
-            const m = $('munt'); m.classList.remove('puls'); void m.offsetWidth; m.classList.add('puls'); }
+    function zet(id, naam, badge, nieuw) {
+        const t = $(id), n = t.querySelector('.naam'), b = t.querySelector('.badge');
+        if (!naam) { t.classList.add('leeg'); n.textContent = 'Nog niemand'; b.textContent = ''; return; }
+        if (!nieuw && n.textContent === naam && b.textContent === (badge ?? '')) return;
+        t.classList.remove('leeg'); n.textContent = naam; b.textContent = badge ?? '';
+        if (nieuw) {
+            t.classList.remove('nieuw'); void t.offsetWidth; t.classList.add('nieuw'); setTimeout(() => t.classList.remove('nieuw'), 4500);
+            const m = $('munt'); m.classList.remove('puls'); void m.offsetWidth; m.classList.add('puls');
+        }
     }
-    const subTekst = e => e.soort === 'gift' ? `${getal(e.aantal ?? 1)} gifted sub${(e.aantal ?? 1) === 1 ? '' : 's'}` : e.soort === 'resub' ? `${e.maanden ?? 1} maanden sub` : `Tier ${e.tier ?? 1} sub`;
-    const tekstVoor = e => ({
-        follower: ['t-volger', 'Zojuist'],
-        subscriber: ['t-sub', subTekst(e)], resub: ['t-sub', subTekst(e)], gift: ['t-sub', subTekst(e)],
-        cheer: ['t-bits', `${getal(e.bits)} bits`],
-        donatie: ['t-donatie', geld(e.bedrag, e.valuta)],
-    })[e.soort];
+    // het gouden labeltje naast de naam (alleen waar het iets toevoegt)
+    const badgeVoor = e => ({
+        subscriber: (e.tier ?? 1) > 1 ? `Tier ${e.tier}` : '',
+        resub: `${e.maanden ?? 1} mnd`,
+        gift: `×${getal(e.aantal ?? 1)}`,
+        cheer: getal(e.bits),
+        donatie: geld(e.bedrag, e.valuta),
+    })[e.soort] ?? '';
+    const TEGEL = { follower: 't-volger', subscriber: 't-sub', resub: 't-sub', gift: 't-gift', cheer: 't-bits', donatie: 't-donatie' };
 
-    // tellers: rollen naar het nieuwe getal
-    const stand = { volgers: null, subs: null };
-    function teller(id, sleutel, waarde, erbij) {
-        const el = $(id), b = el.querySelector('b');
-        el.querySelector('i').textContent = erbij > 0 ? `+${getal(erbij)}` : '';
-        if (waarde == null) return;
-        const van = stand[sleutel]; stand[sleutel] = waarde;
-        if (van == null || van === waarde) { b.textContent = getal(waarde); return; }
-        el.classList.remove('op'); void el.offsetWidth; el.classList.add('op');
-        const start = performance.now();
-        const stap = nu => { const k = Math.min(1, (nu - start) / 800); b.textContent = getal(Math.round(van + (waarde - van) * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(stap); };
-        requestAnimationFrame(stap);
-    }
-
-    let laatsteStats = null;
     function toon(s) {
-        laatsteStats = s;
         const L = s.laatste ?? {};
         $('t-donatie').hidden = !s.donaties && !L.donatie;
-        zet('t-volger', L.follower?.naam, geleden(L.follower?.op), false);
-        const sub = ['subscriber', 'resub', 'gift'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
-        zet('t-sub', sub?.naam, sub ? subTekst(sub) : '', false);
-        // bits: de grootste van deze stream, anders de laatste
-        const top = s.sessie?.topBits;
-        $('t-bits').querySelector('.label').textContent = top ? '💎 Top bits deze stream' : '💎 Laatste bits';
-        zet('t-bits', top?.naam ?? L.cheer?.naam, top ? `${getal(top.bits)} bits` : L.cheer ? `${getal(L.cheer.bits)} bits` : '', false);
-        zet('t-donatie', L.donatie?.naam, L.donatie ? geld(L.donatie.bedrag, L.donatie.valuta) : '', false);
-        teller('c-volgers', 'volgers', s.totaal?.volgers, s.sessie?.volgers);
-        teller('c-subs', 'subs', s.totaal?.subs, s.sessie?.subs);
+        zet('t-volger', L.follower?.naam, '', false);
+        const sub = ['subscriber', 'resub'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
+        zet('t-sub', sub?.naam, sub ? badgeVoor(sub) : '', false);
+        zet('t-gift', L.gift?.naam, L.gift ? badgeVoor({ soort: 'gift', ...L.gift }) : '', false);
+        zet('t-bits', L.cheer?.naam, L.cheer ? badgeVoor({ soort: 'cheer', ...L.cheer }) : '', false);
+        zet('t-donatie', L.donatie?.naam, L.donatie ? badgeVoor({ soort: 'donatie', ...L.donatie }) : '', false);
         $('munt').classList.toggle('aan', Boolean(s.live));
     }
     const haal = () => fetch(API + '/stats', { cache: 'no-store' }).then(r => r.json()).then(s => s && toon(s)).catch(() => {});
     haal(); setInterval(haal, 60000);
-    setInterval(() => laatsteStats && zet('t-volger', laatsteStats.laatste?.follower?.naam, geleden(laatsteStats.laatste?.follower?.op), false), 30000);   // "x min geleden" bijhouden
 
     // live mee met de alerts (ook testalerts: die laten we even zien, de server bewaart ze niet)
     function verbind() {
         const bron = new EventSource(API + '/stream?bron=' + (zoek.has('voorbeeld') ? 'voorbeeld' : 'stats'));   // bron: voor de status op api.gwnlarss.nl
         bron.onmessage = m => {
             let e; try { e = JSON.parse(m.data); } catch { return; }
-            if (!e?.soort || e.soort === '_instellingen') return;
-            const doel = tekstVoor({ soort: e.soort, ...e.extra });
-            if (!doel) return;   // raids en onbekende soorten staan niet in de balk
-            const [id, extra] = doel;
-            const test = Boolean(e.extra?.test);
-            if (e.soort === 'cheer' && !test && laatsteStats?.sessie?.topBits && (e.extra?.bits ?? 0) < laatsteStats.sessie.topBits.bits) { setTimeout(haal, 3000); return; }   // geen nieuwe top
-            if (e.soort === 'cheer' && test) $('t-bits').querySelector('.label').textContent = '💎 Laatste bits';
+            const id = TEGEL[e?.soort];
+            if (!id) return;   // raids, instellingen en onbekende soorten staan niet in de balk
             if (id === 't-donatie') $('t-donatie').hidden = false;
-            zet(id, e.naam, extra, true);
-            if (!test) {   // echte alert: volgers meteen omhoog, daarna gelijk trekken met de server
-                if (e.soort === 'follower') teller('c-volgers', 'volgers', (stand.volgers ?? 0) + 1, (laatsteStats?.sessie?.volgers ?? 0) + 1);
-                setTimeout(haal, 3000);
-            }
+            zet(id, e.naam, badgeVoor({ soort: e.soort, ...e.extra }), true);
+            if (!e.extra?.test) setTimeout(haal, 3000);   // echte alert: daarna gelijk trekken met de server
         };
         bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
     }
