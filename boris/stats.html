@@ -8,8 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
 <style>
     /* Stream stats voor Boris Ferreiro (OBS-browserbron, 1920x1080, transparant). Een rustige balk in zijn
-       kleuren met zijn logo in het midden: links de laatste volger en sub, rechts de laatste gifter en bits
-       (en de laatste donatie zodra StreamElements aan staat). Elke tegel: een klein label en de naam, met
+       kleuren met zijn logo in het midden: links de laatste volger en sub (ook gifted subs, met ×aantal),
+       rechts de laatste donatie en bits. Altijd vier vaste tegels, zodat de balk nooit van vorm verandert. Elke tegel: een klein label en de naam, met
        eventueel een gouden labeltje (x50, 1.000 bits). Werkt live mee met zijn alerts; zet hem in OBS onder
        de alerts-bron. ?plek=boven zet de balk bovenin, ?grootte=0.7 maakt hem kleiner (0.5 t/m 1.2),
        ?voorbeeld toont zijn offline-scherm erachter. */
@@ -51,8 +51,7 @@
 
     /* tegels: even breed, gecentreerd, twee regels; korte zachte scheidingslijn ertussen */
     .tegel { position: relative; width: 280px; height: 56px; padding: 0 18px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-    .tegel[hidden] { display: none; }   /* anders wint display: flex van het hidden-attribuut */
-    .tegel:not([hidden]) ~ .tegel::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 1px; background: rgba(255, 220, 170, 0.22); }
+    .tegel + .tegel::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 1px; background: rgba(255, 220, 170, 0.22); }
     .label { font-size: 11.5px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--label); line-height: 1.4; }
     .regel { display: flex; align-items: center; justify-content: center; gap: 8px; max-width: 100%; min-width: 0; }
     .naam { font-size: 26px; font-weight: 800; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -71,13 +70,12 @@
 <div id="podium"><div id="schaal">
     <div class="balk">
         <div class="kant links">
-            <div class="tegel leeg" id="t-donatie" hidden><div class="label">Laatste donatie</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
             <div class="tegel leeg" id="t-volger"><div class="label">Laatste volger</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
             <div class="tegel leeg" id="t-sub"><div class="label">Laatste sub</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
         </div>
         <div class="munt" id="munt"><div class="live">LIVE</div></div>
         <div class="kant rechts">
-            <div class="tegel leeg" id="t-gift"><div class="label">Laatste gifter</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
+            <div class="tegel leeg" id="t-donatie"><div class="label">Laatste donatie</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
             <div class="tegel leeg" id="t-bits"><div class="label">Laatste bits</div><div class="regel"><span class="naam">Nog niemand</span><span class="badge"></span></div></div>
         </div>
     </div>
@@ -118,17 +116,16 @@
         cheer: getal(e.bits),
         donatie: geld(e.bedrag, e.valuta),
     })[e.soort] ?? '';
-    const TEGEL = { follower: 't-volger', subscriber: 't-sub', resub: 't-sub', gift: 't-gift', cheer: 't-bits', donatie: 't-donatie' };
+    // vaste vier tegels: gifted subs vallen onder "laatste sub" (met ×aantal), de balk verandert nooit van vorm
+    const TEGEL = { follower: 't-volger', subscriber: 't-sub', resub: 't-sub', gift: 't-sub', donatie: 't-donatie', cheer: 't-bits' };
 
     function toon(s) {
         const L = s.laatste ?? {};
-        $('t-donatie').hidden = !s.donaties && !L.donatie;
         zet('t-volger', L.follower?.naam, '', false);
-        const sub = ['subscriber', 'resub'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
+        const sub = ['subscriber', 'resub', 'gift'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
         zet('t-sub', sub?.naam, sub ? badgeVoor(sub) : '', false);
-        zet('t-gift', L.gift?.naam, L.gift ? badgeVoor({ soort: 'gift', ...L.gift }) : '', false);
-        zet('t-bits', L.cheer?.naam, L.cheer ? badgeVoor({ soort: 'cheer', ...L.cheer }) : '', false);
         zet('t-donatie', L.donatie?.naam, L.donatie ? badgeVoor({ soort: 'donatie', ...L.donatie }) : '', false);
+        zet('t-bits', L.cheer?.naam, L.cheer ? badgeVoor({ soort: 'cheer', ...L.cheer }) : '', false);
         $('munt').classList.toggle('aan', Boolean(s.live));
     }
     const haal = () => fetch(API + '/stats', { cache: 'no-store' }).then(r => r.json()).then(s => s && toon(s)).catch(() => {});
@@ -141,7 +138,6 @@
             let e; try { e = JSON.parse(m.data); } catch { return; }
             const id = TEGEL[e?.soort];
             if (!id) return;   // raids, instellingen en onbekende soorten staan niet in de balk
-            if (id === 't-donatie') $('t-donatie').hidden = false;
             zet(id, e.naam, badgeVoor({ soort: e.soort, ...e.extra }), true);
             if (!e.extra?.test) setTimeout(haal, 3000);   // echte alert: daarna gelijk trekken met de server
         };
