@@ -295,6 +295,261 @@
         },
     };
 
+    // ---------- Volledig scherm (window.drieD.toonVol): zijn zonsondergang als finale over het hele beeld ----------
+    // De lucht schuift van onder omhoog over het beeld, zijn witte B-zon (uit zijn eigen logo gehaald) komt groot
+    // op uit een 3D-zee met de lichtstrepen uit zijn logo, zijn naam rijst in dikke 3D-letters uit het water,
+    // gouden vonken stijgen op en zijn emotes knallen uit de zon naar de kijker en regenen over het hele scherm.
+    // Eigen scène, zelfde renderer (één WebGL-verbinding), en tekent alleen tijdens de alert.
+    const vs = new THREE.Scene();
+    const vcam = new THREE.PerspectiveCamera(40, 1920 / 1080, 0.1, 400); vs.add(vcam);
+    const volU = { tijd: { value: 0 }, zicht: { value: 0 }, onthul: { value: 0 }, zonY: { value: -20 }, schermH: { value: 1080 } };
+    const schermHoogte = () => { volU.schermH.value = r.getDrawingBufferSize(new THREE.Vector2()).y; };
+    schermHoogte(); addEventListener('podium', schermHoogte);
+    // gedeelde stukjes shader: het gordijn dat van onder naar boven opent (en bij het weggaan weer zakt)
+    const GORDIJN = `float gordijn() { return 1.0 - smoothstep(onthul - 0.14, onthul, gl_FragCoord.y / schermH); }`;
+
+    // lucht: zijn verloop met de wolkenbanden van zijn offline-scherm
+    const lucht = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+        uniforms: volU, transparent: true, depthWrite: false, depthTest: false,
+        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+        fragmentShader: `uniform float tijd, zicht, onthul, schermH; varying vec2 vUv; ${GORDIJN}
+            void main() {
+                float y = vUv.y;
+                vec3 k = mix(vec3(0.98, 0.64, 0.32), vec3(0.88, 0.38, 0.35), smoothstep(0.40, 0.56, y));
+                k = mix(k, vec3(0.54, 0.23, 0.48), smoothstep(0.52, 0.72, y));
+                k = mix(k, vec3(0.15, 0.09, 0.26), smoothstep(0.70, 1.0, y));
+                float golf = sin(y * 34.0 + sin(vUv.x * 4.0 + tijd * 0.35) * 1.5 + sin(vUv.x * 11.0 - tijd * 0.2) * 0.4);
+                float band = smoothstep(0.45, 0.95, golf) * (0.6 + 0.4 * sin(vUv.x * 6.0 + tijd * 0.3));
+                k = mix(k, k * vec3(1.2, 0.86, 0.98) + vec3(0.06, 0.0, 0.03), band * 0.4);
+                gl_FragColor = vec4(k, 0.96 * zicht * gordijn());
+            }`,
+    }));
+    lucht.frustumCulled = false; lucht.renderOrder = -10; vs.add(lucht);
+
+    // zijn zon: de witte delen van zijn logo (zon met de B erin uitgespaard en de strepen eronder)
+    const LOGO_URL = 'https://static-cdn.jtvnw.net/jtv_user_pictures/f935070f-68b8-446d-95a4-9885ffbad080-profile_image-300x300.png';
+    const zonDoek = document.createElement('canvas'); zonDoek.width = zonDoek.height = 512;
+    const zonTex = new THREE.CanvasTexture(zonDoek); zonTex.colorSpace = THREE.SRGBColorSpace;
+    { const img = new Image(); img.crossOrigin = 'anonymous';
+      img.onload = () => {
+          const c = zonDoek.getContext('2d'); c.drawImage(img, 0, 0, 512, 512);
+          try {
+              const d = c.getImageData(0, 0, 512, 512), p = d.data;
+              for (let i = 0; i < p.length; i += 4) {
+                  const hoog = Math.max(p[i], p[i + 1], p[i + 2]), laag = Math.min(p[i], p[i + 1], p[i + 2]), l = (p[i] + p[i + 1] + p[i + 2]) / 3;
+                  const a = Math.min(1, Math.max(0, (l - 175) / 22)) * Math.min(1, Math.max(0, (70 - (hoog - laag)) / 25));
+                  p[i] = 255; p[i + 1] = 249; p[i + 2] = 240; p[i + 3] = a * 255;
+              }
+              c.putImageData(d, 0, 0);
+          } catch { /* geen toegang tot de pixels: dan het logo zoals het is */ }
+          zonTex.needsUpdate = true;
+      };
+      img.src = LOGO_URL; }
+    const zonGroep = new THREE.Group(); zonGroep.position.set(0, -20, -70); vs.add(zonGroep);
+    const zonGloed = (() => { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+        g.addColorStop(0, 'rgba(255,236,200,0.95)'); g.addColorStop(0.25, 'rgba(255,190,120,0.55)'); g.addColorStop(0.6, 'rgba(240,110,90,0.18)'); g.addColorStop(1, 'rgba(240,110,90,0)');
+        x.fillStyle = g; x.fillRect(0, 0, 256, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+    const gloed = new THREE.Sprite(new THREE.SpriteMaterial({ map: zonGloed, transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending }));
+    gloed.scale.set(58, 58, 1); gloed.position.y = 1.5; gloed.position.z = -1; zonGroep.add(gloed);
+    const stralen = new THREE.Mesh(new THREE.PlaneGeometry(76, 76), new THREE.ShaderMaterial({
+        uniforms: volU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `uniform float tijd, zicht; varying vec2 vUv;
+            void main() {
+                vec2 p = vUv - 0.5; float a = atan(p.y, p.x), d = length(p);
+                float s = pow(0.5 + 0.5 * sin(a * 12.0 + tijd * 0.35), 7.0) * 0.65 + pow(0.5 + 0.5 * sin(a * 7.0 - tijd * 0.22), 9.0) * 0.45;
+                if (d > 0.5) discard;
+                float f = s * smoothstep(0.5, 0.06, d) * smoothstep(0.03, 0.12, d) * 0.55 * zicht;
+                gl_FragColor = vec4(vec3(1.0, 0.84, 0.58) * f, f);
+            }`,
+    }));
+    stralen.position.set(0, 1.5, -2); zonGroep.add(stralen);
+    const zonSchijf = new THREE.Mesh(new THREE.PlaneGeometry(44, 44), new THREE.MeshBasicMaterial({ map: zonTex, transparent: true, depthWrite: false, toneMapped: false }));
+    zonGroep.add(zonSchijf);
+
+    // de zee: golvend 3D-water van paars dichtbij naar oranje bij de horizon, met de lichtstrepen van de zon
+    const zeeSeg = zuinig ? [70, 50] : [150, 110];
+    const zee = new THREE.Mesh(new THREE.PlaneGeometry(240, 170, ...zeeSeg), new THREE.ShaderMaterial({
+        uniforms: volU, transparent: true,
+        vertexShader: `uniform float tijd; varying vec3 vW; varying float vH;
+            void main() { vec3 p = position;
+                float h = sin(p.x * 0.16 + tijd * 1.0) * 0.35 + sin(p.y * 0.33 - tijd * 1.5) * 0.45 + sin((p.x + p.y) * 0.55 + tijd * 2.2) * 0.12;
+                p.z += h; vH = h;
+                vec4 w = modelMatrix * vec4(p, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+        fragmentShader: `uniform float tijd, zicht, zonY, onthul, schermH; varying vec3 vW; varying float vH; ${GORDIJN}
+            void main() {
+                float ver = smoothstep(14.0, -95.0, vW.z);   // 0 dichtbij, 1 bij de horizon
+                vec3 k = mix(vec3(0.17, 0.09, 0.27), vec3(0.50, 0.20, 0.45), smoothstep(0.0, 0.55, ver));
+                k = mix(k, vec3(0.97, 0.56, 0.33), smoothstep(0.55, 1.0, ver));
+                k += vH * 0.07;
+                // lichtstrepen van de zon op het water, zoals onder de zon in zijn logo
+                float breed = mix(1.8, 15.0, ver);
+                float baan = smoothstep(breed, breed * 0.2, abs(vW.x + sin(vW.z * 0.6 + tijd) * 0.7));
+                float streep = smoothstep(0.5, 0.85, sin(vW.z * 2.0 + sin(vW.x * 0.45 + tijd * 1.6) * 2.2 + tijd * 0.9));
+                float zon = smoothstep(-16.0, 8.0, zonY);
+                k = mix(k, vec3(1.0, 0.96, 0.9), baan * streep * 0.85 * zon);
+                gl_FragColor = vec4(k, zicht * gordijn());
+            }`,
+    }));
+    zee.rotation.x = -Math.PI / 2; zee.position.set(0, 0, -55); vs.add(zee);
+
+    // gouden vonken die uit de zee opstijgen (één draw call, alles in de shader)
+    const VONK = zuinig ? 150 : 420;
+    const vonkPos = new Float32Array(VONK * 3), vonkW = new Float32Array(VONK);
+    for (let i = 0; i < VONK; i++) { vonkPos.set([(Math.random() * 2 - 1) * 34, Math.random(), -60 + Math.random() * 74], i * 3); vonkW[i] = Math.random(); }
+    const vonkGeo = new THREE.BufferGeometry();
+    vonkGeo.setAttribute('position', new THREE.BufferAttribute(vonkPos, 3)); vonkGeo.setAttribute('willekeur', new THREE.BufferAttribute(vonkW, 1));
+    const vonken = new THREE.Points(vonkGeo, new THREE.ShaderMaterial({
+        uniforms: volU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        vertexShader: `uniform float tijd, zicht; attribute float willekeur; varying float vA;
+            void main() {
+                float h = mod(position.y * 24.0 + tijd * (1.2 + willekeur * 2.4), 24.0) - 1.0;
+                vec3 p = vec3(position.x + sin(tijd * 0.7 + willekeur * 20.0) * 0.9, h, position.z);
+                vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                gl_PointSize = (150.0 + willekeur * 260.0) / -mv.z;
+                vA = smoothstep(-1.0, 2.0, h) * (1.0 - smoothstep(14.0, 22.0, h)) * zicht * (0.55 + 0.45 * sin(tijd * 5.0 + willekeur * 50.0));
+                gl_Position = projectionMatrix * mv; }`,
+        fragmentShader: `varying float vA;
+            void main() { float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d) * vA;
+                gl_FragColor = vec4(vec3(1.0, 0.78, 0.42) * a, a); }`,
+    }));
+    vonken.frustumCulled = false; vs.add(vonken);
+
+    // de tekst: naam in dikke 3D-letters (gestapelde lagen), daarboven een gouden lint, eronder de extra regel
+    const tekstGroep = new THREE.Group(); tekstGroep.position.set(0, 0.6, 4); vs.add(tekstGroep);
+    const nieuwDoek = (b, h) => { const c = document.createElement('canvas'); c.width = b; c.height = h; return c; };
+    const naamDoek = nieuwDoek(2048, 512), silDoek = nieuwDoek(2048, 512), lintVolDoek = nieuwDoek(1024, 220), extraDoek = nieuwDoek(2048, 200);
+    const naamTex = new THREE.CanvasTexture(naamDoek);   // ruw (geen kleurruimte) voor de eigen glans-shader
+    const silTex = new THREE.CanvasTexture(silDoek); silTex.colorSpace = THREE.SRGBColorSpace;
+    const lintVolTex = new THREE.CanvasTexture(lintVolDoek); lintVolTex.colorSpace = THREE.SRGBColorSpace;
+    const extraTex = new THREE.CanvasTexture(extraDoek); extraTex.colorSpace = THREE.SRGBColorSpace;
+    for (const t of [naamTex, silTex, lintVolTex, extraTex]) t.anisotropy = 4;
+    // donkere zachte wolk achter de tekst, zodat hij altijd leesbaar is
+    const schaduwTex = (() => { const c = nieuwDoek(256, 128), x = c.getContext('2d'), g = x.createRadialGradient(128, 64, 0, 128, 64, 128);
+        g.addColorStop(0, 'rgba(22,8,34,0.62)'); g.addColorStop(0.55, 'rgba(22,8,34,0.32)'); g.addColorStop(1, 'rgba(22,8,34,0)');
+        x.setTransform(1, 0, 0, 0.5, 0, 32); x.fillStyle = g; x.fillRect(0, -64, 256, 256); return new THREE.CanvasTexture(c); })();
+    const schaduw = new THREE.Mesh(new THREE.PlaneGeometry(22, 8), new THREE.MeshBasicMaterial({ map: schaduwTex, transparent: true, depthWrite: false, toneMapped: false }));
+    schaduw.position.set(0, 0.2, -1.2); tekstGroep.add(schaduw);
+    // de dikte van de letters zit in één afbeelding (koraal naar donkerpaars naar achteren), op twee diepten
+    // voor wat echte diepte als de tekst kantelt: elke laag is een vlak over de hele naam, dus weinig lagen
+    const LAGEN = zuinig ? 1 : 2, NB = 16, NH = 4;
+    for (let i = LAGEN; i >= 1; i--) {
+        const laag = new THREE.Mesh(new THREE.PlaneGeometry(NB, NH), new THREE.MeshBasicMaterial({ map: silTex, transparent: true, depthWrite: false, toneMapped: false }));
+        laag.position.set(0, 0, -i * (0.4 / LAGEN)); laag.renderOrder = LAGEN - i; tekstGroep.add(laag);
+    }
+    const voorU = { kaart: { value: naamTex }, glans: { value: -1 } };
+    const naamVoor = new THREE.Mesh(new THREE.PlaneGeometry(NB, NH), new THREE.ShaderMaterial({
+        uniforms: voorU, transparent: true, depthWrite: false,
+        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `uniform sampler2D kaart; uniform float glans; varying vec2 vUv;
+            void main() { vec4 c = texture2D(kaart, vUv); if (c.a < 0.02) discard;
+                float band = smoothstep(0.07, 0.0, abs(vUv.x - vUv.y * 0.3 - glans));
+                gl_FragColor = vec4(c.rgb + band * 0.6 * c.a, c.a); }`,
+    }));
+    naamVoor.renderOrder = LAGEN + 1; tekstGroep.add(naamVoor);
+    const lintVol = new THREE.Mesh(new THREE.PlaneGeometry(9.3, 2.0), new THREE.MeshBasicMaterial({ map: lintVolTex, transparent: true, depthWrite: false, toneMapped: false }));
+    lintVol.position.set(0, 2.4, 0.2); lintVol.renderOrder = LAGEN + 2; tekstGroep.add(lintVol);
+    const extraVol = new THREE.Mesh(new THREE.PlaneGeometry(14, 1.37), new THREE.MeshBasicMaterial({ map: extraTex, transparent: true, depthWrite: false, toneMapped: false }));
+    extraVol.position.set(0, -2.25, 0.2); extraVol.renderOrder = LAGEN + 2; tekstGroep.add(extraVol);
+    tekstGroep.traverse(m => { if (m.material) m.material.depthTest = false; });   // tekst ligt over het water heen
+    tekstGroep.visible = false;
+
+    function tekenVolTekst(o, naam) {
+        // naam: kleur (wit-crème met gouden rand) en silhouet (wit, voor de 3D-lagen)
+        const maat = c => { let m = 330; c.font = `800 ${m}px "Baloo 2"`; while (m > 120 && c.measureText(naam).width > 1880) { m -= 8; c.font = `800 ${m}px "Baloo 2"`; } return m; };
+        const n = naamDoek.getContext('2d'), s = silDoek.getContext('2d');
+        for (const c of [n, s]) { c.clearRect(0, 0, 2048, 512); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; }
+        const m = maat(n); s.font = n.font;
+        const tekst = naam.length > 1 && n.measureText(naam).width > 1880 ? naam.slice(0, 22) + '…' : naam;
+        for (let i = 22; i >= 1; i--) {   // uitgestanste zijkant: per stap iets lager en donkerder
+            const f = i / 22, kl = new THREE.Color().lerpColors(new THREE.Color(0xc4583a), new THREE.Color(0x2c1240), f);
+            s.lineWidth = 26; s.strokeStyle = s.fillStyle = '#' + kl.getHexString();
+            s.strokeText(tekst, 1024 + i * 0.6, 270 + i * 1.5); s.fillText(tekst, 1024 + i * 0.6, 270 + i * 1.5);
+        }
+        n.lineWidth = 26; n.strokeStyle = '#f4b860'; n.strokeText(tekst, 1024, 270);
+        n.lineWidth = 9; n.strokeStyle = '#ffe3a8'; n.strokeText(tekst, 1024, 270);
+        const g = n.createLinearGradient(0, 270 - m * 0.42, 0, 270 + m * 0.32); g.addColorStop(0, '#ffffff'); g.addColorStop(0.6, '#fff1df'); g.addColorStop(1, '#ffd2a6');
+        n.fillStyle = g; n.fillText(tekst, 1024, 270);
+        // lint met het soort alert
+        const l = lintVolDoek.getContext('2d'); l.clearRect(0, 0, 1024, 220);
+        l.beginPath(); l.moveTo(20, 40); l.lineTo(1004, 40); l.lineTo(950, 110); l.lineTo(1004, 180); l.lineTo(20, 180); l.lineTo(74, 110); l.closePath();
+        const lg = l.createLinearGradient(0, 40, 0, 180); lg.addColorStop(0, '#ffd27a'); lg.addColorStop(0.5, '#f4a54a'); lg.addColorStop(1, '#c9702a');
+        l.fillStyle = lg; l.fill(); l.lineWidth = 6; l.strokeStyle = '#fff2cf'; l.stroke();
+        l.font = '800 72px "Baloo 2"'; l.letterSpacing = '6px'; l.textAlign = 'center'; l.textBaseline = 'middle'; l.fillStyle = '#3a1640';
+        let soort = (o.soort ?? '').toUpperCase(); while (soort.length > 1 && l.measureText(soort).width > 820) soort = soort.slice(0, -1);
+        l.fillText(soort, 512, 116); l.letterSpacing = '0px';
+        // extra regel
+        const x = extraDoek.getContext('2d'); x.clearRect(0, 0, 2048, 200);
+        x.font = '700 104px "Baloo 2"'; x.textAlign = 'center'; x.textBaseline = 'middle';
+        let extra = o.extra ?? ''; while (extra.length > 1 && x.measureText(extra).width > 1900) extra = extra.slice(0, -1);
+        x.shadowColor = 'rgba(20, 6, 30, 0.85)'; x.shadowBlur = 22; x.shadowOffsetY = 6; x.fillStyle = '#fff8f2'; x.fillText(extra, 1024, 104);
+        for (const t of [naamTex, silTex, lintVolTex, extraTex]) t.needsUpdate = true;
+    }
+
+    // emotes: eerst een knal uit de zon richting de kijker, dan een regen over het hele scherm tot onderin
+    let vol = null, volDeeltjes = [];
+    const terugveer = x => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+    function volEmote(url, pos, v, start) {
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(url), transparent: true, depthTest: false, depthWrite: false }));
+        const g = 1.5 + Math.random() * 1.3; s.scale.set(g, g, 1); s.position.copy(pos); s.visible = false; s.renderOrder = 50;
+        vs.add(s); volDeeltjes.push({ s, v, draai: (Math.random() - 0.5) * 5, start });
+    }
+    window.drieD.toonVol = (e, o, duur, urls) => {
+        vol = { start: performance.now(), duur, urls, aantal: zuinig ? Math.ceil(o.aantal / 2) : o.aantal, geknald: false, regen: 0 };
+        tekenVolTekst(o, e.naam);
+        if (!document.fonts.check('800 100px "Baloo 2"')) lettertype.then(() => tekenVolTekst(o, e.naam));
+        starten();
+    };
+    function stapVol(nu, dt) {
+        const t = (nu - vol.start) / 1000, eind = vol.duur / 1000, w = t - eind, inE = x => x * x * x;
+        volU.tijd.value = nu / 1000;
+        volU.zicht.value = w < 0.25 ? ease(Math.min(1, t / 0.5)) : Math.max(0, 1 - ease((w - 0.25) / 0.7));
+        volU.onthul.value = w < 0 ? 1.14 * ease(Math.min(1, t / 0.8)) : 1.14 * (1 - inE(Math.min(1, w / 0.75)));
+        volU.zonY.value = w < 0 ? -22 + 31 * ease(Math.min(1, Math.max(0, t - 0.2) / 1.7)) : 9 - 31 * inE(Math.min(1, w / 0.65));
+        zonGroep.position.y = volU.zonY.value;
+        stralen.rotation.z = t * 0.05;
+        // camera: komt laag over het water binnen en schuift rustig omhoog en naar voren
+        const k = ease(Math.min(1, t / 1.8));
+        vcam.position.set(Math.sin(t * 0.45) * 0.7, 1.4 + 2.0 * k + Math.sin(t * 0.7) * 0.12, 30 - 6 * k);
+        vcam.lookAt(0, 3.4, -40);
+        // tekst rijst op uit het water (met een veertje) en duikt er bij het weggaan weer in
+        const tin = t < 1.0 ? 0 : terugveer(Math.min(1, (t - 1.0) / 0.65));
+        const tuit = w < 0 ? 0 : inE(Math.min(1, w / 0.45));
+        tekstGroep.visible = t >= 1.0 && tuit < 1;
+        tekstGroep.scale.setScalar(Math.max(0.001, 1.12 * (0.35 + 0.65 * tin) * (1 - tuit)));
+        tekstGroep.rotation.x = -(1 - Math.min(1, tin)) * 1.1 + tuit * 0.9;
+        tekstGroep.position.y = 0.6 - (1 - Math.min(1, tin)) * 2.5 - tuit * 2.5 + Math.sin(t * 1.3) * 0.1;
+        tekstGroep.rotation.y = Math.sin(t * 0.6) * 0.06;
+        lintVol.position.y = 2.4 + Math.sin(t * 2.0) * 0.06;
+        voorU.glans.value = ((t * 0.5) % 1.7) - 0.35;
+        // de knal, zodra de naam er staat
+        if (!vol.geknald && t > 1.15) {
+            vol.geknald = true;
+            for (let i = 0; i < vol.aantal; i++) {
+                const hoek = Math.random() * Math.PI * 2, snel = 10 + Math.random() * 9;   // rondom uit de zon, meteen breed uit elkaar
+                volEmote(vol.urls[i % vol.urls.length], new THREE.Vector3(0, 9, -16), new THREE.Vector3(Math.cos(hoek) * snel, Math.sin(hoek) * snel * 0.75 + 4, 2 + Math.random() * 4), nu + Math.random() * Math.random() * 500);
+            }
+        }
+        // de regen, verspreid tot ~72% van de alert
+        const regenTot = Math.max(2, eind * 0.72), regenAantal = Math.round(vol.aantal * 0.9);
+        if (t > 1.6 && t < regenTot) {
+            const moet = Math.floor(regenAantal * (t - 1.6) / (regenTot - 1.6));
+            while (vol.regen < moet) { vol.regen++; volEmote(vol.urls[vol.regen % vol.urls.length], new THREE.Vector3((Math.random() * 2 - 1) * 22, 14 + Math.random() * 3, -6 + Math.random() * 12),
+                new THREE.Vector3((Math.random() - 0.5) * 2.5, -2 - Math.random() * 3, 0), nu); }
+        }
+        volDeeltjes = volDeeltjes.filter(d => {
+            if (nu < d.start) return true;
+            d.s.visible = true;
+            d.v.y -= 8 * dt; d.s.position.addScaledVector(d.v, dt); d.s.material.rotation += d.draai * dt;
+            d.s.material.opacity = Math.min(1, volU.zicht.value * 1.4) * (1 - THREE.MathUtils.smoothstep(d.s.position.z, 5, 9));   // niet vlak voor de camera opblazen
+            if (d.s.position.y < -9 || d.s.position.z > 9) { vs.remove(d.s); d.s.material.dispose(); return false; }
+            return true;
+        });
+        if (w > 1.0) { for (const d of volDeeltjes) { vs.remove(d.s); d.s.material.dispose(); } volDeeltjes = []; vol = null; tekstGroep.visible = false; }
+    }
+    // ook deze shaders alvast klaarzetten
+    tekstGroep.visible = true; r.compile(vs, vcam); tekstGroep.visible = false;
+
     // alleen tekenen zolang er iets in beeld is: daarna stopt de lus (stil kost de overlay dan niets)
     let vorige = performance.now(), loopt = false;
     function starten() { if (loopt) return; loopt = true; vorige = performance.now(); r.setAnimationLoop(stap); }
@@ -347,16 +602,16 @@
             if (leeftijd > 8 || d.s.position.y < -13) { scene.remove(d.s); d.s.material.dispose(); return false; }   // pas weg als hij onder uit beeld is gevallen
             return true;
         });
-        r.render(scene, cam);
+        if (vol) { stapVol(nu, dt); r.render(vs, vcam); } else r.render(scene, cam);
         // houdt deze pc het bij? Kost één beeld gemiddeld meer dan 14 ms rekenwerk, dan voortaan zuinig
-        if (!zuinig && anim) {
+        if (!zuinig && (anim || vol)) {
             meting.frames++; meting.werk += performance.now() - nu;
             if (meting.frames === 40) {
                 if (meting.werk / 40 > 14) { zuinig = true; scherpte(); try { localStorage.setItem('boris-zuinig', '1'); } catch { } }
                 meting = { frames: 0, werk: 0 };
             }
         }
-        if (!anim && !deeltjes.length) { loopt = false; r.setAnimationLoop(null); }
+        if (!anim && !deeltjes.length && !vol) { loopt = false; r.setAnimationLoop(null); }
     }
 
 </script>
@@ -454,12 +709,12 @@
         bezig = true;
         const e = wachtrij.shift(), o = opbouw(e), duur = instellingen.duur ?? 7000;
         // 3D-stijl (gekozen op de instelpagina): munt, lint en spattende emotes
-        if (instellingen.stijl === '3d' && window.drieD) {
+        if ((instellingen.stijl === '3d' || instellingen.stijl === 'volledig') && window.drieD) {
             const bericht = document.getElementById('bericht');
             bericht.textContent = o.bericht || '';
             bericht.style.opacity = o.bericht ? 1 : 0;
             geluid(e.soort, instellingen.volume ?? 0.7);
-            window.drieD.toon(e, o, duur, o.emotes.map(k => EMOTE[k]));
+            window.drieD[instellingen.stijl === 'volledig' ? 'toonVol' : 'toon'](e, o, duur, o.emotes.map(k => EMOTE[k]));
             setTimeout(() => { bericht.style.opacity = 0; }, duur);
             setTimeout(() => { bezig = false; volgende(); }, duur + 1100);
             return;

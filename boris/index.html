@@ -45,6 +45,11 @@
     .slot { display: none; }
     .geen-sleutel .slot { display: block; }
     .geen-sleutel .beheer { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }
+    .zuinig { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+    .zuinig small { color: var(--dim); line-height: 1.4; flex: 1 1 260px; }
+    #zuinigKnop[aria-pressed="true"] { border-color: var(--oranje); box-shadow: 0 0 0 3px rgba(244, 165, 74, 0.25); }
+    .plaatje.vol { background: radial-gradient(circle at 50% 62%, #fff8f0 0 17%, rgba(255,200,130,0.6) 18% 26%, transparent 27%), linear-gradient(180deg, #241638 0%, var(--magenta) 38%, var(--koraal) 56%, #f4a54a 60%, #3b2363 61%, #1f1236 100%); }
+    .plaatje.vol::after { content: "Naam"; position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-weight: 800; font-size: 1.15rem; color: #fff3e2; text-shadow: 0 3px 0 #b8562f, 0 5px 0 #4a1d4a; }
     .stijlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px; }
     .stijl { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: var(--panel2); border: 2px solid var(--rand); cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
     .stijl:hover { transform: translateY(-2px); }
@@ -101,7 +106,8 @@
         <h2><span class="nr">2</span>Zet de alerts in OBS</h2>
         <p>Voeg in OBS een <b>Browserbron</b> toe met deze link, breedte <b>1920</b> en hoogte <b>1080</b>. Zet hem bovenaan in je scènes.</p>
         <div class="link"><input id="obsLink" readonly value="https://gwnlarss.nl/boris/alerts.html"><button class="knop zacht" id="kopieer">Kopieer</button></div>
-        <div class="tip">Wordt je pc traag tijdens een alert? De overlay schakelt dan vanzelf naar een zuinige stand. Je kunt die ook altijd aanzetten door <b>?zuinig</b> achter de link te zetten.</div>
+        <div class="zuinig"><button class="knop zacht" id="zuinigKnop" aria-pressed="false">🐢 Zuinige stand voor een mindere pc</button>
+            <small id="zuinigTekst">Lagere 3D-resolutie, geen glinsters en half zoveel emotes. Klik om de link hierboven aan te passen. Wordt je pc traag tijdens een alert, dan schakelt de overlay ook vanzelf over.</small></div>
         <div class="tip">Hoor je geen geluid? Vink in OBS bij de browserbron "Audio regelen via OBS" aan en zet het volume hoger.</div>
     </section>
 
@@ -117,6 +123,7 @@
         <div class="stijlen" id="stijlen">
             <label class="stijl"><input type="radio" name="stijl" value="zonsondergang"><span class="plaatje zonsondergang"></span><b>🌅 Zonsondergang</b><small>Kaart met golven, je B-zon komt op uit het water en je emotes regenen omlaag.</small></label>
             <label class="stijl"><input type="radio" name="stijl" value="3d"><span class="plaatje drie"></span><b>🪙 3D</b><small>Je logo als gouden 3D-munt, een wapperend lint met je naam en emotes die uit de munt spatten.</small></label>
+            <label class="stijl"><input type="radio" name="stijl" value="volledig"><span class="plaatje vol"></span><b>🌅 Volledig scherm</b><small>Een finale over je hele beeld: je B-zon komt op uit een 3D-zee, je naam rijst in 3D-letters uit het water en je emotes knallen uit de zon en regenen over het hele scherm.</small></label>
         </div>
         <div class="soorten" id="soorten"></div>
         <div class="formaat"><span>Formaat</span><button class="knop zacht" data-grootte="0.7">Klein</button><button class="knop zacht" data-grootte="1">Normaal</button><button class="knop zacht" data-grootte="1.3">Groot</button></div>
@@ -247,6 +254,13 @@
     $('duur').addEventListener('change', () => bewaarInstellingen());
     $('seOpslaan').addEventListener('click', async () => { await bewaarInstellingen({ seJwt: $('seJwt').value }); $('seJwt').value = ''; setTimeout(laad, 3000); });
     $('sleutelOpslaan').addEventListener('click', () => { sleutel = $('sleutelInvoer').value.trim(); try { localStorage.setItem('boris-sleutel', sleutel); } catch {} laad(); });
+    $('zuinigKnop').addEventListener('click', () => {
+        const aan = $('zuinigKnop').getAttribute('aria-pressed') !== 'true';
+        $('zuinigKnop').setAttribute('aria-pressed', aan);
+        $('zuinigKnop').textContent = aan ? '✅ Zuinige stand staat in de link' : '🐢 Zuinige stand voor een mindere pc';
+        $('obsLink').value = 'https://gwnlarss.nl/boris/alerts.html' + (aan ? '?zuinig' : '');
+        melding(aan ? '🐢 Link met zuinige stand: kopieer hem en zet hem in OBS' : 'Gewone link weer terug');
+    });
     $('kopieer').addEventListener('click', () => { navigator.clipboard?.writeText($('obsLink').value); melding('📋 Link gekopieerd'); });
 
     $('tests').innerHTML = TESTS.map(([s, naam], i) => `<button class="knop zacht" data-test="${i}">${naam}</button>`).join('');
