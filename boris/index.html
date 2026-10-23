@@ -47,7 +47,7 @@
     .geen-sleutel .beheer { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }
     .zuinig { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
     .zuinig small { color: var(--dim); line-height: 1.4; flex: 1 1 260px; }
-    #zuinigKnop[aria-pressed="true"] { border-color: var(--oranje); box-shadow: 0 0 0 3px rgba(244, 165, 74, 0.25); }
+    #statsBoven[aria-pressed="true"], #zuinigKnop[aria-pressed="true"] { border-color: var(--oranje); box-shadow: 0 0 0 3px rgba(244, 165, 74, 0.25); }
     .plaatje.vol { background: radial-gradient(circle at 50% 62%, #fff8f0 0 17%, rgba(255,200,130,0.6) 18% 26%, transparent 27%), linear-gradient(180deg, #241638 0%, var(--magenta) 38%, var(--koraal) 56%, #f4a54a 60%, #3b2363 61%, #1f1236 100%); }
     .plaatje.vol::after { content: "Naam"; position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-weight: 800; font-size: 1.15rem; color: #fff3e2; text-shadow: 0 3px 0 #b8562f, 0 5px 0 #4a1d4a; }
     .stijlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -109,6 +109,15 @@
         <div class="zuinig"><button class="knop zacht" id="zuinigKnop" aria-pressed="false">🐢 Zuinige stand voor een mindere pc</button>
             <small id="zuinigTekst">Lagere 3D-resolutie, geen glinsters en half zoveel emotes. Klik om de link hierboven aan te passen. Wordt je pc traag tijdens een alert, dan schakelt de overlay ook vanzelf over.</small></div>
         <div class="tip">Hoor je geen geluid? Vink in OBS bij de browserbron "Audio regelen via OBS" aan en zet het volume hoger.</div>
+    </section>
+
+    <section class="stap">
+        <h2><span class="nr">📊</span>Stream stats in OBS</h2>
+        <p>Een balk in jouw stijl met je laatste volger, sub, bits, raid en donatie, en je volgers en subs met wat er deze stream bij kwam. Voeg een tweede <b>Browserbron</b> toe (1920 × 1080) en zet hem <b>onder</b> de alerts-bron: dan komen je alerts, ook volledig scherm, eroverheen.</p>
+        <div class="link"><input id="statsLink" readonly value="https://gwnlarss.nl/boris/stats.html"><button class="knop zacht" id="kopieerStats">Kopieer</button></div>
+        <div class="zuinig"><button class="knop zacht" id="statsBoven" aria-pressed="false">⬆️ Balk bovenin</button>
+            <small>Standaard staat de balk onderin. De testknoppen bij stap 3 laten hem hieronder meteen bewegen.</small></div>
+        <div class="voorbeeld" id="statsVoorbeeld"><iframe id="statsFrame" src="stats.html?voorbeeld" title="Voorbeeld van de stream stats"></iframe></div>
     </section>
 
     <section class="stap slot">
@@ -263,6 +272,14 @@
         $('obsLink').value = 'https://gwnlarss.nl/boris/alerts.html' + (aan ? '?zuinig' : '');
         melding(aan ? '🐢 Link met zuinige stand: kopieer hem en zet hem in OBS' : 'Gewone link weer terug');
     });
+    $('statsBoven').addEventListener('click', () => {
+        const boven = $('statsBoven').getAttribute('aria-pressed') !== 'true';
+        $('statsBoven').setAttribute('aria-pressed', boven);
+        $('statsBoven').textContent = boven ? '✅ Balk staat bovenin' : '⬆️ Balk bovenin';
+        $('statsLink').value = 'https://gwnlarss.nl/boris/stats.html' + (boven ? '?plek=boven' : '');
+        $('statsFrame').src = 'stats.html?voorbeeld' + (boven ? '&plek=boven' : '');
+    });
+    $('kopieerStats').addEventListener('click', () => { navigator.clipboard?.writeText($('statsLink').value); melding('📋 Stats-link gekopieerd'); });
     $('kopieer').addEventListener('click', () => { navigator.clipboard?.writeText($('obsLink').value); melding('📋 Link gekopieerd'); });
 
     $('tests').innerHTML = TESTS.map(([s, naam], i) => `<button class="knop zacht" data-test="${i}">${naam}</button>`).join('');
@@ -276,7 +293,7 @@
     });
 
     // voorbeeld: de overlay op schaal in het kader
-    const schaal = () => { const w = $('voorbeeld').clientWidth; $('frame').style.transform = `scale(${w / 1920})`; };
+    const schaal = () => { for (const [doos, frame] of [['voorbeeld', 'frame'], ['statsVoorbeeld', 'statsFrame']]) $(frame).style.transform = `scale(${$(doos).clientWidth / 1920})`; };
     addEventListener('resize', schaal); schaal();
     laad();
 </script>

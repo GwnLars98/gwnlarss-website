@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Stream stats · Boris Ferreiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+    /* Stream stats voor Boris Ferreiro (OBS-browserbron, 1920x1080, transparant). Een balk in zijn
+       zonsondergang-stijl met zijn laatste volger, sub, bits, raid en donatie, plus zijn totalen volgers
+       en subs met wat er deze stream bij kwam. Werkt live mee met zijn alerts (zelfde live-verbinding);
+       zet hem in OBS onder de alerts-bron, dan komen de alerts (ook volledig scherm) eroverheen.
+       ?plek=boven zet de balk bovenin, ?voorbeeld toont zijn offline-scherm erachter. */
+    :root { --paars: #3b2a63; --magenta: #8a3b7a; --koraal: #e0605a; --oranje: #f4a54a; --goud: #ffd27a; --wit: #fff8f2; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Baloo 2', system-ui, sans-serif; }
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; }
+    body.voorbeeld #podium { background: #222 url('https://static-cdn.jtvnw.net/jtv_user_pictures/81a5a7a9-9ba4-41da-9621-54d3a23eb7bd-channel_offline_image-1920x1080.png') center/cover; }
+
+    .balk { position: absolute; left: 50%; bottom: 34px; width: 1500px; height: 106px; transform: translateX(-50%); display: flex; align-items: center;
+        padding: 0 26px 0 138px; box-sizing: border-box; border-radius: 30px; color: var(--wit);
+        background: linear-gradient(180deg, rgba(37, 26, 69, 0.94), rgba(78, 39, 102, 0.94) 52%, rgba(138, 59, 122, 0.94));
+        box-shadow: 0 16px 44px rgba(20, 6, 30, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        animation: binnen 0.9s cubic-bezier(.2, 1.3, .4, 1) both; }
+    body.boven .balk { bottom: auto; top: 34px; animation-name: binnenBoven; }
+    @keyframes binnen { from { transform: translateX(-50%) translateY(160px); opacity: 0; } }
+    @keyframes binnenBoven { from { transform: translateX(-50%) translateY(-160px); opacity: 0; } }
+    /* gouden rand, zoals de munt en de vlag */
+    .balk::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 3px; pointer-events: none;
+        background: linear-gradient(90deg, #c9702a, #ffd27a, #f4a54a, #ffe9b8, #f4a54a, #ffd27a, #c9702a);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+    /* zijn golven onderin de balk, langzaam schuivend (één element, alleen transform: licht) */
+    .zee { position: absolute; inset: 3px; border-radius: 27px; overflow: hidden; pointer-events: none; }
+    .golven { position: absolute; left: 0; bottom: -2px; width: 200%; height: 44px; opacity: 0.55; animation: schuif 24s linear infinite;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 44' preserveAspectRatio='none'%3E%3Cpath d='M0 22 Q100 6 200 22 T400 22 T600 22 T800 22 V44 H0Z' fill='%23e0605a' opacity='0.55'/%3E%3Cpath d='M0 30 Q100 18 200 30 T400 30 T600 30 T800 30 V44 H0Z' fill='%23f4a54a' opacity='0.6'/%3E%3C/svg%3E") repeat-x 0 0 / 50% 100%; }
+    @keyframes schuif { to { transform: translateX(-50%); } }
+
+    /* zijn logo als munt, half over de rand */
+    .munt { position: absolute; left: -22px; top: 50%; width: 140px; height: 140px; transform: translateY(-50%); border-radius: 50%;
+        background: url('https://static-cdn.jtvnw.net/jtv_user_pictures/f935070f-68b8-446d-95a4-9885ffbad080-profile_image-300x300.png') center / cover;
+        box-shadow: 0 0 0 5px #f4a54a, 0 0 0 8px #ffe3a8, 0 12px 30px rgba(20, 6, 30, 0.55); }
+    .munt.puls { animation: puls 0.9s cubic-bezier(.2, 1.6, .4, 1); }
+    @keyframes puls { 40% { transform: translateY(-50%) scale(1.12) rotate(-8deg); } }
+    .live { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); padding: 0 10px; border-radius: 99px; font-size: 15px; font-weight: 800; letter-spacing: 0.1em;
+        background: #e0475a; color: #fff; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35); display: none; }
+    .munt.aan .live { display: block; }
+
+    .tegel { position: relative; flex: 1 1 0; min-width: 0; height: 78px; padding: 4px 18px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+    .tegel + .tegel { border-left: 1px solid rgba(255, 255, 255, 0.14); }
+    .label { font-size: 15px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #ffd7a8; white-space: nowrap; }
+    .naam { font-size: 31px; font-weight: 800; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 3px 0 rgba(90, 30, 70, 0.6); }
+    .extra { font-size: 17px; font-weight: 600; color: rgba(255, 248, 242, 0.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 20px; }
+    .leeg .naam { color: rgba(255, 248, 242, 0.45); font-size: 24px; }
+    /* nieuw: naam springt erin, gouden veeg over de tegel */
+    .tegel.nieuw .naam { animation: erin 0.65s cubic-bezier(.2, 1.5, .4, 1); color: var(--goud); }
+    .tegel.nieuw::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 25%, rgba(255, 226, 160, 0.5) 50%, transparent 75%); animation: veeg 1.2s ease-out forwards; }
+    @keyframes erin { from { transform: translateY(30px) scale(0.9); opacity: 0; } }
+    @keyframes veeg { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+    .tellers { flex: 0 0 230px; display: flex; flex-direction: column; gap: 4px; padding-left: 20px; border-left: 1px solid rgba(255, 255, 255, 0.14); }
+    .teller { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+    .teller b { font-size: 29px; font-weight: 800; line-height: 1; min-width: 0; }
+    .teller span { font-size: 16px; font-weight: 700; color: #ffd7a8; }
+    .teller i { font-style: normal; font-size: 15px; font-weight: 800; color: var(--goud); background: rgba(255, 210, 122, 0.14); padding: 0 7px; border-radius: 99px; }
+    .teller i:empty { display: none; }
+    .teller.op b { animation: op 0.8s cubic-bezier(.2, 1.6, .4, 1); color: var(--goud); }
+    @keyframes op { 35% { transform: scale(1.25); } }
+</style>
+</head>
+<body>
+<div id="podium">
+    <div class="balk">
+        <div class="zee"><div class="golven"></div></div>
+        <div class="munt" id="munt"><div class="live">LIVE</div></div>
+        <div class="tegel leeg" id="t-volger"><div class="label">💜 Laatste volger</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
+        <div class="tegel leeg" id="t-sub"><div class="label">⭐ Laatste sub</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
+        <div class="tegel leeg" id="t-bits"><div class="label">💎 Top bits</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
+        <div class="tegel leeg" id="t-raid"><div class="label">🚀 Laatste raid</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
+        <div class="tegel leeg" id="t-donatie" hidden><div class="label">💸 Laatste donatie</div><div class="naam">Nog niemand</div><div class="extra"></div></div>
+        <div class="tellers">
+            <div class="teller" id="c-volgers"><b>…</b><span>volgers</span><i></i></div>
+            <div class="teller" id="c-subs"><b>…</b><span>subs</span><i></i></div>
+        </div>
+    </div>
+</div>
+<script>
+    const LOGIN = 'borisferreiro';
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
+    const zoek = new URLSearchParams(location.search);
+    if (zoek.has('voorbeeld')) document.body.classList.add('voorbeeld');
+    if (zoek.get('plek') === 'boven') document.body.classList.add('boven');
+    const $ = id => document.getElementById(id);
+    const getal = n => Number(n ?? 0).toLocaleString('nl-NL');
+    const geld = (b, v) => { try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: v || 'EUR' }).format(b ?? 0); } catch { return `${b} ${v ?? ''}`; } };
+
+    // podium passend in elk venster (in OBS op 1920x1080 precies 1 op 1)
+    function pasPodiumAan() {
+        const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+        $('podium').style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pasPodiumAan); pasPodiumAan();
+
+    function zet(id, naam, extra, nieuw) {
+        const t = $(id);
+        const n = t.querySelector('.naam'), x = t.querySelector('.extra');
+        if (!naam) { t.classList.add('leeg'); n.textContent = 'Nog niemand'; x.textContent = ''; return; }
+        if (!nieuw && n.textContent === naam && x.textContent === (extra ?? '')) return;
+        t.classList.remove('leeg'); n.textContent = naam; x.textContent = extra ?? '';
+        if (nieuw) { t.classList.remove('nieuw'); void t.offsetWidth; t.classList.add('nieuw'); setTimeout(() => t.classList.remove('nieuw'), 4000);
+            const m = $('munt'); m.classList.remove('puls'); void m.offsetWidth; m.classList.add('puls'); }
+    }
+    const subTekst = e => e.soort === 'gift' ? `${getal(e.aantal ?? 1)} gifted sub${(e.aantal ?? 1) === 1 ? '' : 's'}` : e.soort === 'resub' ? `${e.maanden ?? 1} maanden sub` : `Tier ${e.tier ?? 1} sub`;
+    const tekstVoor = e => ({
+        follower: ['t-volger', 'Welkom in de crew!'],
+        subscriber: ['t-sub', subTekst(e)], resub: ['t-sub', subTekst(e)], gift: ['t-sub', subTekst(e)],
+        cheer: ['t-bits', `${getal(e.bits)} bits`],
+        raid: ['t-raid', `met ${getal(e.kijkers)} kijkers`],
+        donatie: ['t-donatie', geld(e.bedrag, e.valuta)],
+    })[e.soort];
+
+    // tellers: rollen naar het nieuwe getal
+    const stand = { volgers: null, subs: null };
+    function teller(id, sleutel, waarde, erbij) {
+        const el = $(id), b = el.querySelector('b');
+        el.querySelector('i').textContent = erbij > 0 ? `+${getal(erbij)}` : '';
+        if (waarde == null) return;
+        const van = stand[sleutel]; stand[sleutel] = waarde;
+        if (van == null || van === waarde) { b.textContent = getal(waarde); return; }
+        el.classList.remove('op'); void el.offsetWidth; el.classList.add('op');
+        const start = performance.now();
+        const stap = nu => { const k = Math.min(1, (nu - start) / 800); b.textContent = getal(Math.round(van + (waarde - van) * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(stap); };
+        requestAnimationFrame(stap);
+    }
+
+    let laatsteStats = null;
+    function toon(s, nieuw = null) {
+        laatsteStats = s;
+        const L = s.laatste ?? {};
+        $('t-donatie').hidden = !s.donaties && !L.donatie;
+        zet('t-volger', L.follower?.naam, L.follower ? 'Welkom in de crew!' : '', nieuw === 't-volger');
+        const sub = ['subscriber', 'resub', 'gift'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
+        zet('t-sub', sub?.naam, sub ? subTekst(sub) : '', nieuw === 't-sub');
+        // bits: de grootste van deze stream, anders de laatste
+        const top = s.sessie?.topBits;
+        $('t-bits').querySelector('.label').textContent = top ? '💎 Top bits deze stream' : '💎 Laatste bits';
+        zet('t-bits', top?.naam ?? L.cheer?.naam, top ? `${getal(top.bits)} bits` : L.cheer ? `${getal(L.cheer.bits)} bits` : '', nieuw === 't-bits');
+        zet('t-raid', L.raid?.naam, L.raid ? `met ${getal(L.raid.kijkers)} kijkers` : '', nieuw === 't-raid');
+        zet('t-donatie', L.donatie?.naam, L.donatie ? geld(L.donatie.bedrag, L.donatie.valuta) : '', nieuw === 't-donatie');
+        teller('c-volgers', 'volgers', s.totaal?.volgers, s.sessie?.volgers);
+        teller('c-subs', 'subs', s.totaal?.subs, s.sessie?.subs);
+        $('munt').classList.toggle('aan', Boolean(s.live));
+    }
+    const haal = () => fetch(API + '/stats', { cache: 'no-store' }).then(r => r.json()).then(s => s && toon(s)).catch(() => {});
+    haal(); setInterval(haal, 60000);
+
+    // live mee met de alerts (ook testalerts: die laten we even zien, de server bewaart ze niet)
+    function verbind() {
+        const bron = new EventSource(API + '/stream?bron=' + (zoek.has('voorbeeld') ? 'voorbeeld' : 'stats'));   // bron: voor de status op api.gwnlarss.nl
+        bron.onmessage = m => {
+            let e; try { e = JSON.parse(m.data); } catch { return; }
+            if (!e?.soort || e.soort === '_instellingen') return;
+            const doel = tekstVoor({ soort: e.soort, ...e.extra });
+            if (!doel) return;
+            const [id] = doel;
+            if (e.soort === 'cheer' && laatsteStats?.sessie?.topBits && (e.extra?.bits ?? 0) < laatsteStats.sessie.topBits.bits && !e.extra?.test) { setTimeout(haal, 3000); return; }   // geen nieuwe top: alleen bijwerken
+            if (id === 't-bits') $('t-bits').querySelector('.label').textContent = e.extra?.test ? '💎 Laatste bits' : $('t-bits').querySelector('.label').textContent;
+            if (id === 't-donatie') $('t-donatie').hidden = false;
+            zet(id, e.naam, tekstVoor({ soort: e.soort, ...e.extra })[1], true);
+            if (!e.extra?.test) {   // echte alert: tellers meteen omhoog, daarna gelijk trekken met de server
+                if (e.soort === 'follower') teller('c-volgers', 'volgers', (stand.volgers ?? 0) + 1, (laatsteStats?.sessie?.volgers ?? 0) + 1);
+                setTimeout(haal, 3000);
+            }
+        };
+        bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
+    }
+    verbind();
+</script>
+</body>
+</html>

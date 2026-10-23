@@ -849,7 +849,7 @@
     }
 
     function verbind() {
-        const bron = new EventSource(API + '/stream');
+        const bron = new EventSource(API + '/stream?bron=' + (VOORBEELD ? 'voorbeeld' : 'alerts'));   // bron: voor de status op api.gwnlarss.nl
         bron.onmessage = m => {
             try {
                 const d = JSON.parse(m.data);
