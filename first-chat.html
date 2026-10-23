@@ -184,6 +184,8 @@
 <audio id="msn-audio"></audio>
 
 <script>
+    // Kopie van api.gwnlarss.nl/first-chat.html voor gwnlarss.nl (Netlify, geen eigen backend): dit is de
+    // enige regel die tussen die twee kopieën verschilt.
     const API_BASE = 'https://api.gwnlarss.nl';
 
     // Zonder ?kanaal=... in de URL gedraagt dit zich als vanouds: gericht op gwnlarss zelf.
@@ -314,9 +316,8 @@
     const ICOON_DISCORD = '<svg width="18" height="15" viewBox="0 0 26 22"><rect x="1" y="1" width="24" height="18" rx="9" fill="#fff"/><ellipse cx="9" cy="10" rx="1.8" ry="2.4" fill="#5865f2"/><ellipse cx="17" cy="10" rx="1.8" ry="2.4" fill="#5865f2"/></svg>';
     const ICOON_INSTAGRAM = '<svg width="16" height="16" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="17" rx="5" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12.5" r="4.2" fill="none" stroke="#fff" stroke-width="2"/><circle cx="17.5" cy="7.5" r="1.1" fill="#fff"/></svg>';
 
-    // Echte meldingsgeluiden per thema (first-chat-sounds/<thema>.mp3 op api.gwnlarss.nl,
-    // bijgesneden en op gelijk volume gezet). Lukt afspelen niet, dan valt het terug op het
-    // gesynthetiseerde geluidje.
+    // Echte meldingsgeluiden per thema (first-chat-sounds/<thema>.mp3, bijgesneden en op gelijk
+    // volume gezet). Lukt afspelen niet, dan valt het terug op het gesynthetiseerde geluidje.
     const echteGeluiden = {};
     function speelEchtGeluid(sleutel, terugval) {
         const audio = (echteGeluiden[sleutel] ??= new Audio(`${API_BASE}/first-chat-sounds/${sleutel}.mp3`));
@@ -394,10 +395,12 @@
 
     const wachtrij = [];
     let bezig = false;
+    let toonSinds = 0;
 
     function toonVolgende() {
         if (bezig || wachtrij.length === 0) return;
         bezig = true;
+        toonSinds = Date.now();
         const event = wachtrij.shift();
 
         msnNaamEl.textContent = event.naam;
@@ -427,10 +430,25 @@
         }, weergaveTijd);
     }
 
+    // Vangnet tegen een toastje dat voor altijd blijft hangen: OBS pauzeert de timers van een
+    // browser-source soms als die in een niet-actieve scene zit (of bij een kortstondige
+    // verbindingshik), waardoor de setTimeout hierboven nooit afgaat. Deze controleert elke 2s
+    // of het huidige toastje al veel langer zichtbaar is dan de bedoeling, en forceert dan
+    // alsnog een reset zodat de wachtrij niet voorgoed vaststaat.
+    setInterval(() => {
+        if (bezig && Date.now() - toonSinds > weergaveTijd + 4000) {
+            msnToastEl.classList.remove('is-visible');
+            bezig = false;
+            toonVolgende();
+        }
+    }, 2000);
+
     function verbind() {
-        const bron = new EventSource(`${API_BASE}/api/alerts/stream`);
+        // eigen live-verbinding van Eerste chat (eerstechat.js, eigen container): herstart niet mee met de rest
+        const bron = new EventSource(`${API_BASE}/api/eerste-chat/stream?kanaal=${encodeURIComponent(KANAAL)}`);
         bron.onmessage = e => {
             const event = JSON.parse(e.data);
+            if (event.type === 'herlaad' && (!event.extra?.kanaal || event.extra.kanaal === KANAAL)) return location.reload();
             if (event.type !== 'first_chat') return; // andere alert-types negeren, die horen bij alerts.html
             if ((event.extra?.kanaal ?? 'gwnlarss') !== KANAAL) return; // niet voor ons kanaal
             wachtrij.push(event);
