@@ -47,7 +47,8 @@
     .geen-sleutel .beheer { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }
     .zuinig { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
     .zuinig small { color: var(--dim); line-height: 1.4; flex: 1 1 260px; }
-    #statsBoven[aria-pressed="true"], #zuinigKnop[aria-pressed="true"] { border-color: var(--oranje); box-shadow: 0 0 0 3px rgba(244, 165, 74, 0.25); }
+    .statsMaten { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .statsMaten .gekozen, #statsBoven[aria-pressed="true"], #zuinigKnop[aria-pressed="true"] { border-color: var(--oranje); box-shadow: 0 0 0 3px rgba(244, 165, 74, 0.25); }
     .plaatje.vol { background: radial-gradient(circle at 50% 62%, #fff8f0 0 17%, rgba(255,200,130,0.6) 18% 26%, transparent 27%), linear-gradient(180deg, #241638 0%, var(--magenta) 38%, var(--koraal) 56%, #f4a54a 60%, #3b2363 61%, #1f1236 100%); }
     .plaatje.vol::after { content: "Naam"; position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-weight: 800; font-size: 1.15rem; color: #fff3e2; text-shadow: 0 3px 0 #b8562f, 0 5px 0 #4a1d4a; }
     .stijlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -116,7 +117,8 @@
         <p>Een balk in jouw stijl met je laatste volger, sub, bits, raid en donatie, en je volgers en subs met wat er deze stream bij kwam. Voeg een tweede <b>Browserbron</b> toe (1920 × 1080) en zet hem <b>onder</b> de alerts-bron: dan komen je alerts, ook volledig scherm, eroverheen.</p>
         <div class="link"><input id="statsLink" readonly value="https://gwnlarss.nl/boris/stats.html"><button class="knop zacht" id="kopieerStats">Kopieer</button></div>
         <div class="zuinig"><button class="knop zacht" id="statsBoven" aria-pressed="false">⬆️ Balk bovenin</button>
-            <small>Standaard staat de balk onderin. De testknoppen bij stap 3 laten hem hieronder meteen bewegen.</small></div>
+            <span class="statsMaten" id="statsMaten"><button class="knop zacht" data-maat="0.7">Klein</button><button class="knop zacht" data-maat="0.85">Middel</button><button class="knop zacht gekozen" data-maat="1">Normaal</button><button class="knop zacht" data-maat="1.2">Groot</button></span>
+            <small>Standaard staat de balk onderin op normale grootte. Je keuze zit in de link: kopieer hem daarna opnieuw naar OBS. De testknoppen bij stap 3 laten de balk hieronder meteen bewegen.</small></div>
         <div class="voorbeeld" id="statsVoorbeeld"><iframe id="statsFrame" src="stats.html?voorbeeld" title="Voorbeeld van de stream stats"></iframe></div>
     </section>
 
@@ -272,12 +274,27 @@
         $('obsLink').value = 'https://gwnlarss.nl/boris/alerts.html' + (aan ? '?zuinig' : '');
         melding(aan ? '🐢 Link met zuinige stand: kopieer hem en zet hem in OBS' : 'Gewone link weer terug');
     });
+    // stats-link: plek en grootte zitten in de link (de overlay leest ze uit de adresregel)
+    let statsBoven = false, statsMaat = 1;
+    function statsLinkBijwerken() {
+        const q = new URLSearchParams();
+        if (statsBoven) q.set('plek', 'boven');
+        if (statsMaat !== 1) q.set('grootte', statsMaat);
+        $('statsLink').value = 'https://gwnlarss.nl/boris/stats.html' + (q.size ? '?' + q : '');
+        q.set('voorbeeld', ''); $('statsFrame').src = 'stats.html?' + q.toString().replace('voorbeeld=', 'voorbeeld');
+    }
     $('statsBoven').addEventListener('click', () => {
-        const boven = $('statsBoven').getAttribute('aria-pressed') !== 'true';
-        $('statsBoven').setAttribute('aria-pressed', boven);
-        $('statsBoven').textContent = boven ? '✅ Balk staat bovenin' : '⬆️ Balk bovenin';
-        $('statsLink').value = 'https://gwnlarss.nl/boris/stats.html' + (boven ? '?plek=boven' : '');
-        $('statsFrame').src = 'stats.html?voorbeeld' + (boven ? '&plek=boven' : '');
+        statsBoven = !statsBoven;
+        $('statsBoven').setAttribute('aria-pressed', statsBoven);
+        $('statsBoven').textContent = statsBoven ? '✅ Balk staat bovenin' : '⬆️ Balk bovenin';
+        statsLinkBijwerken();
+    });
+    $('statsMaten').addEventListener('click', e => {
+        const b = e.target.closest('[data-maat]'); if (!b) return;
+        statsMaat = Number(b.dataset.maat);
+        document.querySelectorAll('#statsMaten [data-maat]').forEach(k => k.classList.toggle('gekozen', k === b));
+        statsLinkBijwerken();
+        melding('📏 Grootte in de link gezet: kopieer hem opnieuw naar OBS');
     });
     $('kopieerStats').addEventListener('click', () => { navigator.clipboard?.writeText($('statsLink').value); melding('📋 Stats-link gekopieerd'); });
     $('kopieer').addEventListener('click', () => { navigator.clipboard?.writeText($('obsLink').value); melding('📋 Link gekopieerd'); });
