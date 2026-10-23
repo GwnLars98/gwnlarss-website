@@ -155,8 +155,10 @@
     const API = 'https://api.gwnlarss.nl/api/streamer-alerts/borisferreiro';
     const $ = id => document.getElementById(id);
     const SOORTEN = { follower: '💜 Volgers', subscriber: '👑 Subs', resub: '🔁 Resubs', gift: '🎁 Gifted subs', cheer: '💎 Bits', raid: '🚨 Raids', donatie: '💸 Donaties' };
-    const TESTS = [['follower', 'Volger'], ['subscriber', 'Sub'], ['resub', 'Resub'], ['gift', '5 gifted subs', { aantal: 5 }], ['cheer', '1.000 bits', { bits: 1000 }],
-        ['cheer', '5.000 bits', { bits: 5000 }], ['cheer', '10.000 bits', { bits: 10000 }], ['raid', 'Raid'], ['donatie', 'Donatie']];
+    const TESTS = [['follower', 'Volger'], ['subscriber', 'Sub'], ['resub', 'Resub'],
+        ['gift', '1 gifted sub', { aantal: 1 }], ['gift', '10 gifted subs', { aantal: 10 }], ['gift', '20 gifted subs', { aantal: 20 }], ['gift', '50 gifted subs', { aantal: 50 }], ['gift', '100 gifted subs', { aantal: 100 }],
+        ['cheer', '100 bits', { bits: 100 }], ['cheer', '1.000 bits', { bits: 1000 }], ['cheer', '5.000 bits', { bits: 5000 }], ['cheer', '10.000 bits', { bits: 10000 }], ['cheer', '25.000 bits', { bits: 25000 }],
+        ['raid', 'Raid'], ['donatie', 'Donatie']];
     const melding = tekst => { const m = $('melding'); m.textContent = tekst; m.classList.add('aan'); clearTimeout(melding.t); melding.t = setTimeout(() => m.classList.remove('aan'), 2600); };
 
     // sleutel: uit de link na het koppelen (#sleutel=...), anders uit deze browser
