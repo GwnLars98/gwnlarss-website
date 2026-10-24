@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Now Playing, GwnLarss</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+    /* Spotify "now playing" voor OBS in vijf stijlen (?stijl=kaart|pil|vinyl|cassette|3d, keuze op nowplaying-setup.html).
+       Elke stijl heeft een eigen basismaat en schaalt mee met de browserbron. Schuift in beeld zodra er muziek
+       speelt en weer weg bij pauze. ?plek=rechts lijnt rechts uit, ?demo=1 toont een voorbeeldnummer.
+       Data: /api/spotify/nu (utils/spotify.js), elke 3 seconden; de voortgang loopt tussendoor lokaal door. */
+    :root { --paars: #9146ff; --roze: #ff3ea5; --kaart: rgba(18, 9, 38, 0.86); --p: 0; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100vw; height: 100vh; background: transparent; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; color: #fff; }
+    #podium { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    .blok { display: none; position: relative; width: 100%; height: 100%; }
+    body[data-stijl="kaart"] .blok.kaart, body[data-stijl="pil"] .blok.pil, body[data-stijl="vinyl"] .blok.vinyl,
+    body[data-stijl="cassette"] .blok.cassette, body[data-stijl="3d"] .blok.drie { display: block; }
+    /* in- en uitschuiven */
+    .schuif { transform: translateX(-120%); opacity: 0; transition: transform 0.75s cubic-bezier(.2, 1.2, .3, 1), opacity 0.5s; }
+    body.rechts .schuif { transform: translateX(120%); }
+    body.aan .schuif { transform: none; opacity: 1; }
+    /* gedeelde stukjes */
+    .eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; }
+    .eq i { width: 4px; height: 30%; border-radius: 2px; background: linear-gradient(var(--roze), var(--paars)); }
+    body.speelt .eq i { animation: eq 0.9s ease-in-out infinite alternate; }
+    .eq i:nth-child(2) { animation-delay: -0.3s !important; } .eq i:nth-child(3) { animation-delay: -0.6s !important; } .eq i:nth-child(4) { animation-delay: -0.15s !important; }
+    @keyframes eq { 0% { height: 20%; } 100% { height: 100%; } }
+    .titelvak { overflow: hidden; white-space: nowrap; -webkit-mask: linear-gradient(90deg, #000 90%, transparent); mask: linear-gradient(90deg, #000 90%, transparent); }
+    .titel { display: inline-block; padding-right: 50px; }
+    .titel.loopt { animation: loop var(--duur, 12s) linear infinite; }
+    @keyframes loop { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--afstand)); } }
+    .hoes { background: linear-gradient(135deg, var(--paars), var(--roze)) center / cover no-repeat; }
+    .balk { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+    .vul { height: 100%; width: calc(var(--p) * 100%); border-radius: inherit; background: linear-gradient(90deg, var(--paars), var(--roze)); }
+    .draait { animation: draai 2.4s linear infinite; animation-play-state: paused; }
+    body.speelt .draait { animation-play-state: running; }
+    @keyframes draai { to { transform: rotate(360deg); } }
+    .wissel { animation: wissel 0.7s ease; }
+    @keyframes wissel { 0% { transform: perspective(600px) rotateY(0); } 50% { transform: perspective(600px) rotateY(90deg); } 100% { transform: perspective(600px) rotateY(0); } }
+
+    /* ---------- 1. kaart (800 x 220) ---------- */
+    .kaart .doos { position: absolute; left: 24px; top: 30px; width: 752px; height: 160px; display: flex; align-items: center; gap: 22px;
+        padding: 0 26px 0 20px; border-radius: 26px; background: var(--kaart); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 34px rgba(145, 70, 255, 0.35); }
+    .kaart .doos::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 3px; pointer-events: none;
+        background: linear-gradient(120deg, var(--paars), var(--roze), var(--paars));
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+    .kaart .hoesvak { position: relative; flex: 0 0 120px; height: 120px; }
+    .kaart .plaat { position: absolute; left: 10px; top: 6px; width: 108px; height: 108px; border-radius: 50%;
+        background: radial-gradient(circle, var(--roze) 0 13px, #1a1a1a 14px 16px, transparent 17px), repeating-radial-gradient(circle, #121212 0 2px, #1d1d1d 2px 4px);
+        transition: transform 0.9s cubic-bezier(.2, 1, .3, 1); }
+    body.speelt .kaart .plaat { transform: translateX(46px); }
+    .kaart .hoes { position: absolute; inset: 0; border-radius: 18px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); }
+    .kaart .info { flex: 1; min-width: 0; padding-left: 42px; }
+    .kaart .boven { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #d9c8ff; }
+    .kaart .titel { font: 800 34px/1.2 'Baloo 2', sans-serif; margin-top: 4px; }
+    .kaart .artiest { font-size: 19px; font-weight: 600; color: #cbb8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kaart .tijden { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; font-weight: 600; color: #b9a6e8; font-variant-numeric: tabular-nums; }
+    .kaart .balk { flex: 1; }
+
+    /* ---------- 2. pil (640 x 110) ---------- */
+    .pil .doos { position: absolute; left: 16px; top: 18px; width: 608px; height: 74px; border-radius: 999px; display: flex; align-items: center; gap: 14px;
+        padding: 0 26px 0 8px; background: var(--kaart); box-shadow: 0 0 0 2px rgba(145, 70, 255, 0.7), 0 10px 26px rgba(0, 0, 0, 0.45); overflow: hidden; }
+    .pil .rond { flex: 0 0 58px; height: 58px; border-radius: 50%; box-shadow: 0 0 0 3px #1a1030, 0 0 0 5px var(--roze); position: relative; }
+    .pil .rond::after { content: ''; position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: #120a26; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4); }
+    .pil .titelvak { flex: 1; font: 800 24px/1 'Baloo 2', sans-serif; padding-top: 3px; }
+    .pil .titel .wie { color: #cbb8ff; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 19px; }
+    .pil .lijn { position: absolute; left: 0; bottom: 0; height: 4px; width: calc(var(--p) * 100%); background: linear-gradient(90deg, var(--paars), var(--roze)); }
+
+    /* ---------- 3. vinyl (900 x 300) ---------- */
+    .vinyl .plaat { position: absolute; left: 30px; top: 20px; width: 260px; height: 260px; border-radius: 50%;
+        background: radial-gradient(circle, transparent 0 56px, #111 57px 60px, transparent 61px), repeating-radial-gradient(circle, #0e0e0e 0 2px, #1c1c1c 2px 4px);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.05); }
+    .vinyl .plaat .label { position: absolute; left: 50%; top: 50%; width: 112px; height: 112px; margin: -56px; border-radius: 50%; box-shadow: 0 0 0 3px #0a0a0a; }
+    .vinyl .plaat .label::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: #0a0a0a; }
+    .vinyl .plaat .licht { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 20deg, transparent 0 12%, rgba(255, 255, 255, 0.09) 16%, transparent 22% 62%, rgba(255, 255, 255, 0.09) 66%, transparent 72%); }
+    .vinyl .arm { position: absolute; left: 262px; top: 6px; width: 16px; height: 190px; transform-origin: 8px 8px; transform: rotate(-8deg); transition: transform 1.1s cubic-bezier(.3, 1.3, .4, 1); }
+    body.speelt .vinyl .arm { transform: rotate(13deg); }
+    .vinyl .arm::before { content: ''; position: absolute; left: -8px; top: -8px; width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle, #ddd 0 6px, #888 7px 14px, #555 15px); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); }
+    .vinyl .arm i { position: absolute; left: 5px; top: 8px; width: 6px; height: 170px; border-radius: 3px; background: linear-gradient(90deg, #eee, #999); }
+    .vinyl .arm b { position: absolute; left: -2px; top: 168px; width: 20px; height: 30px; border-radius: 4px; background: linear-gradient(var(--roze), var(--paars)); transform: rotate(18deg); }
+    .vinyl .info { position: absolute; left: 330px; top: 70px; width: 550px; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7); }
+    .vinyl .boven { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; letter-spacing: 3px; color: #e3d6ff; }
+    .vinyl .titel { font: 800 46px/1.15 'Baloo 2', sans-serif; margin-top: 4px; }
+    .vinyl .artiest { font-size: 22px; font-weight: 600; color: #d6c7ff; }
+    .vinyl .balk { margin-top: 14px; width: 420px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); }
+
+    /* ---------- 4. cassette (680 x 430), behuizing ontworpen in Photoshop ---------- */
+    .cassette .band { position: absolute; left: 20px; top: 15px; width: 640px; height: 400px; filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.5)); }
+    .cassette .band img { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .cassette .spoel { position: absolute; top: 222px; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle, #3a2a18 0 60%, #24180c 61%); }
+    .cassette .spoel.l { left: 235px; } .cassette .spoel.r { left: 405px; }
+    .cassette .naaf { position: absolute; top: 222px; width: 34px; height: 34px; margin: -17px; border-radius: 50%; background: #f4ecff;
+        background: conic-gradient(#f4ecff 0 10%, #9a8ab8 10% 23%, #f4ecff 23% 43%, #9a8ab8 43% 56%, #f4ecff 56% 76%, #9a8ab8 76% 90%, #f4ecff 90%); }
+    .cassette .naaf::after { content: ''; position: absolute; inset: 9px; border-radius: 50%; background: #2a0d52; }
+    .cassette .naaf.l { left: 235px; } .cassette .naaf.r { left: 405px; }
+    .cassette .bandboven { position: absolute; left: 70px; top: 57px; width: 500px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; letter-spacing: 3px; }
+    .cassette .bandboven .eq i { background: #fff; }
+    .cassette .tijd { font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+    .cassette .titelvak { position: absolute; left: 72px; top: 96px; width: 496px; font: 400 32px/1.25 'Permanent Marker', cursive; color: #2a0d52; transform: rotate(-1.2deg); }
+    .cassette .artiest { position: absolute; left: 74px; top: 140px; width: 490px; font: 400 21px/1.2 'Permanent Marker', cursive; color: #9146ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: rotate(-1deg); }
+
+    /* ---------- 5. 3d (900 x 320) ---------- */
+    .drie canvas { position: absolute; left: 0; top: 0; width: 320px; height: 320px; }
+    .drie .info { position: absolute; left: 320px; top: 76px; width: 560px; }
+    .drie .boven { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; letter-spacing: 3px; color: #e3d6ff; }
+    .drie .titel { font: 800 48px/1.15 'Baloo 2', sans-serif; margin-top: 2px;
+        background: linear-gradient(180deg, #ffffff, #f3e6ff 55%, #c9a2ff); -webkit-background-clip: text; background-clip: text; color: transparent;
+        filter: drop-shadow(0 3px 0 #2a0d52) drop-shadow(0 8px 14px rgba(0, 0, 0, 0.5)); }
+    .drie .artiest { font-size: 22px; font-weight: 700; color: #ffb3dc; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); }
+    .drie .balk { margin-top: 14px; width: 440px; height: 8px; box-shadow: 0 0 14px rgba(255, 62, 165, 0.45); }
+
+    /* melding als Spotify nog niet gekoppeld is (ook in OBS, zodat je weet dat er iets moet gebeuren) */
+    .hint { position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); max-width: 720px; padding: 16px 20px; border-radius: 16px;
+        background: var(--kaart); font-size: 16px; line-height: 1.45; box-shadow: 0 0 0 2px var(--paars); }
+    .hint[hidden] { display: none; }
+    .hint a { color: #ff9bd2; font-weight: 700; }
+</style>
+</head>
+<body data-stijl="kaart">
+<div id="podium">
+    <div class="blok kaart"><div class="doos schuif">
+        <div class="hoesvak"><div class="plaat draait"></div><div class="hoes" data-hoes></div></div>
+        <div class="info">
+            <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY</div>
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
+        </div>
+    </div></div>
+
+    <div class="blok pil"><div class="doos schuif">
+        <div class="rond hoes draait" data-hoes></div>
+        <span class="eq"><i></i><i></i><i></i><i></i></span>
+        <div class="titelvak"><span class="titel"><span data-titel></span> <span class="wie">· <span data-artiest></span></span></span></div>
+        <div class="lijn"></div>
+    </div></div>
+
+    <div class="blok vinyl"><div class="schuif" style="position:absolute;inset:0">
+        <div class="plaat draait"><div class="label hoes" data-hoes></div><div class="licht"></div></div>
+        <div class="arm"><i></i><b></b></div>
+        <div class="info">
+            <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY</div>
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="balk"><div class="vul"></div></div>
+        </div>
+    </div></div>
+
+    <div class="blok cassette"><div class="band schuif">
+        <div class="spoel l" id="spoelL"></div><div class="spoel r" id="spoelR"></div>
+        <div class="naaf l draait"></div><div class="naaf r draait"></div>
+        <img src="nowplaying/cassette.webp" alt="">
+        <div class="bandboven"><span><span class="eq"><i></i><i></i><i></i><i></i></span> NU OP SPOTIFY</span><span class="tijd"><span data-tijd>0:00</span> / <span data-lengte>0:00</span></span></div>
+        <div class="titelvak"><span class="titel" data-titel></span></div>
+        <div class="artiest" data-artiest></div>
+    </div></div>
+
+    <div class="blok drie"><div class="schuif" style="position:absolute;inset:0">
+        <canvas id="drie" width="320" height="320"></canvas>
+        <div class="info">
+            <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY</div>
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="balk"><div class="vul"></div></div>
+        </div>
+    </div></div>
+</div>
+<div class="hint" id="hint" hidden></div>
+<script>
+(() => {
+    const q = new URLSearchParams(location.search);
+    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320] };
+    const STIJL = STIJLEN[q.get('stijl')] ? q.get('stijl') : 'kaart';
+    document.body.dataset.stijl = STIJL;
+    if (q.get('plek') === 'rechts') document.body.classList.add('rechts');
+    const DEMO = q.get('demo') === '1';
+    // kopie op gwnlarss.nl voor andere streamers (?id= uit nowplaying-setup.html); het origineel staat in de bot-repo (public/nowplaying.html)
+    const API_BASE = 'https://api.gwnlarss.nl', ID = q.get('id') || '';
+    const KOPPEL = ID ? 'https://gwnlarss.nl/nowplaying-setup.html' : API_BASE + '/api/spotify/verbind';
+    window.npStijl = STIJL;
+
+    // podium op de maat van de stijl, passend in de browserbron (rechts uitgelijnd met ?plek=rechts)
+    const podium = document.getElementById('podium'), [BW, BH] = STIJLEN[STIJL];
+    podium.style.width = BW + 'px'; podium.style.height = BH + 'px';
+    function pas() {
+        const s = Math.min(innerWidth / BW, innerHeight / BH);
+        const x = document.body.classList.contains('rechts') ? innerWidth - BW * s : 0;
+        podium.style.transform = `translate(${x}px, ${(innerHeight - BH * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pas); pas();
+
+    const blok = document.querySelector(`.blok.${STIJL === '3d' ? 'drie' : STIJL}`);
+    const alle = sel => blok.querySelectorAll(sel);
+    const hint = document.getElementById('hint');
+    const mmss = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    if (q.get('gekoppeld') === '1') { hint.hidden = false; hint.innerHTML = '✅ Spotify is gekoppeld! Zet een nummer aan, dan schuift de overlay in beeld. Deze melding verdwijnt vanzelf.'; setTimeout(() => (hint.hidden = true), 6000); }
+    if (q.get('fout')) { hint.hidden = false; hint.innerHTML = '❌ ' + q.get('fout').replace(/[<>&]/g, '') + ' <a href="' + KOPPEL + '">Opnieuw koppelen</a>'; }
+
+    function lopendeTitel() {
+        for (const t of alle('.titel')) {
+            t.classList.remove('loopt');
+            const vak = t.parentElement.clientWidth, breed = t.scrollWidth - 50;
+            if (breed > vak) {   // te lang: rustig heen en weer laten lopen
+                t.style.setProperty('--afstand', (vak - breed - 20) + 'px');
+                t.style.setProperty('--duur', Math.max(8, (breed - vak) / 30 + 6) + 's');
+                t.classList.add('loopt');
+            }
+        }
+    }
+    let nu = null, vorigeId = null, uitTimer = null;
+    function verwerk(d) {
+        if (!d.geconfigureerd && !DEMO) { hint.hidden = false; hint.textContent = 'Spotify is nog niet ingesteld op de server (SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET).'; return; }
+        if (!d.gekoppeld && !DEMO) { if (!q.get('fout')) { hint.hidden = false; hint.innerHTML = 'Spotify is nog niet gekoppeld. <a href="' + KOPPEL + '">Koppel je Spotify</a>' + (ID ? '.' : ' (alleen met je beheer-login).'); } return; }
+        if (!q.get('gekoppeld') && !q.get('fout')) hint.hidden = true;
+        nu = d;
+        if (d.id && d.id !== vorigeId) {
+            const eerste = vorigeId === null;
+            vorigeId = d.id;
+            if (!eerste) alle('[data-hoes]').forEach(h => { h.classList.remove('wissel'); void h.offsetWidth; h.classList.add('wissel'); });
+            setTimeout(() => {   // halverwege de draai van de hoes het nieuwe plaatje en de tekst
+                alle('[data-hoes]').forEach(h => (h.style.backgroundImage = d.hoes ? `url("${d.hoes}")` : ''));
+                alle('[data-titel]').forEach(e => (e.textContent = d.titel || ''));
+                alle('[data-artiest]').forEach(e => (e.textContent = d.artiest || ''));
+                alle('[data-lengte]').forEach(e => (e.textContent = mmss(d.duur)));
+                lopendeTitel();
+                window.npHoes?.(d.hoes);
+            }, eerste ? 0 : 350);
+        }
+        document.body.classList.toggle('speelt', d.speelt);
+        clearTimeout(uitTimer);
+        if (d.speelt) document.body.classList.add('aan');
+        else uitTimer = setTimeout(() => document.body.classList.remove('aan'), 4000);   // even laten staan bij een korte pauze
+    }
+    // voortgang tussen de metingen door lokaal laten doorlopen (en bij de cassette de spoeltjes)
+    const spoelL = document.getElementById('spoelL'), spoelR = document.getElementById('spoelR');
+    setInterval(() => {
+        if (!nu || !nu.duur) return;
+        const pos = Math.min(nu.duur, nu.positie + (nu.speelt ? Date.now() - nu.op : 0)), p = pos / nu.duur;
+        blok.style.setProperty('--p', p.toFixed(4));
+        alle('[data-tijd]').forEach(e => (e.textContent = mmss(pos)));
+        if (STIJL === 'cassette') {
+            const r = p2 => (24 + 30 * p2) * 2;   // band loopt van de linker naar de rechter spoel
+            spoelL.style.width = spoelL.style.height = r(1 - p) + 'px';
+            spoelR.style.width = spoelR.style.height = r(p) + 'px';
+        }
+    }, 250);
+
+    async function haal() {
+        if (DEMO) return verwerk({ geconfigureerd: true, gekoppeld: true, speelt: true, id: 'demo', titel: 'Een heel lang nummer met een titel die niet past', artiest: 'GwnLarss, Vrienden', hoes: '', duur: 213000, positie: 64000, op: Date.now() });
+        try { verwerk(await (await fetch(API_BASE + '/api/spotify/nu' + (ID ? '?id=' + encodeURIComponent(ID) : ''), { cache: 'no-store' })).json()); } catch { }
+    }
+    haal(); setInterval(haal, 3000);
+    document.fonts.ready.then(() => { lopendeTitel(); document.body.dataset.klaar = '1'; });
+})();
+</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module">
+// 3d-stijl: een glanzende plaat met de albumhoes als label, schuin naar je toe, draait mee met de muziek
+// en klapt om bij een nieuw nummer. Eigen klein canvas (320x320), rendert alleen als de overlay in beeld is.
+if (window.npStijl === '3d') {
+    const THREE = await import('three');
+    const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
+    const r = new THREE.WebGLRenderer({ canvas: document.getElementById('drie'), alpha: true, antialias: true });
+    r.setPixelRatio(Math.min(2, devicePixelRatio)); r.setSize(320, 320, false);
+    r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+    const scene = new THREE.Scene();
+    scene.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+    const cam = new THREE.PerspectiveCamera(32, 1, 1, 100); cam.position.set(0, 0.1, 8.2);
+
+    // groeven als textuur op de plaat
+    const gc = document.createElement('canvas'); gc.width = gc.height = 512;
+    const g = gc.getContext('2d'); g.fillStyle = '#0b0b0f'; g.fillRect(0, 0, 512, 512);
+    for (let rr = 250; rr > 100; rr -= 3) { g.strokeStyle = rr % 2 ? '#17161d' : '#0e0d12'; g.lineWidth = 2; g.beginPath(); g.arc(256, 256, rr, 0, 6.29); g.stroke(); }
+    const groeven = new THREE.CanvasTexture(gc); groeven.colorSpace = THREE.SRGBColorSpace;
+    const plaat = new THREE.Group();
+    const schijf = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.06, 96), [
+        new THREE.MeshPhysicalMaterial({ color: 0x111116, metalness: 0.3, roughness: 0.35, clearcoat: 1 }),
+        new THREE.MeshPhysicalMaterial({ map: groeven, metalness: 0.4, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.15 }),
+        new THREE.MeshPhysicalMaterial({ map: groeven, metalness: 0.4, roughness: 0.3, clearcoat: 1 }),
+    ]);
+    plaat.add(schijf);
+    // label met de hoes, iets boven het vinyl
+    const labelMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.35, clearcoat: 0.6 });
+    const label = new THREE.Mesh(new THREE.CircleGeometry(0.62, 64), labelMat);
+    label.rotation.x = -Math.PI / 2; label.position.y = 0.032; plaat.add(label);
+    const gat = new THREE.Mesh(new THREE.CircleGeometry(0.06, 24), new THREE.MeshBasicMaterial({ color: 0x050505 }));
+    gat.rotation.x = -Math.PI / 2; gat.position.y = 0.034; plaat.add(gat);
+    // standaardlabel: paars-roze verloop
+    const lc = document.createElement('canvas'); lc.width = lc.height = 256;
+    const lg = lc.getContext('2d'), vg = lg.createLinearGradient(0, 0, 256, 256); vg.addColorStop(0, '#9146ff'); vg.addColorStop(1, '#ff3ea5');
+    lg.fillStyle = vg; lg.fillRect(0, 0, 256, 256);
+    const standaard = new THREE.CanvasTexture(lc); standaard.colorSpace = THREE.SRGBColorSpace;
+    labelMat.map = standaard;
+    plaat.rotation.x = 1.05;   // schuin naar de kijker
+    scene.add(plaat);
+    // gekleurde lampen die over de glans glijden
+    const paars = new THREE.PointLight(0x9146ff, 12, 0, 1.6), roze = new THREE.PointLight(0xff3ea5, 12, 0, 1.6);
+    scene.add(paars, roze);
+
+    const laad = new THREE.TextureLoader(); laad.setCrossOrigin('anonymous');
+    let klap = 0;
+    window.npHoes = url => {
+        klap = 1;   // omklappen bij een nieuw nummer
+        if (!url) { labelMat.map = standaard; labelMat.needsUpdate = true; return; }
+        laad.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; labelMat.map = t; labelMat.needsUpdate = true; });
+    };
+    let hoek = 0, vorige = 0;
+    r.setAnimationLoop(nu => {
+        if (!document.body.classList.contains('aan')) { vorige = nu; return; }   // uit beeld: niet rekenen
+        const dt = vorige ? Math.min(0.05, (nu - vorige) / 1000) : 0; vorige = nu;
+        const t = nu / 1000;
+        if (document.body.classList.contains('speelt')) hoek -= dt * 3.4;   // 33 toeren voelt traag in beeld; iets sneller
+        schijf.rotation.y = hoek; label.rotation.z = -hoek;
+        klap = Math.max(0, klap - dt * 1.6);
+        plaat.rotation.z = Math.sin(t * 0.7) * 0.06 + (1 - Math.cos(klap * Math.PI)) * Math.PI * 0.5 * (klap > 0 ? 1 : 0);
+        plaat.position.y = Math.sin(t * 1.3) * 0.06;
+        paars.position.set(Math.sin(t * 0.9) * 3, 2, 2.5); roze.position.set(-Math.sin(t * 0.9) * 3, -1, 2.5);
+        r.render(scene, cam);
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Now Playing instellen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
+<link rel="stylesheet" href="setup.css">
+<style>
+    /* Nog niet openbaar: niet gelinkt vanaf tools.html en noindex. Koppelen loopt via api.gwnlarss.nl (utils/spotify.js),
+       daarna komt de streamer hier terug met zijn eigen id in de hash; die bewaren we in de browser. */
+    .stijl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+    .stijl-kaart { font: inherit; text-align: left; display: grid; gap: 3px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--lijn); background: rgba(255, 255, 255, 0.03); color: var(--tekst); cursor: pointer; transition: transform 0.2s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .stijl-kaart:hover { transform: translateY(-2px); }
+    .stijl-kaart b { font-family: var(--display); font-size: 1.1rem; }
+    .stijl-kaart span { color: var(--dim); font-size: 0.78rem; line-height: 1.35; }
+    .stijl-kaart.is-actief { border-color: var(--roze); background: rgba(255, 62, 165, 0.1); box-shadow: 0 0 22px -8px var(--roze); }
+    .koppel { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--lijn); background: rgba(255, 255, 255, 0.03); }
+    .koppel .punt { width: 10px; height: 10px; border-radius: 50%; background: #ffb02e; flex: 0 0 auto; }
+    .koppel.is-goed .punt { background: #1ed760; box-shadow: 0 0 10px #1ed760; }
+    .koppel .wie { flex: 1 1 160px; font-weight: 600; }
+    .btn--spotify { background: #1ed760; color: #06210f; box-shadow: 0 10px 30px -10px rgba(30, 215, 96, 0.6); }
+    .vv.np { aspect-ratio: var(--vb, 800 / 220); }
+    .vv.np iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; z-index: 2; color-scheme: normal; }
+    .maat-tekst { color: var(--dim); font-size: 0.85rem; margin: 0; }
+</style>
+</head>
+<body>
+
+<canvas id="veld" aria-hidden="true"></canvas>
+<div class="page-wrap laag">
+<nav class="top">
+  <a class="merk" href="index.html">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a href="tools.html">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
+</nav>
+
+<header class="held">
+    <a class="terug" href="tools.html">&larr; Alle tools</a>
+    <p class="label">Overlay</p>
+    <h1>Now Playing</h1>
+    <p class="intro">Laat in je stream zien welk nummer er op Spotify speelt. Koppel je Spotify, kies een stijl en plak het linkje als Browser Source in OBS. De overlay schuift vanzelf in beeld zodra er muziek speelt en verdwijnt weer als je pauzeert.</p>
+</header>
+
+<div class="opzet">
+<div class="card rand">
+
+    <p class="thema-label">1. Koppel je Spotify</p>
+    <div class="koppel" id="koppel">
+        <span class="punt"></span>
+        <span class="wie" id="koppel-tekst">Nog niet gekoppeld</span>
+        <a class="btn btn--spotify" id="koppel-btn" href="https://api.gwnlarss.nl/api/spotify/verbind?voor=streamer">Koppel Spotify</a>
+    </div>
+    <p class="thema-hint">We lezen alleen welk nummer er nu speelt. Er wordt niets aan je Spotify veranderd.</p>
+
+    <p class="thema-label">2. Kies een stijl</p>
+    <div class="stijl-grid" id="stijl-grid">
+        <button type="button" class="stijl-kaart is-actief" data-stijl="kaart"><b>Kaart</b><span>Hoes met plaat, titel en voortgang</span></button>
+        <button type="button" class="stijl-kaart" data-stijl="pil"><b>Pil</b><span>Klein en strak, voor in een hoek</span></button>
+        <button type="button" class="stijl-kaart" data-stijl="vinyl"><b>Vinyl</b><span>Draaiende plaat met naald</span></button>
+        <button type="button" class="stijl-kaart" data-stijl="cassette"><b>Cassette</b><span>Retro bandje, spoeltjes lopen mee</span></button>
+        <button type="button" class="stijl-kaart" data-stijl="3d"><b>3D</b><span>Glanzende 3D-plaat die omklapt</span></button>
+    </div>
+
+    <p class="thema-label">Kant van het scherm</p>
+    <div class="grootte-rij" id="plek-rij">
+        <button type="button" class="grootte-knop is-actief" data-plek="links">Links</button>
+        <button type="button" class="grootte-knop" data-plek="rechts">Rechts</button>
+    </div>
+
+    <div class="result" id="result">
+        <p class="result__titel" id="result-titel"></p>
+        <p id="result-tekst"></p>
+        <div class="link-row" id="link-row" hidden>
+            <input type="text" id="link-output" readonly>
+            <button type="button" class="btn btn--ghost" id="kopieer-btn">Kopieer</button>
+        </div>
+        <ol class="steps" id="steps" hidden>
+            <li>Open OBS en voeg een nieuwe <strong>Browser Source</strong> toe.</li>
+            <li>Plak het linkje hierboven als URL en zet de maat die onder het voorbeeld staat.</li>
+            <li>Zet een nummer aan op Spotify, dan schuift hij in beeld.</li>
+        </ol>
+    </div>
+    <button type="button" class="btn btn--ghost" id="ontkoppel-btn" hidden>Spotify ontkoppelen</button>
+</div>
+<div class="podium">
+    <div class="podium-kop"><span>Zo ziet het eruit</span><span class="live">Live voorbeeld</span></div>
+    <div class="vv np rand" id="vv"><iframe id="vb" title="Voorbeeld"></iframe></div>
+    <p class="maat-tekst" id="maat-tekst"></p>
+</div>
+</div>
+<p class="powered-by">Powered by <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">GwnLarss</a></p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+    const API = 'https://api.gwnlarss.nl/api/spotify';
+    const MATEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320] };
+    const $ = id => document.getElementById(id);
+    const q = new URLSearchParams(location.search);
+    const toastEl = $('toast');
+    const toast = t => { toastEl.textContent = t; toastEl.classList.add('is-visible'); setTimeout(() => toastEl.classList.remove('is-visible'), 2500); };
+
+    // eigen id na het koppelen (in de hash), bewaard in deze browser
+    let id = '', stijl = 'kaart', plek = 'links';
+    try { id = localStorage.getItem('np-id') || ''; stijl = localStorage.getItem('np-stijl') || 'kaart'; plek = localStorage.getItem('np-plek') || 'links'; } catch { }
+    const hashId = new URLSearchParams(location.hash.slice(1)).get('id');
+    if (hashId) { id = hashId; try { localStorage.setItem('np-id', id); } catch { } }
+    if (location.hash || location.search) history.replaceState(null, '', location.pathname);
+    if (!MATEN[stijl]) stijl = 'kaart';
+
+    const overlay = (demo) => new URL('nowplaying.html', location.href).href + '?' + new URLSearchParams({
+        ...(demo ? { demo: '1' } : { id }), stijl, ...(plek === 'rechts' ? { plek } : {}) });
+    function bijwerken() {
+        document.querySelectorAll('.stijl-kaart').forEach(k => k.classList.toggle('is-actief', k.dataset.stijl === stijl));
+        document.querySelectorAll('#plek-rij .grootte-knop').forEach(k => k.classList.toggle('is-actief', k.dataset.plek === plek));
+        const [w, h] = MATEN[stijl];
+        $('vv').style.setProperty('--vb', `${w} / ${h}`);
+        $('maat-tekst').innerHTML = `OBS-maat: <strong>${w} x ${h}</strong> (groter of kleiner mag, hij schaalt mee)`;
+        const vb = overlay(true); if ($('vb').src !== vb) $('vb').src = vb;
+        if (id) $('link-output').value = overlay(false);
+        try { localStorage.setItem('np-stijl', stijl); localStorage.setItem('np-plek', plek); } catch { }
+    }
+    document.querySelectorAll('.stijl-kaart').forEach(k => k.addEventListener('click', () => { stijl = k.dataset.stijl; bijwerken(); }));
+    document.querySelectorAll('#plek-rij .grootte-knop').forEach(k => k.addEventListener('click', () => { plek = k.dataset.plek; bijwerken(); }));
+
+    function toonResultaat(goed, titel, tekst) {
+        const r = $('result');
+        r.classList.add('is-visible'); r.classList.toggle('is-goed', goed); r.classList.toggle('is-fout', !goed);
+        $('result-titel').textContent = titel; $('result-titel').classList.toggle('is-goed', goed);
+        $('result-tekst').textContent = tekst;
+        $('link-row').hidden = $('steps').hidden = !goed;
+    }
+    if (q.get('fout')) toonResultaat(false, 'Koppelen is niet gelukt', q.get('fout'));
+
+    async function laadStatus() {
+        if (!id) return;
+        try {
+            const d = await (await fetch(`${API}/status?id=${encodeURIComponent(id)}`, { cache: 'no-store' })).json();
+            if (!d.gekoppeld) { id = ''; try { localStorage.removeItem('np-id'); } catch { } return; }
+            $('koppel').classList.add('is-goed');
+            $('koppel-tekst').textContent = 'Gekoppeld' + (d.naam ? ' als ' + d.naam : '');
+            $('koppel-btn').textContent = 'Opnieuw koppelen'; $('koppel-btn').classList.replace('btn--spotify', 'btn--ghost');
+            $('ontkoppel-btn').hidden = false;
+            toonResultaat(true, 'Je overlay-link', 'Plak deze link in OBS. Wissel je later van stijl? Kopieer dan de nieuwe link, je Spotify blijft gekoppeld.');
+            bijwerken();
+            if (q.get('gekoppeld') === '1') toast('✅ Spotify gekoppeld!');
+        } catch { }
+    }
+    $('kopieer-btn').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText($('link-output').value); toast('🔗 Link gekopieerd!'); } catch { $('link-output').select(); }
+    });
+    $('ontkoppel-btn').addEventListener('click', async () => {
+        if (!confirm('Spotify ontkoppelen? Je overlay laat daarna niets meer zien.')) return;
+        try { await fetch(API + '/ontkoppel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); } catch { }
+        try { localStorage.removeItem('np-id'); } catch { }
+        location.reload();
+    });
+    bijwerken(); laadStatus();
+})();
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+  import { $, startVeld, kantel } from './setup.js';
+  kantel($('vv'));
+  startVeld('munt', 3.2);
+</script>
+
+</body>
+</html>
