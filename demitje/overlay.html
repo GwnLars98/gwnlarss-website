@@ -161,7 +161,6 @@
     /* speels: de letters van de naam maken om de paar seconden een golfje */
     .speels .naam .l { animation: hup 7s ease-in-out infinite; animation-delay: calc(var(--i) * 0.07s); }
     @keyframes hup { 0%, 13%, 100% { transform: none; } 5% { transform: translateY(-24px) rotate(-5deg); } 9% { transform: translateY(4px) rotate(2deg); } }
-    .hoek { display: none; }
 
     /* ---------- stijl 2: neon (?stijl=neon) ---------- */
     body.neon .rand { background: linear-gradient(120deg, #040b1c, #071a3a 50%, #040b1c); }
@@ -182,14 +181,7 @@
     body.neon .avatar { background: #040b1c; padding: 7px; box-shadow: 0 0 0 4px #5ff6ff, 0 0 26px 6px rgba(34, 227, 208, 0.9), 0 0 60px 10px rgba(30, 107, 255, 0.5); }
     body.neon .avatar.leeg { background: transparent; box-shadow: inset 0 0 0 7px #040b1c, 0 0 0 4px #5ff6ff, 0 0 26px 6px rgba(34, 227, 208, 0.9); }
     body.neon .doel { background: rgba(3, 10, 26, 0.9); box-shadow: 0 0 0 3px #5ff6ff, 0 0 22px 3px rgba(34, 227, 208, 0.8); }
-    /* neon: HUD-hoeken binnen in het beeld, losse letters die haperen, iconen als neonbuis */
-    body.neon .hoek { display: block; position: absolute; width: 70px; height: 70px; border: 0 solid #5ff6ff;
-        filter: drop-shadow(0 0 6px #22e3d0); opacity: 0.9; animation: hoekAdem 3s ease-in-out infinite; }
-    @keyframes hoekAdem { 50% { opacity: 0.45; } }
-    body.neon .hoek.lb { left: calc(var(--rand) + 16px); top: calc(var(--rand) + 16px); border-width: 4px 0 0 4px; }
-    body.neon .hoek.rb { right: calc(var(--rand) + 230px); top: calc(var(--rand) + 16px); border-width: 4px 4px 0 0; }
-    body.neon .hoek.lo { left: calc(var(--rand) + 16px); bottom: calc(var(--rand) + 110px); border-width: 0 0 4px 4px; }
-    body.neon .hoek.ro { right: calc(var(--rand) + 16px); bottom: calc(var(--rand) + 110px); border-width: 0 4px 4px 0; }
+    /* neon: losse letters die haperen, iconen als neonbuis */
     body.neon .naam .l.uit .voor { opacity: 0.18; text-shadow: none; }
     body.neon .plaat .ikoon { background: #030a1a; box-shadow: 0 0 0 3px #5ff6ff, 0 0 16px 3px rgba(34, 227, 208, 0.8); transform: rotate(0); }
     body.neon .plaat .ikoon svg { fill: none; stroke: #5ff6ff; stroke-width: 2; filter: drop-shadow(0 0 4px #5ff6ff); }
@@ -238,7 +230,6 @@
 
     <div class="naam" id="naam"></div>
 
-    <div class="hoek lb"></div><div class="hoek rb"></div><div class="hoek lo"></div><div class="hoek ro"></div>
     <canvas id="naam3d" width="1200" height="300"></canvas>
 
     <div class="avatar">
