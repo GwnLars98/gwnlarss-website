@@ -55,6 +55,7 @@
     body.neon .foto { background: #020611; box-shadow: 0 0 0 4px #5ff6ff, 0 0 30px 8px rgba(34, 227, 208, 0.9), 0 0 80px 14px rgba(30, 107, 255, 0.5); }
     body.neon .chip { background: rgba(2, 6, 17, 0.85); box-shadow: 0 0 0 3px #5ff6ff, 0 0 24px 4px rgba(34, 227, 208, 0.8); }
     body.neon .chip .label { font-family: 'Russo One', sans-serif; color: #5ff6ff; }
+    body.neon .naam { display: none; }   /* neon: niets in de hoeken */
 
     /* 3d */
     body.drie { background: radial-gradient(circle at 50% 45%, #4fc3ff 0 18%, #1aa8ff 18% 34%, #1e8bff 34% 52%, #1e6bff 52% 72%, #1757d6 72%); }
@@ -156,11 +157,9 @@
     const grid = (() => {
         const c = document.createElement('canvas'); c.width = W; c.height = H;
         const g = c.getContext('2d'), hor = 640;
-        const lg = g.createLinearGradient(0, hor - 160, 0, hor + 20);
-        lg.addColorStop(0, 'rgba(34,227,208,0)'); lg.addColorStop(1, 'rgba(34,227,208,0.35)');
-        g.fillStyle = lg; g.fillRect(0, hor - 160, W, 180);
-        g.strokeStyle = '#5ff6ff'; g.lineWidth = 2; g.shadowColor = '#22e3d0'; g.shadowBlur = 10; g.globalAlpha = 0.5;
-        for (let i = -24; i <= 24; i++) { g.beginPath(); g.moveTo(W / 2 + i * 30, hor); g.lineTo(W / 2 + i * 260, H); g.stroke(); }
+        const lg = g.createLinearGradient(0, hor - 220, 0, hor + 220);
+        lg.addColorStop(0, 'rgba(34,227,208,0)'); lg.addColorStop(0.5, 'rgba(34,227,208,0.28)'); lg.addColorStop(1, 'rgba(34,227,208,0)');
+        g.fillStyle = lg; g.fillRect(0, hor - 220, W, 440);
         return c;
     })();
     let vorige = 0;
@@ -189,18 +188,8 @@
                 cx.globalAlpha = 0.8; cx.beginPath(); cx.arc(x - rr * 0.4, z.y - rr * 0.4, rr * 0.14, 0, 6.28); cx.fillStyle = '#fff'; cx.fill();
             }
         } else if (STIJL === 'neon') {
-            // horizon-gloed en een perspectief-grid dat naar je toe rijdt
-            const hor = 640;
+            // alleen een zachte gloed aan de horizon (geen raster op de grond)
             cx.globalAlpha = 1; cx.drawImage(grid, 0, 0);
-            // de liggende lijnen rijden naar je toe; gloed als brede zachte streep onder een dunne felle
-            const fase = (t * 0.6) % 1;
-            cx.strokeStyle = '#5ff6ff';
-            for (let n = 0; n < 14; n++) {
-                const z = (n + fase) / 14, y = hor + Math.pow(z, 2.2) * (H - hor);
-                cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y);
-                cx.globalAlpha = (0.15 + z * 0.6) * 0.3; cx.lineWidth = 9; cx.stroke();
-                cx.globalAlpha = 0.15 + z * 0.6; cx.lineWidth = 2; cx.stroke();
-            }
             cx.globalAlpha = 1;
             // emotes die gloeiend boven de horizon zweven
             for (const z of zwevers) {
