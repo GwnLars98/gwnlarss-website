@@ -7,10 +7,11 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Lilita+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Lilita+One&family=Russo+One&family=Overpass:wght@800;900&display=swap" rel="stylesheet">
 <style>
     /* Overlay voor Demitje01 (1920x1080): blauw-turquoise rand met glinsters rond de game, onderaan
-       laatste sub, zijn naam en laatste volger, rechtsboven zijn Twitch-profielfoto met LIVE en
+       laatste sub, zijn naam en laatste volger, rechtsboven zijn Twitch-profielfoto (of eigen logo: ?logo=<https-link>,
+       of ?foto=0 voor een leeg rondje waar hij in OBS zijn eigen afbeelding in zet) met LIVE en
        optioneel een volgdoel (?doel=1200). Gegevens via zijn koppeling op gwnlarss.nl/demitje.
        Het midden blijft doorzichtig. In OBS als browserbron van 1920x1080 boven de game-opname. */
     :root {
@@ -108,6 +109,7 @@
         box-shadow: 0 0 0 5px #fff, 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(34, 227, 208, 0.45);
     }
     .avatar img { width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; background: var(--diep); }
+    .avatar.leeg img { visibility: hidden; }   /* alleen de ring: de eigen afbeelding komt uit OBS */
     .live {
         position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%);
         display: flex; align-items: center; gap: 8px;
@@ -130,6 +132,55 @@
     .doel .balk { height: 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.15); overflow: hidden; margin-top: 4px; }
     .doel .vul { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--paars), var(--roze)); transition: width 1.2s ease; }
     .live[hidden] { display: flex; opacity: 0; transform: translateX(-50%) scale(0.6); }
+    /* leeg rondje: alleen de ring, binnenin doorzichtig voor een eigen afbeelding uit OBS */
+    .avatar.leeg { background: transparent; box-shadow: inset 0 0 0 9px var(--paars), 0 0 0 5px #fff, 0 0 40px rgba(34, 227, 208, 0.45); }
+    .avatar.leeg img { visibility: hidden; }
+
+    /* ---------- stijl 2: neon (?stijl=neon) ---------- */
+    body.neon .rand { background: linear-gradient(120deg, #040b1c, #071a3a 50%, #040b1c); }
+    body.neon .rand::after { background: linear-gradient(90deg, transparent, rgba(34, 227, 208, 0.35), transparent); }
+    body.neon .binnenlijn { box-shadow: 0 0 0 3px #5ff6ff, 0 0 18px 4px rgba(34, 227, 208, 0.9), 0 0 50px 10px rgba(30, 107, 255, 0.6), inset 0 0 20px rgba(34, 227, 208, 0.35); }
+    body.neon .plaat { transform: none; border-radius: 12px; background: rgba(3, 10, 26, 0.9);
+        box-shadow: 0 0 0 3px #5ff6ff, 0 0 22px 3px rgba(34, 227, 208, 0.8), inset 0 0 18px rgba(34, 227, 208, 0.25); }
+    body.neon .plaat > * { transform: none; }
+    body.neon .plaat .label, body.neon .doel .label { font-family: 'Russo One', sans-serif; background: none; color: #5ff6ff; text-shadow: 0 0 10px rgba(34, 227, 208, 0.9); }
+    body.neon .plaat .wie, body.neon .doel .tal { font-family: 'Russo One', sans-serif; font-weight: 400; text-shadow: 0 0 12px rgba(255, 255, 255, 0.6); }
+    body.neon .plaat.nieuw { animation: popNeon 0.9s ease; }
+    @keyframes popNeon { 30% { transform: scale(1.12); box-shadow: 0 0 0 3px #fff, 0 0 60px 14px #22e3d0; } }
+    body.neon .naam { font-family: 'Russo One', sans-serif; transform: translateX(-50%); font-size: 96px; letter-spacing: 4px; }
+    body.neon .naam .achter { display: none; }
+    body.neon .naam .voor { background: none; color: #fff;
+        text-shadow: 0 0 6px #fff, 0 0 18px #5ff6ff, 0 0 40px #22e3d0, 0 0 80px #1e6bff; animation: zoem 6s infinite; }
+    @keyframes zoem { 0%, 92%, 100% { opacity: 1; } 93% { opacity: 0.55; } 94% { opacity: 1; } 96% { opacity: 0.7; } }
+    body.neon .avatar { background: #040b1c; padding: 7px; box-shadow: 0 0 0 4px #5ff6ff, 0 0 26px 6px rgba(34, 227, 208, 0.9), 0 0 60px 10px rgba(30, 107, 255, 0.5); }
+    body.neon .avatar.leeg { background: transparent; box-shadow: inset 0 0 0 7px #040b1c, 0 0 0 4px #5ff6ff, 0 0 26px 6px rgba(34, 227, 208, 0.9); }
+    body.neon .doel { background: rgba(3, 10, 26, 0.9); box-shadow: 0 0 0 3px #5ff6ff, 0 0 22px 3px rgba(34, 227, 208, 0.8); }
+    body.neon .doel .vul { background: linear-gradient(90deg, #1e6bff, #5ff6ff); box-shadow: 0 0 12px #5ff6ff; }
+
+    /* ---------- stijl 3: snelweg (?stijl=weg), past bij Euro Truck Simulator ---------- */
+    body.weg .rand { background: #2a2c31; }
+    body.weg .rand::after { display: none; }
+    body.weg .binnenlijn { box-shadow: 0 0 0 4px #f2f2f2, 0 0 18px 4px rgba(0, 0, 0, 0.5); }
+    body.weg .plaat { transform: none; border-radius: 14px; background: #1d4fa3; padding: 8px 30px 6px;
+        box-shadow: inset 0 0 0 4px #1d4fa3, inset 0 0 0 7px #fff, 0 8px 20px rgba(0, 0, 0, 0.55); }
+    body.weg .plaat > * { transform: none; }
+    body.weg .plaat .label, body.weg .doel .label { font-family: 'Overpass', sans-serif; font-weight: 800 !important; background: none; color: #fff; letter-spacing: 2px; }
+    body.weg .plaat .wie, body.weg .doel .tal { font-family: 'Overpass', sans-serif; font-weight: 900; text-shadow: none; }
+    body.weg .plaat.nieuw { animation: popWeg 0.9s cubic-bezier(.2, 1.6, .4, 1); }
+    @keyframes popWeg { 30% { transform: scale(1.12); } }
+    /* naam op een geel kenteken met blauwe NL-strook */
+    body.weg .naam { transform: translateX(-50%); bottom: 4px; display: flex; align-items: stretch; height: 112px;
+        border-radius: 14px; overflow: hidden; background: #f6c400; font-family: 'Overpass', sans-serif;
+        box-shadow: 0 0 0 4px #111, 0 0 0 7px #f6c400, 0 0 0 9px #111, 0 12px 26px rgba(0, 0, 0, 0.6); }
+    body.weg .naam::before { content: 'NL'; display: flex; align-items: flex-end; justify-content: center; width: 58px; padding-bottom: 12px;
+        background: #1d4fa3; color: #fff; font: 900 30px 'Overpass', sans-serif; }
+    body.weg .naam .achter { display: none; }
+    body.weg .naam .voor { background: none; color: #111; font-size: 92px; font-weight: 900; letter-spacing: 6px; padding: 14px 30px 0 24px; line-height: 1; text-transform: uppercase; }
+    /* rondje als verkeersbord: rode rand */
+    body.weg .avatar { background: #fff; padding: 16px; box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 16px #d7262e, 0 0 0 4px #fff, 0 10px 26px rgba(0, 0, 0, 0.55); }
+    body.weg .avatar.leeg { background: transparent; }
+    body.weg .doel { background: #1d4fa3; border-radius: 14px; box-shadow: inset 0 0 0 4px #1d4fa3, inset 0 0 0 7px #fff, 0 8px 20px rgba(0, 0, 0, 0.55); }
+    body.weg .doel .vul { background: #f6c400; }
 </style>
 </head>
 <body>
@@ -156,6 +207,9 @@
     const isDemo = q.get('demo') === '1';
     const RAND = Math.max(10, Math.min(60, +q.get('rand') || 26));
     const R = 22;
+    // drie stijlen: speels (standaard), neon, weg (snelweg/ETS2)
+    const STIJL = ['neon', 'weg'].includes(q.get('stijl')) ? q.get('stijl') : 'speels';
+    document.body.classList.add(STIJL);
     document.documentElement.style.setProperty('--rand', RAND + 'px');
 
     // Podium op elke venstermaat passend schalen (in OBS is dat gewoon 1920x1080 = schaal 1)
@@ -188,11 +242,14 @@
         const [x, y] = inBand();
         return { x, y, fase: Math.random() * 6.28, snel: 1 + Math.random() * 2.5, r: 1 + Math.random() * 2.2 };
     });
+    // middenlijn van de band (voor de wegstrepen)
+    const m = RAND / 2, mr = R + m;
+    const middenPad = new Path2D(`M${m + mr} ${m}H${W - m - mr}A${mr} ${mr} 0 0 1 ${W - m} ${m + mr}V${H - m - mr}A${mr} ${mr} 0 0 1 ${W - m - mr} ${H - m}H${m + mr}A${mr} ${mr} 0 0 1 ${m} ${H - m - mr}V${m + mr}A${mr} ${mr} 0 0 1 ${m + mr} ${m}Z`);
     const vonken = [];
     function barst(x, y) {
         for (let i = 0; i < 46; i++) {
             const h = Math.random() * 6.28, v = 3 + Math.random() * 9;
-            vonken.push({ x, y, vx: Math.cos(h) * v, vy: Math.sin(h) * v - 4, leven: 1, kleur: Math.random() < 0.5 ? '#c9fff8' : '#ffffff' });
+            vonken.push({ x, y, vx: Math.cos(h) * v, vy: Math.sin(h) * v - 4, leven: 1, kleur: STIJL === 'weg' ? (Math.random() < 0.5 ? '#f6c400' : '#ffffff') : STIJL === 'neon' ? (Math.random() < 0.5 ? '#5ff6ff' : '#1e6bff') : (Math.random() < 0.5 ? '#c9fff8' : '#ffffff') });
         }
         if (!loopt) start();
     }
@@ -203,7 +260,15 @@
         cx.clearRect(0, 0, W, H);
         const t = nu / 1000;
         cx.save(); cx.clip(bandPad, 'evenodd');
-        cx.fillStyle = '#fff';
+        if (STIJL === 'weg') {
+            // rijdende streepjes over het midden van de asfaltband, met doorgetrokken kantlijnen
+            cx.strokeStyle = '#f2f2f2'; cx.lineWidth = Math.max(3, RAND * 0.14);
+            cx.globalAlpha = 0.9; cx.setLineDash([46, 34]); cx.lineDashOffset = -t * 160;
+            cx.stroke(middenPad);
+            cx.setLineDash([]); cx.globalAlpha = 0.55; cx.lineWidth = 3; cx.strokeRect(4, 4, W - 8, H - 8);
+            cx.restore();
+        } else {
+        cx.fillStyle = STIJL === 'neon' ? '#7ff8ff' : '#fff';
         for (const p of puntjes) {
             const a = Math.max(0, Math.sin(t * p.snel + p.fase));
             if (a < 0.05) continue;
@@ -214,6 +279,7 @@
             }
         }
         cx.restore();
+        }
         for (let i = vonken.length - 1; i >= 0; i--) {
             const v = vonken[i];
             v.x += v.vx; v.y += v.vy; v.vy += 0.35; v.vx *= 0.97; v.leven -= 0.022;
@@ -231,7 +297,10 @@
     const LOGIN = 'demitje01', API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
     const DOEL = Math.max(0, +q.get('doel') || 0);
     const DEMO = { laatste: { subscriber: { naam: 'GezelligeKijker', op: 2 }, follower: { naam: 'NieuweVolger123', op: 1 } }, totaal: { volgers: 1056 } };
-    fetch('https://decapi.me/twitch/avatar/' + LOGIN).then(r => r.text()).then(u => { if (u.trim().startsWith('https://')) document.getElementById('foto').src = u.trim(); }).catch(() => { });
+    const eigenLogo = (q.get('logo') || '').trim();
+    if (q.get('foto') === '0') document.querySelector('.avatar').classList.add('leeg');
+    else if (eigenLogo.startsWith('https://')) document.getElementById('foto').src = eigenLogo;
+    else fetch('https://decapi.me/twitch/avatar/' + LOGIN).then(r => r.text()).then(u => { if (u.trim().startsWith('https://')) document.getElementById('foto').src = u.trim(); }).catch(() => { });
     const vorigeNaam = {};
     function zet(sleutel, plaatId, wieId, naam) {
         naam = naam || '-';

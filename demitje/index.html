@@ -30,6 +30,12 @@
             background: linear-gradient(90deg, var(--blauw), var(--turquoise)); box-shadow: 0 6px 18px rgba(30, 107, 255, 0.4); }
     .knop.twitch { background: #9146ff; box-shadow: 0 6px 18px rgba(145, 70, 255, 0.4); }
     .knop.klein { font-size: 15px; padding: 6px 16px; }
+    .stijlen { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stijl { text-align: left; cursor: pointer; border: 0; border-radius: 14px; padding: 14px 16px; color: var(--tekst);
+             background: #051a3d; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08); font: 600 15px 'Baloo 2', sans-serif; }
+    .stijl b { display: block; font: 400 22px 'Lilita One', sans-serif; margin-bottom: 2px; }
+    .stijl span { color: var(--zacht); }
+    .stijl.gekozen { box-shadow: 0 0 0 3px var(--turquoise), 0 0 20px rgba(34, 227, 208, 0.35); }
     .melding { border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; font-weight: 700; }
     .melding.ok { background: rgba(34, 227, 208, 0.15); box-shadow: 0 0 0 2px var(--turquoise); }
     .link { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -58,8 +64,16 @@
     <section class="stap">
         <h2>2. Zet hem in OBS</h2>
         <p>Voeg een <b>Browserbron</b> toe van <b>1920 x 1080</b> en zet hem boven je game-opname. Het midden is doorzichtig.</p>
+        <div class="stijlen" id="stijlen">
+            <button class="stijl" data-stijl="speels"><b>Speels</b><span>Blauw-turquoise rand met glinsters</span></button>
+            <button class="stijl" data-stijl="neon"><b>Neon</b><span>Donker met gloeiende randen</span></button>
+            <button class="stijl" data-stijl="weg"><b>Snelweg</b><span>Asfalt, verkeersborden en je naam op een kenteken</span></button>
+        </div>
         <label>Volgdoel <input type="number" id="doel" min="0" step="50" placeholder="bijv. 1200"></label>
         <label><input type="checkbox" id="dik"> Dikkere rand</label>
+        <p style="margin:6px 0 10px"><b>Rondje rechtsboven:</b> standaard je Twitch-profielfoto. Wil je je eigen logo erin (bijv. je Yoshi)? Plak een link naar die afbeelding, of kies een leeg rondje en zet je afbeelding er in OBS zelf in.</p>
+        <label>Eigen logo <input type="url" id="logo" placeholder="https://... (png of gif)" style="width:min(420px,70vw);font:600 15px 'Baloo 2',sans-serif;padding:6px 10px;border-radius:10px;border:0;background:#051a3d;color:#fff"></label>
+        <label><input type="checkbox" id="leeg"> Leeg rondje (afbeelding zelf in OBS)</label>
         <div class="link"><code id="obs"></code><button class="knop klein" id="kopieer">Kopieer</button></div>
     </section>
 
@@ -72,9 +86,9 @@
     <section class="stap">
         <h2>Wat zit erin</h2>
         <ol>
-            <li>Blauw-turquoise rand met glinsters rond je game</li>
+            <li>Drie stijlen: speels, neon of snelweg (zelfde link, alleen ?stijl= verschilt)</li>
             <li>Laatste sub links, laatste volger rechts, je naam in het midden</li>
-            <li>Je Twitch-profielfoto rechtsboven met LIVE zodra je live bent</li>
+            <li>Rechtsboven je Twitch-profielfoto of je eigen logo, met LIVE zodra je live bent</li>
             <li>Optioneel je volgdoel met balkje onder je foto</li>
         </ol>
     </section>
@@ -86,12 +100,16 @@
     if (q.get('verbonden') === '1') document.getElementById('verbonden').hidden = false;
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);   // sleutel niet in de adresbalk laten staan
 
-    const doel = document.getElementById('doel'), dik = document.getElementById('dik');
-    try { doel.value = localStorage.getItem('demitje-doel') || ''; dik.checked = localStorage.getItem('demitje-dik') === '1'; } catch { }
+    let stijl = 'speels';
+    const doel = document.getElementById('doel'), dik = document.getElementById('dik'), logo = document.getElementById('logo'), leeg = document.getElementById('leeg');
+    try { doel.value = localStorage.getItem('demitje-doel') || ''; dik.checked = localStorage.getItem('demitje-dik') === '1'; logo.value = localStorage.getItem('demitje-logo') || ''; leeg.checked = localStorage.getItem('demitje-leeg') === '1'; stijl = localStorage.getItem('demitje-stijl') || 'speels'; } catch { }
     function link(voorbeeld) {
         const p = new URLSearchParams();
+        if (stijl !== 'speels') p.set('stijl', stijl);
         if (+doel.value > 0) p.set('doel', Math.round(+doel.value));
         if (dik.checked) p.set('rand', 40);
+        if (leeg.checked) p.set('foto', '0');
+        else if (logo.value.trim().startsWith('https://')) p.set('logo', logo.value.trim());
         if (voorbeeld) p.set('demo', '1');
         const s = p.toString();
         return BASIS + (s ? '?' + s : '');
@@ -101,9 +119,11 @@
         document.getElementById('obs').textContent = link(false);
         const vb = link(true);
         if (vb !== vorigeVb) { document.getElementById('frame').src = vb; vorigeVb = vb; }
-        try { localStorage.setItem('demitje-doel', doel.value); localStorage.setItem('demitje-dik', dik.checked ? '1' : '0'); } catch { }
+        try { localStorage.setItem('demitje-doel', doel.value); localStorage.setItem('demitje-dik', dik.checked ? '1' : '0'); localStorage.setItem('demitje-logo', logo.value); localStorage.setItem('demitje-leeg', leeg.checked ? '1' : '0'); localStorage.setItem('demitje-stijl', stijl); } catch { }
+        document.querySelectorAll('.stijl').forEach(k => k.classList.toggle('gekozen', k.dataset.stijl === stijl));
     }
-    doel.addEventListener('input', bijwerken); dik.addEventListener('change', bijwerken);
+    doel.addEventListener('input', bijwerken); dik.addEventListener('change', bijwerken); logo.addEventListener('input', bijwerken); leeg.addEventListener('change', bijwerken);
+    document.querySelectorAll('.stijl').forEach(k => k.addEventListener('click', () => { stijl = k.dataset.stijl; bijwerken(); }));
     document.getElementById('kopieer').addEventListener('click', async e => {
         try { await navigator.clipboard.writeText(link(false)); e.target.textContent = 'Gekopieerd!'; setTimeout(() => (e.target.textContent = 'Kopieer'), 1500); } catch { }
     });
