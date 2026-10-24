@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Rad</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+<style>
+    /* Het rad van een streamer: rad.html?kanaal=<login> is de OBS-overlay (doorzichtig, browserbron 1000 x 1150),
+       met &pagina=1 is het een gewone kijkpagina met achtergrond. Draaien gebeurt op de server (utils/rad.js),
+       hier volgen we live via /api/rad/<login>/stream en draait iedereen hetzelfde rad naar dezelfde winnaar.
+       ?demo=1 toont voorbeeldopties, &geluid=0 zet de tikjes uit. Nog niet openbaar gelinkt. */
+    :root { --paars: #9146ff; --roze: #ff3ea5; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100vw; height: 100vh; overflow: hidden; background: transparent; font-family: 'Inter', system-ui, sans-serif; color: #fff; }
+    body.pagina { background: radial-gradient(900px 600px at 50% 20%, rgba(145, 70, 255, 0.35), transparent), radial-gradient(800px 600px at 80% 100%, rgba(255, 62, 165, 0.22), transparent), #0a0616; }
+    #podium { position: absolute; left: 0; top: 0; width: 1000px; height: 1150px; transform-origin: 0 0; transition: opacity 0.6s, transform 0.6s; }
+    body.verborgen #podium { opacity: 0; }
+    .kop { display: none; position: absolute; left: 0; right: 0; top: 0; text-align: center; font: 800 54px/1 'Baloo 2', sans-serif; letter-spacing: 1px; }
+    .kop small { display: block; font: 700 18px 'Inter', sans-serif; letter-spacing: 4px; color: #cdb8ff; margin-top: 6px; }
+    body.pagina .kop { display: block; }
+    body.pagina #wiel, body.pagina #wijzer, body.pagina #feest { top: 90px; }
+    #wiel { position: absolute; left: 25px; top: 25px; width: 950px; height: 950px; }
+    #feest { position: absolute; left: 0; top: 0; width: 1000px; height: 1150px; pointer-events: none; }
+    /* wijzer bovenaan: een druppel die meeveert als hij langs een vakje tikt */
+    #wijzer { position: absolute; left: 470px; top: 25px; width: 60px; height: 84px; transform-origin: 30px 18px; z-index: 2; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)); }
+    #wijzer.tik { animation: tik 0.12s ease-out; }
+    @keyframes tik { 40% { transform: rotate(-14deg); } }
+    .winnaar { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%) scale(0.6); opacity: 0; min-width: 520px; max-width: 960px; text-align: center;
+        padding: 16px 40px 18px; border-radius: 26px; background: rgba(16, 9, 32, 0.92); box-shadow: 0 0 0 3px var(--roze), 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 60px rgba(255, 62, 165, 0.45);
+        transition: transform 0.5s cubic-bezier(.2, 1.6, .4, 1), opacity 0.3s; }
+    body.pagina .winnaar { bottom: 0; }
+    .winnaar.aan { transform: translateX(-50%) scale(1); opacity: 1; }
+    .winnaar small { display: block; font-size: 16px; font-weight: 700; letter-spacing: 4px; color: #ffb3dc; }
+    .winnaar b { display: block; font: 800 58px/1.1 'Baloo 2', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .melding { position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); max-width: 640px; margin: 0 auto; padding: 18px 22px; border-radius: 16px;
+        background: rgba(16, 9, 32, 0.92); box-shadow: 0 0 0 2px var(--paars); font-size: 16px; line-height: 1.5; text-align: center; }
+    .melding[hidden] { display: none; }
+</style>
+</head>
+<body>
+<div id="podium">
+    <div class="kop"><span id="kopNaam">Het rad</span><small>LIVE OP TWITCH</small></div>
+    <canvas id="wiel" width="950" height="950"></canvas>
+    <svg id="wijzer" viewBox="0 0 60 84"><defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#ffd6ec"/></linearGradient></defs>
+        <path d="M30 82 C 18 58, 4 40, 4 26 A 26 26 0 1 1 56 26 C 56 40, 42 58, 30 82 Z" fill="url(#wg)" stroke="#2a0d52" stroke-width="4"/>
+        <circle cx="30" cy="26" r="9" fill="#ff3ea5"/></svg>
+    <canvas id="feest" width="1000" height="1150"></canvas>
+    <div class="winnaar" id="winnaar"><small>HET RAD ZEGT</small><b id="winnaarTekst"></b></div>
+</div>
+<div class="melding" id="melding" hidden></div>
+<script>
+(() => {
+    const API = 'https://api.gwnlarss.nl/api/rad/';
+    const q = new URLSearchParams(location.search);
+    const LOGIN = (q.get('kanaal') || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const DEMO = q.get('demo') === '1', PAGINA = q.get('pagina') === '1', GELUID = q.get('geluid') !== '0';
+    if (PAGINA) document.body.classList.add('pagina');
+    const W = 1000, H = PAGINA ? 1240 : 1150;
+    const podium = document.getElementById('podium');
+    podium.style.height = H + 'px';
+    function pas() {
+        const s = Math.min(innerWidth / W, innerHeight / H);
+        podium.style.transform = `translate(${(innerWidth - W * s) / 2}px, ${(innerHeight - H * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pas); pas();
+    const melding = t => { const m = document.getElementById('melding'); m.hidden = !t; m.textContent = t || ''; };
+    if (!LOGIN && !DEMO) return melding('Geen kanaal in de link. Maak je eigen rad op gwnlarss.nl/rad-setup.html.');
+    if (PAGINA) document.getElementById('kopNaam').textContent = 'Het rad van ' + (LOGIN || 'demo');
+
+    // ---------- tekenen ----------
+    const cv = document.getElementById('wiel'), cx = cv.getContext('2d'), R = 475, M = 475;
+    const KLEUREN = ['#9146ff', '#ff3ea5', '#5b34d6', '#ff7a59', '#b54cf0', '#ffb547', '#3f7bff', '#ff5aa8'];
+    let opties = [], hoek = 0, lampFase = 0, draaitNu = false;
+    function kleur(i, n) {
+        // twee naast elkaar mogen niet dezelfde kleur hebben, ook niet de laatste en de eerste
+        let k = KLEUREN[i % KLEUREN.length];
+        if (i === n - 1 && n % KLEUREN.length === 1) k = KLEUREN[(i + 2) % KLEUREN.length];
+        return k;
+    }
+    function teken() {
+        const n = opties.length, seg = (Math.PI * 2) / Math.max(1, n);
+        cx.clearRect(0, 0, 950, 950);
+        // buitenrand met lampjes
+        cx.beginPath(); cx.arc(M, M, R, 0, Math.PI * 2);
+        const rand = cx.createLinearGradient(0, 0, 950, 950); rand.addColorStop(0, '#2a0d52'); rand.addColorStop(1, '#140628');
+        cx.fillStyle = rand; cx.fill();
+        const lampen = 32;
+        for (let i = 0; i < lampen; i++) {
+            const a = (i / lampen) * Math.PI * 2, x = M + Math.cos(a) * (R - 22), y = M + Math.sin(a) * (R - 22);
+            const aan = draaitNu ? (i + Math.floor(lampFase)) % 2 === 0 : (i + Math.floor(lampFase / 3)) % 4 !== 0;
+            cx.beginPath(); cx.arc(x, y, 8, 0, Math.PI * 2);
+            cx.fillStyle = aan ? '#fff6c8' : '#5a3a7a'; cx.fill();
+            if (aan) { cx.beginPath(); cx.arc(x, y, 14, 0, Math.PI * 2); cx.fillStyle = 'rgba(255, 230, 150, 0.25)'; cx.fill(); }
+        }
+        // vakjes
+        cx.save(); cx.translate(M, M); cx.rotate(hoek - Math.PI / 2);
+        const rIn = R - 44;
+        for (let i = 0; i < n; i++) {
+            cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, rIn, i * seg, (i + 1) * seg); cx.closePath();
+            cx.fillStyle = kleur(i, n); cx.fill();
+            // lichte glans aan de buitenkant van elk vakje
+            const g = cx.createRadialGradient(0, 0, rIn * 0.35, 0, 0, rIn);
+            g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0.14)');
+            cx.fillStyle = g; cx.fill();
+            cx.strokeStyle = 'rgba(20, 6, 40, 0.55)'; cx.lineWidth = 3; cx.stroke();
+            // tekst langs de straal, van buiten naar binnen leesbaar
+            cx.save(); cx.rotate((i + 0.5) * seg);
+            const maat = Math.max(20, Math.min(46, 900 / Math.max(6, n) + 6));
+            cx.font = `800 ${maat}px 'Baloo 2', sans-serif`; cx.textAlign = 'right'; cx.textBaseline = 'middle';
+            let t = opties[i]; const max = rIn - 120;
+            while (cx.measureText(t).width > max && t.length > 1) t = t.slice(0, -2) + '…';
+            cx.fillStyle = 'rgba(20, 6, 40, 0.45)'; cx.fillText(t, rIn - 34, 3);
+            cx.fillStyle = '#ffffff'; cx.fillText(t, rIn - 36, 0);
+            cx.restore();
+        }
+        cx.restore();
+        // binnenring en naaf
+        cx.beginPath(); cx.arc(M, M, rIn, 0, Math.PI * 2); cx.strokeStyle = 'rgba(255,255,255,0.35)'; cx.lineWidth = 4; cx.stroke();
+        cx.beginPath(); cx.arc(M, M, 92, 0, Math.PI * 2);
+        const naaf = cx.createRadialGradient(M - 25, M - 25, 10, M, M, 92); naaf.addColorStop(0, '#ffffff'); naaf.addColorStop(1, '#d9c8ff');
+        cx.fillStyle = naaf; cx.fill(); cx.lineWidth = 8; cx.strokeStyle = '#2a0d52'; cx.stroke();
+        cx.fillStyle = '#2a0d52'; cx.font = "800 44px 'Baloo 2', sans-serif"; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+        cx.fillText('!rad', M, M + 3);
+    }
+
+    // ---------- tikjes ----------
+    let ac = null;
+    const ontgrendel = () => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch { } };
+    addEventListener('pointerdown', ontgrendel);
+    function tik() {
+        document.getElementById('wijzer').classList.remove('tik'); void document.getElementById('wijzer').offsetWidth; document.getElementById('wijzer').classList.add('tik');
+        if (!GELUID) return;
+        try {
+            ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+            const o = ac.createOscillator(), g = ac.createGain(), nu = ac.currentTime;
+            o.type = 'triangle'; o.frequency.value = 1500;
+            g.gain.setValueAtTime(0.18, nu); g.gain.exponentialRampToValueAtTime(0.001, nu + 0.05);
+            o.connect(g); g.connect(ac.destination); o.start(nu); o.stop(nu + 0.06);
+        } catch { }
+    }
+    function fanfare() {
+        if (!GELUID) return;
+        try {
+            ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+            const nu = ac.currentTime;
+            [523, 659, 784, 1047].forEach((f, i) => {
+                const o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.value = f;
+                g.gain.setValueAtTime(0, nu + i * 0.09); g.gain.linearRampToValueAtTime(0.25, nu + i * 0.09 + 0.02); g.gain.exponentialRampToValueAtTime(0.001, nu + i * 0.09 + 0.5);
+                o.connect(g); g.connect(ac.destination); o.start(nu + i * 0.09); o.stop(nu + i * 0.09 + 0.55);
+            });
+        } catch { }
+    }
+
+    // ---------- confetti ----------
+    const fc = document.getElementById('feest'), fx = fc.getContext('2d');
+    let stukjes = [];
+    function confetti() {
+        for (let i = 0; i < 160; i++) {
+            const a = Math.random() * Math.PI * 2, v = 6 + Math.random() * 14;
+            stukjes.push({ x: 500, y: (PAGINA ? 90 : 0) + 500, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 6, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4, b: 10 + Math.random() * 10, k: KLEUREN[i % KLEUREN.length], leven: 1 });
+        }
+    }
+
+    // ---------- draaien ----------
+    let anim = null, verbergTimer = null, instellingen = {};
+    const easeOut = t => 1 - Math.pow(1 - t, 4);
+    function startDraai(e) {
+        opties = e.opties;
+        const n = opties.length, seg = (Math.PI * 2) / n;
+        // eindhoek: midden van het winnende vakje onder de wijzer, met een klein willekeurig stukje speling
+        const speling = (Math.random() - 0.5) * seg * 0.6;
+        const doelBasis = -((e.winnaar + 0.5) * seg) + speling;
+        const van = hoek;
+        let doel = doelBasis + Math.ceil((van - doelBasis) / (Math.PI * 2)) * Math.PI * 2;   // eerste gelijke stand vóór 'van'
+        doel += Math.PI * 2 * (5 + Math.round(e.duur / 2));                        // een flink aantal rondjes erbij
+        const duurMs = e.duur * 1000, begin = performance.now() - Math.max(0, Date.now() - e.start);
+        anim = { van, doel, begin, duurMs, seg, vorigVak: Math.floor((van) / seg), id: e.id };
+        draaitNu = true;
+        document.getElementById('winnaar').classList.remove('aan');
+        clearTimeout(verbergTimer); document.body.classList.remove('verborgen');
+    }
+    function toonWinnaar(tekst) {
+        document.getElementById('winnaarTekst').textContent = tekst;
+        document.getElementById('winnaar').classList.add('aan');
+        confetti(); fanfare();
+        if (instellingen.verbergen && !PAGINA) { clearTimeout(verbergTimer); verbergTimer = setTimeout(() => document.body.classList.add('verborgen'), 9000); }
+    }
+    function lus(nu) {
+        requestAnimationFrame(lus);
+        lampFase += draaitNu ? 0.5 : 0.05;
+        if (anim) {
+            const t = Math.min(1, (nu - anim.begin) / anim.duurMs);
+            hoek = anim.van + (anim.doel - anim.van) * easeOut(t);
+            const vak = Math.floor(hoek / anim.seg);
+            if (vak !== anim.vorigVak) { anim.vorigVak = vak; tik(); }
+            if (t >= 1) { anim = null; draaitNu = false; }
+        } else if (!PAGINA && !draaitNu) {
+            hoek += 0.0008;   // in rust heel langzaam doordraaien
+        }
+        teken();
+        // confetti
+        fx.clearRect(0, 0, 1000, H);
+        for (const s of stukjes) {
+            s.vy += 0.35; s.vx *= 0.99; s.x += s.vx; s.y += s.vy; s.r += s.vr; s.leven -= 0.006;
+            fx.save(); fx.globalAlpha = Math.max(0, s.leven); fx.translate(s.x, s.y); fx.rotate(s.r); fx.fillStyle = s.k; fx.fillRect(-s.b / 2, -s.b / 4, s.b, s.b / 2); fx.restore();
+        }
+        stukjes = stukjes.filter(s => s.leven > 0 && s.y < H + 40);
+    }
+
+    // ---------- gegevens ----------
+    function zetOpties(d) {
+        if (!d.bestaat) return melding('Voor dit kanaal is (nog) geen rad. Maak er een op gwnlarss.nl/rad-setup.html.');
+        melding('');
+        instellingen = d.instellingen || {};
+        if (!anim) opties = d.opties;
+        if (instellingen.verbergen && !PAGINA && !anim && !document.getElementById('winnaar').classList.contains('aan')) document.body.classList.add('verborgen');
+        else if (!instellingen.verbergen) document.body.classList.remove('verborgen');
+    }
+    // testen vanaf de instelpagina (voorbeeld zonder server)
+    addEventListener('message', m => {
+        const d = m.data || {};
+        if (d.radOpties) { opties = d.radOpties; instellingen = { ...instellingen, ...(d.instellingen || {}) }; }
+        if (d.radDraai) { const n = opties.length, w = Math.floor(Math.random() * n); startDraai({ opties, winnaar: w, duur: d.duur || 6, start: Date.now(), id: 'test' }); setTimeout(() => toonWinnaar(opties[w]), (d.duur || 6) * 1000 + 300); }
+    });
+    if (DEMO) {
+        opties = ['Pizza', 'Sushi', 'Friet', 'Pasta', 'Burger', 'Taco', 'Wraps', 'Kapsalon'];
+    } else {
+        fetch(API + LOGIN, { cache: 'no-store' }).then(r => r.json()).then(zetOpties).catch(() => melding('Het rad is even niet bereikbaar.'));
+        (function verbind() {
+            const bron = new EventSource(API + LOGIN + '/stream');
+            bron.onmessage = m => {
+                try {
+                    const d = JSON.parse(m.data);
+                    if (d.soort === 'draai' && (!anim || anim.id !== d.id)) startDraai(d);
+                    else if (d.soort === 'winnaar') toonWinnaar(d.tekst);
+                    else if (d.soort === 'opties') zetOpties(d);
+                    else if (d.soort === 'weg') zetOpties({ bestaat: false });
+                } catch { }
+            };
+            bron.onerror = () => { bron.close(); setTimeout(verbind, 5000); };
+        })();
+    }
+    document.fonts.ready.then(() => { requestAnimationFrame(lus); document.body.dataset.klaar = '1'; });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Rad instellen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
+<link rel="stylesheet" href="setup.css">
+<style>
+    /* Nog niet openbaar: niet gelinkt vanaf tools.html en noindex. Beheer met een geheime sleutel die de streamer bij
+       het aanmaken krijgt (bewaard in deze browser en in de beheerlink); de server zit in utils/rad.js. */
+    textarea { width: 100%; min-height: 230px; resize: vertical; font: 600 1rem/1.6 var(--sans, 'Inter'), sans-serif; padding: 12px 16px; border-radius: 14px;
+        border: 1px solid var(--lijn); background: rgba(255, 255, 255, 0.04); color: var(--tekst); }
+    textarea:focus { outline: none; border-color: var(--roze); box-shadow: 0 0 0 3px rgba(255, 62, 165, 0.18); }
+    .teller { font-family: var(--mono); font-size: 0.74rem; color: var(--dim); text-align: right; margin-top: -8px !important; }
+    .schakel { display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
+    .schakel input { width: 18px; height: 18px; accent-color: var(--roze); flex: 0 0 auto; }
+    .schakel small { color: var(--dim); font-weight: 400; }
+    .knoppen { display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn--draai { font-size: 1.25rem; padding: 14px 34px; }
+    .vv.rad { aspect-ratio: 1000 / 1150; max-width: 460px; justify-self: center; width: 100%; }
+    .vv.rad iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; z-index: 2; color-scheme: normal; }
+    .beheer[hidden] { display: none !important; }
+    .gevaar { color: #ff8aa0; border-color: rgba(255, 92, 122, 0.45); }
+</style>
+</head>
+<body>
+
+<canvas id="veld" aria-hidden="true"></canvas>
+<div class="page-wrap laag">
+<nav class="top">
+  <a class="merk" href="index.html">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a href="tools.html">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
+</nav>
+
+<header class="held">
+    <a class="terug" href="tools.html">&larr; Alle tools</a>
+    <p class="label">Spel</p>
+    <h1>Het rad</h1>
+    <p class="intro">Zet je eigen keuzes op een rad en laat het draaien, op stream én gewoon in de browser. Stopt het rad, dan noemt de bot de winnaar meteen in je chat. Draaien kan hier, of met <code>!rad</code> in je chat (alleen jij en je mods).</p>
+</header>
+
+<div class="opzet">
+<div class="card rand">
+
+    <div id="start">
+        <p class="thema-label">1. Jouw Twitch-kanaal</p>
+        <div class="form-row">
+            <input type="text" id="kanaal" placeholder="jouw-twitch-naam" maxlength="25" autocomplete="off">
+            <button type="button" class="btn" id="maak-btn">Maak mijn rad</button>
+        </div>
+        <p class="thema-hint">Je krijgt een eigen beheerlink. Bewaar die goed: daarmee kun jij (en alleen jij) je rad aanpassen en laten draaien.</p>
+    </div>
+
+    <div class="beheer" id="beheer" hidden>
+        <p class="thema-label">Opties op het rad <span id="voor-wie"></span></p>
+        <textarea id="opties" placeholder="Eén optie per regel"></textarea>
+        <p class="teller" id="teller">0 / 60</p>
+
+        <p class="thema-label">Draaitijd</p>
+        <div class="volume-rij"><input type="range" id="duur" min="3" max="15" step="1"><span class="volume-rij__waarde" id="duur-waarde">7 s</span></div>
+
+        <p class="thema-label">Extra</p>
+        <label class="schakel"><input type="checkbox" id="aankondigen"> Winnaar in mijn chat noemen <small>(door de bot)</small></label>
+        <label class="schakel"><input type="checkbox" id="verwijderWinnaar"> Winnaar van het rad halen <small>(voor loten zonder dubbele winnaars)</small></label>
+        <label class="schakel"><input type="checkbox" id="verbergen"> Rad op stream alleen tonen tijdens het draaien</label>
+
+        <div class="knoppen" style="margin-top:10px">
+            <button type="button" class="btn btn--draai" id="draai-btn">🎡 Draai!</button>
+            <button type="button" class="btn btn--ghost" id="opslaan-btn" disabled>💾 Opslaan</button>
+        </div>
+
+        <div class="result is-visible is-goed">
+            <p class="result__titel is-goed">Je links</p>
+            <p>Voor OBS: een <strong>Browser Source</strong> van <strong>1000 x 1150</strong> (schaalt mee). Doorzichtig, dus het rad zweeft over je beeld.</p>
+            <div class="link-row"><input type="text" id="link-obs" readonly><button type="button" class="btn btn--ghost" data-kopieer="link-obs">Kopieer</button></div>
+            <p>Voor je kijkers in de browser (zonder beheerknoppen):</p>
+            <div class="link-row"><input type="text" id="link-kijk" readonly><button type="button" class="btn btn--ghost" data-kopieer="link-kijk">Kopieer</button></div>
+            <p>Jouw beheerlink (privé, deel deze niet):</p>
+            <div class="link-row"><input type="text" id="link-beheer" readonly><button type="button" class="btn btn--ghost" data-kopieer="link-beheer">Kopieer</button></div>
+        </div>
+        <button type="button" class="btn btn--ghost gevaar" id="weg-btn">Rad verwijderen</button>
+    </div>
+
+    <div class="result" id="result"><p class="result__titel" id="result-titel"></p><p id="result-tekst"></p></div>
+</div>
+<div class="podium">
+    <div class="podium-kop"><span>Zo ziet het eruit</span><span class="live">Live voorbeeld</span></div>
+    <div class="vv rad rand" id="vv"><iframe id="vb" title="Voorbeeld"></iframe></div>
+    <p class="thema-hint" id="vb-uitleg">Dit is een voorbeeld. Maak je rad aan om je eigen opties te zien.</p>
+</div>
+</div>
+<p class="powered-by">Powered by <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">GwnLarss</a></p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+    const API = 'https://api.gwnlarss.nl/api/rad/';
+    const $ = id => document.getElementById(id);
+    const toastEl = $('toast');
+    const toast = t => { toastEl.textContent = t; toastEl.classList.add('is-visible'); setTimeout(() => toastEl.classList.remove('is-visible'), 2500); };
+    const post = (pad, body) => fetch(API + pad, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(async r => ({ status: r.status, ...(await r.json().catch(() => ({}))) }));
+    function fout(titel, tekst) { const r = $('result'); r.classList.add('is-visible', 'is-fout'); $('result-titel').textContent = titel; $('result-tekst').textContent = tekst; }
+    const geenFout = () => $('result').classList.remove('is-visible', 'is-fout');
+
+    // beheer: login en sleutel uit de beheerlink (#kanaal=..&sleutel=..) of uit deze browser
+    let login = '', sleutel = '';
+    const h = new URLSearchParams(location.hash.slice(1));
+    try { login = h.get('kanaal') || localStorage.getItem('rad-kanaal') || ''; sleutel = h.get('sleutel') || (login ? localStorage.getItem('rad-sleutel-' + login) : '') || ''; } catch { login = h.get('kanaal') || ''; sleutel = h.get('sleutel') || ''; }
+    if (location.hash) history.replaceState(null, '', location.pathname);
+
+    const basis = p => new URL(p, location.href).href;
+    let opgeslagen = null;
+    function huidig() {
+        return {
+            opties: $('opties').value.split('\n').map(s => s.trim()).filter(Boolean),
+            duur: +$('duur').value, aankondigen: $('aankondigen').checked, verwijderWinnaar: $('verwijderWinnaar').checked, verbergen: $('verbergen').checked,
+        };
+    }
+    function bijwerken() {
+        const k = huidig();
+        $('teller').textContent = `${k.opties.length} / 60`;
+        $('duur-waarde').textContent = k.duur + ' s';
+        const anders = opgeslagen && JSON.stringify(k) !== JSON.stringify(opgeslagen);
+        $('opslaan-btn').disabled = !anders;
+        $('opslaan-btn').classList.toggle('btn--ghost', !anders);
+        // voorbeeld meteen laten zien hoe het rad met deze opties eruitziet (nog zonder op te slaan)
+        $('vb').contentWindow?.postMessage({ radOpties: k.opties.length >= 2 ? k.opties : undefined, instellingen: { verbergen: false } }, '*');
+    }
+    function vul(d) {
+        $('opties').value = (d.opties || []).join('\n');
+        const i = d.instellingen || {};
+        $('duur').value = i.duur ?? 7; $('aankondigen').checked = i.aankondigen ?? true; $('verwijderWinnaar').checked = Boolean(i.verwijderWinnaar); $('verbergen').checked = Boolean(i.verbergen);
+        opgeslagen = huidig(); bijwerken();
+    }
+    function toonBeheer(d) {
+        $('start').hidden = true; $('beheer').hidden = false;
+        $('voor-wie').textContent = '· twitch.tv/' + login;
+        $('link-obs').value = basis('rad.html') + '?kanaal=' + login;
+        $('link-kijk').value = basis('rad.html') + '?kanaal=' + login + '&pagina=1';
+        $('link-beheer').value = basis('rad-setup.html') + '#kanaal=' + login + '&sleutel=' + encodeURIComponent(sleutel);
+        $('vb').src = basis('rad.html') + '?kanaal=' + login + '&geluid=0';
+        $('vb-uitleg').textContent = 'Dit is je echte rad: draai je hier, dan draait het ook op stream.';
+        vul(d);
+    }
+    async function laadBeheer() {
+        if (!login || !sleutel) { $('vb').src = basis('rad.html') + '?demo=1&geluid=0'; return; }
+        const d = await post(login + '/controleer', { sleutel }).catch(() => null);
+        if (d?.ok) { try { localStorage.setItem('rad-kanaal', login); localStorage.setItem('rad-sleutel-' + login, sleutel); } catch { } toonBeheer(d); }
+        else { $('vb').src = basis('rad.html') + '?demo=1&geluid=0'; if (d?.status === 403) fout('Beheerlink klopt niet', 'Deze beheerlink hoort niet (meer) bij dit rad.'); }
+    }
+
+    $('maak-btn').addEventListener('click', async () => {
+        geenFout();
+        const naam = $('kanaal').value.trim().toLowerCase().replace(/^@/, '').replace(/^https?:\/\/(www\.)?twitch\.tv\//, '');
+        $('maak-btn').disabled = true;
+        const d = await post('aanmaken', { kanaal: naam }).catch(() => ({ fout: 'De server is even niet bereikbaar.' }));
+        $('maak-btn').disabled = false;
+        if (!d.ok) return fout('Dat lukte niet', d.fout || 'Onbekende fout.');
+        login = d.login; sleutel = d.sleutel;
+        try { localStorage.setItem('rad-kanaal', login); localStorage.setItem('rad-sleutel-' + login, sleutel); } catch { }
+        await laadBeheer();
+        toast('🎡 Je rad is klaar! Bewaar je beheerlink.');
+    });
+    for (const id of ['opties', 'duur']) $(id).addEventListener('input', bijwerken);
+    for (const id of ['aankondigen', 'verwijderWinnaar', 'verbergen']) $(id).addEventListener('change', bijwerken);
+    async function opslaan() {
+        const d = await post(login + '/opslaan', { sleutel, ...huidig() }).catch(() => ({ fout: 'De server is even niet bereikbaar.' }));
+        if (!d.ok) { toast('❌ ' + (d.fout || 'Opslaan mislukt')); return false; }
+        vul(d); return true;
+    }
+    $('opslaan-btn').addEventListener('click', async () => { if (await opslaan()) toast('✅ Opgeslagen!'); });
+    $('draai-btn').addEventListener('click', async () => {
+        // niet-opgeslagen wijzigingen eerst opslaan, anders draait het rad met de oude opties
+        if (!$('opslaan-btn').disabled && !(await opslaan())) return;
+        const d = await post(login + '/draai', { sleutel }).catch(() => ({ fout: 'De server is even niet bereikbaar.' }));
+        if (!d.ok) toast('❌ ' + (d.fout || 'Draaien mislukt'));
+    });
+    $('weg-btn').addEventListener('click', async () => {
+        if (!confirm('Je rad helemaal verwijderen? De bot verlaat dan ook je chat (als je geen andere tools gebruikt).')) return;
+        await post(login + '/verwijder', { sleutel }).catch(() => { });
+        try { localStorage.removeItem('rad-sleutel-' + login); localStorage.removeItem('rad-kanaal'); } catch { }
+        location.reload();
+    });
+    document.querySelectorAll('[data-kopieer]').forEach(k => k.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText($(k.dataset.kopieer).value); toast('🔗 Link gekopieerd!'); } catch { $(k.dataset.kopieer).select(); }
+    }));
+    laadBeheer();
+})();
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+  import { $, startVeld, kantel } from './setup.js';
+  kantel($('vv'));
+  startVeld('munt', 3.2);
+</script>
+
+</body>
+</html>
