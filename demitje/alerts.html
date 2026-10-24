@@ -11,7 +11,7 @@
 <style>
     /* Alerts voor Demitje01 in dezelfde drie stijlen als zijn overlay (?stijl=speels|neon|3d):
        speels = stuiterend kaartje met confetti, neon = oplichtende neonbuis met lichtstralen,
-       3d = de naam als echte 3D-letters die van ver aan komen draaien, met een 3D-icoon en 3D-confetti.
+       3d = cartoon-3D: letters vallen één voor één naar binnen en stuiteren, met een omlijnd icoon en confetti.
        Live via api.gwnlarss.nl/api/streamer-alerts/demitje01/stream. 1920x1080, doorzichtig.
        ?voorbeeld=1 is voor de instelpagina (testknoppen via postMessage). */
     :root { --blauw: #1e6bff; --turq: #22e3d0; --diep: #062347; --grootte: 1; }
@@ -65,9 +65,9 @@
     /* ---------- 3d: three.js tekent naam, kop, icoon en confetti; de regel (bericht) blijft gewone tekst ---------- */
     #drie { position: absolute; inset: 0; width: 1920px; height: 1080px; display: none; }
     .drie #drie { display: block; }
-    .regel3d { position: absolute; left: 50%; top: 600px; transform: translateX(-50%); max-width: 1200px; text-align: center; white-space: normal;
+    .regel3d { position: absolute; left: 50%; top: 610px; transform: translateX(-50%); max-width: 1200px; text-align: center; white-space: normal;
         font: 800 38px 'Baloo 2', sans-serif; color: #fff; padding: 6px 30px; border-radius: 999px;
-        background: linear-gradient(90deg, rgba(30, 107, 255, 0.85), rgba(34, 227, 208, 0.85)); box-shadow: 0 0 0 4px #fff, 0 10px 24px rgba(0, 0, 0, 0.4);
+        background: #1e6bff; box-shadow: 0 0 0 5px #062347, 8px 8px 0 5px #062347;
         opacity: 0; transition: opacity 0.4s, transform 0.4s; }
     .regel3d.aan { opacity: 1; transform: translateX(-50%) translateY(-8px); }
 </style></style>
@@ -288,52 +288,99 @@
 </script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module">
-// 3D-alerts: naam en kop als geëxtrudeerde letters (Lilita One), een 3D-icoon per soort en 3D-confetti.
-// Er wordt alleen gerenderd tijdens een alert, daarna staat de lus stil.
+// 3D-alerts in cartoon-3D: de letters van kop en naam vallen één voor één naar binnen en stuiteren, een
+// omlijnd icoon ploft erboven, cartoonconfetti en zijn emotes spatten eruit. Rendert alleen tijdens een alert.
 if (document.body.classList.contains('drie')) {
     try {
         const THREE = await import('three');
         const { FontLoader } = await import('three/addons/loaders/FontLoader.js');
         const { TextGeometry } = await import('three/addons/geometries/TextGeometry.js');
-        const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
-        const r = new THREE.WebGLRenderer({ canvas: document.getElementById('drie'), alpha: true, antialias: true });
-        r.setPixelRatio(Math.min(1, devicePixelRatio)); r.setSize(1920, 1080, false);
-        r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
-        const scene = new THREE.Scene();
-        scene.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
-        const cam = new THREE.PerspectiveCamera(35, 1920 / 1080, 10, 8000); cam.position.set(0, 0, 1400);
-        const zon = new THREE.DirectionalLight(0xffffff, 1.5); zon.position.set(-500, 700, 900); scene.add(zon);
-        const glans = new THREE.PointLight(0x22e3d0, 6, 0, 0); scene.add(glans);
         const font = await new FontLoader().loadAsync('lilita.typeface.json');
-
-        const voorWit = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.1, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1 });
-        const voorTurq = new THREE.MeshPhysicalMaterial({ color: 0x22e3d0, metalness: 0.2, roughness: 0.25, clearcoat: 1 });
-        const zijBlauw = new THREE.MeshStandardMaterial({ color: 0x1e6bff, metalness: 0.55, roughness: 0.3 });
-        const zijDiep = new THREE.MeshStandardMaterial({ color: 0x062347, metalness: 0.4, roughness: 0.4 });
-        function tekst(t, size, voor, zij) {
-            const g = new TextGeometry(t, { font, size, height: size * 0.3, depth: size * 0.3, curveSegments: 5, bevelEnabled: true, bevelThickness: size * 0.06, bevelSize: size * 0.035, bevelSegments: 3 });
-            g.computeBoundingBox(); g.center();
-            return new THREE.Mesh(g, [voor, zij]);
+        // ---- cartoon-3D (cel-shading): matte kleurvlakken met harde overgangen en een donkere omlijning ----
+        const { mergeVertices } = await import('three/addons/utils/BufferGeometryUtils.js');
+        const verloop = new THREE.DataTexture(new Uint8Array([110, 190, 255]), 3, 1, THREE.RedFormat);
+        verloop.minFilter = verloop.magFilter = THREE.NearestFilter; verloop.needsUpdate = true;
+        const toon = c => new THREE.MeshToonMaterial({ color: c, gradientMap: verloop });
+        // omlijning: dezelfde vorm iets opgeblazen langs gladde normalen, alleen de achterkant, donkerblauw
+        const lijnMat = d => new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: { d: { value: d } },
+            vertexShader: 'uniform float d; void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position + normal * d, 1.0); }',
+            fragmentShader: 'void main() { gl_FragColor = vec4(0.024, 0.137, 0.278, 1.0); }' });
+        function metLijn(geo, mat, d) {
+            const g = new THREE.Group();
+            const glad = mergeVertices(geo.clone().deleteAttribute('normal').deleteAttribute('uv'), 0.5); glad.computeVertexNormals();
+            g.add(new THREE.Mesh(glad, lijnMat(d)), new THREE.Mesh(geo, mat));
+            return g;
         }
-        // iconen als vormen, geëxtrudeerd
+        // tekst als losse letters (elk met eigen draaipunt onderaan het midden), zodat ze kunnen springen en indeuken;
+        // de tussenruimte wordt aan de letter zelf gemeten (de advance-breedtes in het lettertypebestand kloppen niet)
+        function letters(tekst, size, voorKleur, zijKleur) {
+            const groep = new THREE.Group(), mats = [toon(voorKleur), toon(zijKleur)];
+            let x = 0; const lijst = [];
+            for (const c of [...tekst]) {
+                if (!c.trim()) { x += size * 0.3; continue; }
+                {
+                    const geo = new TextGeometry(c, { font, size, height: size * 0.32, depth: size * 0.32, curveSegments: 5, bevelEnabled: true, bevelThickness: size * 0.05, bevelSize: size * 0.03, bevelSegments: 2 });
+                    geo.computeBoundingBox();
+                    const { min, max } = geo.boundingBox, breed = max.x - min.x;
+                    // letters met een haakje naar links (zoals de j) schuiven onder de vorige door; de afschuining telt niet mee
+                    x += Math.min(0, min.x + size * 0.03);
+                    geo.translate(-(min.x + max.x) / 2, 0, -max.z / 2);
+                    const l = metLijn(geo, mats, size * 0.045);
+                    l.position.x = x + breed / 2;
+                    groep.add(l); lijst.push(l);
+                    x += breed + size * 0.05;   // breedte van de letter zelf plus een kleine tussenruimte
+                }
+            }
+            x -= size * 0.05;
+            for (const l of lijst) l.position.x -= x / 2;
+            groep.userData.letters = lijst; groep.userData.breedte = x;
+            return groep;
+        }
+        // spring + indeuken: p loopt van 0 tot 1
+        function hop(l, p, hoogte) {
+            if (p <= 0 || p >= 1) { l.position.y = 0; l.scale.set(1, 1, 1); l.rotation.z = 0; return; }
+            const sprong = Math.sin(p * Math.PI);
+            l.position.y = sprong * hoogte;
+            const deuk = p < 0.12 ? (0.12 - p) / 0.12 : p > 0.88 ? (p - 0.88) / 0.12 : 0;   // indeuken bij afzet en landing
+            l.scale.set(1 + deuk * 0.22, 1 - deuk * 0.28 + sprong * 0.08, 1 + deuk * 0.22);
+            l.rotation.z = Math.sin(p * Math.PI * 2) * 0.12;
+        }
+
+        const r = new THREE.WebGLRenderer({ canvas: document.getElementById('drie'), alpha: true, antialias: true });
+        r.setPixelRatio(Math.min(1, devicePixelRatio)); r.setSize(1920, 1080, false); r.outputColorSpace = THREE.SRGBColorSpace;
+        const scene = new THREE.Scene();
+        const cam = new THREE.PerspectiveCamera(35, 1920 / 1080, 10, 8000); cam.position.set(0, 120, 1400); cam.lookAt(0, 60, 0);
+        scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+        const zon = new THREE.DirectionalLight(0xffffff, 2.2); zon.position.set(-0.6, 1, 0.9); scene.add(zon);
+
+        // iconen als platte cartoonvormen met dikte en omlijning
         function vorm(soort) {
             const s = new THREE.Shape();
-            if (soort === 'follower') { for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 26 : 60; s[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr); } }
+            if (soort === 'follower') { for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 28 : 64; s[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr); } }
             else if (soort === 'cheer') { s.moveTo(0, 62); s.lineTo(46, 12); s.lineTo(0, -62); s.lineTo(-46, 12); }
             else if (soort === 'raid') { s.moveTo(-60, 16); s.lineTo(10, 16); s.lineTo(10, 46); s.lineTo(62, 0); s.lineTo(10, -46); s.lineTo(10, -16); s.lineTo(-60, -16); }
             else if (soort === 'donatie') { s.absarc(0, 0, 56, 0, Math.PI * 2, false); }
             else { s.moveTo(0, -50); s.bezierCurveTo(-30, -26, -62, -6, -62, 22); s.bezierCurveTo(-62, 46, -40, 58, -22, 58); s.bezierCurveTo(-10, 58, -2, 50, 0, 40);
                    s.bezierCurveTo(2, 50, 10, 58, 22, 58); s.bezierCurveTo(40, 58, 62, 46, 62, 22); s.bezierCurveTo(62, -6, 30, -26, 0, -50); }
-            const g = new THREE.ExtrudeGeometry(s, { depth: 26, bevelEnabled: true, bevelThickness: 7, bevelSize: 5, bevelSegments: 4, curveSegments: 16 });
+            const g = new THREE.ExtrudeGeometry(s, { depth: 30, bevelEnabled: true, bevelThickness: 6, bevelSize: 4, bevelSegments: 2, curveSegments: 16 });
             g.center();
             const kleur = { follower: 0xffd84a, cheer: 0xb06bff, raid: 0x22e3d0, donatie: 0xffd84a }[soort] ?? 0xff4f8b;
-            return new THREE.Mesh(g, new THREE.MeshPhysicalMaterial({ color: kleur, metalness: 0.35, roughness: 0.2, clearcoat: 1 }));
+            return metLijn(g, toon(kleur), 6);
         }
-        // confetti: kleine plaatjes die tollen en vallen
-        const MAX = 500, conf = new THREE.InstancedMesh(new THREE.BoxGeometry(14, 8, 2), new THREE.MeshStandardMaterial({ metalness: 0.3, roughness: 0.4 }), MAX);
+        // cartoonconfetti
+        const MAX = 500, conf = new THREE.InstancedMesh(new THREE.BoxGeometry(16, 9, 3), toon(0xffffff), MAX);
         conf.instanceMatrix.setUsage(THREE.DynamicDrawUsage); conf.count = 0; conf.frustumCulled = false; scene.add(conf);
         const KL = [0xffffff, 0x22e3d0, 0x1e6bff, 0xff4f8b, 0xffd84a].map(c => new THREE.Color(c));
         let stukjes = [];
+        const hulp = new THREE.Object3D();
+        function strooi3d(n, y) {
+            for (let i = 0; i < n && stukjes.length < MAX; i++) {
+                const a = Math.random() * Math.PI * 2, v = 8 + Math.random() * 18;
+                stukjes.push({ p: new THREE.Vector3(0, y, 0), v: new THREE.Vector3(Math.cos(a) * v, Math.sin(a) * v * 0.8 + 10, (Math.random() - 0.5) * 20), r: new THREE.Euler(Math.random() * 6, Math.random() * 6, 0), vr: Math.random() * 0.3, k: KL[i % KL.length] });
+            }
+            start();
+        }
+        // zijn emotes als plaatjes die mee wegspatten (achter de letters)
         const emoteMat = [], sprites = [];
         fetch('https://api.gwnlarss.nl/api/streamer-alerts/demitje01/emotes').then(r => r.json()).then(d => {
             const tl = new THREE.TextureLoader(); tl.setCrossOrigin('anonymous');
@@ -349,51 +396,46 @@ if (document.body.classList.contains('drie')) {
             }
             start();
         }
-        const hulp = new THREE.Object3D();
-        function strooi3d(n, y) {
-            for (let i = 0; i < n && stukjes.length < MAX; i++) {
-                const a = Math.random() * Math.PI * 2, v = 8 + Math.random() * 18;
-                stukjes.push({ p: new THREE.Vector3(0, y, 0), v: new THREE.Vector3(Math.cos(a) * v, Math.sin(a) * v * 0.8 + 10, (Math.random() - 0.5) * 20), r: new THREE.Euler(Math.random() * 6, Math.random() * 6, 0), vr: Math.random() * 0.3, k: KL[i % KL.length] });
-            }
-            stukjes.forEach((d, i) => conf.setColorAt(i, d.k));
-            if (conf.instanceColor) conf.instanceColor.needsUpdate = true;
-            start();
-        }
 
         let groep = null, anim = null, loopt = false, vorige = 0;
-        const easeBack = x => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
         function stap(nu) {
             if (nu - vorige < 15) return;
-            const dt = Math.min(0.05, (nu - (vorige || nu)) / 1000); vorige = nu;
-            const t = nu / 1000;
-            glans.position.set(Math.sin(t * 1.3) * 900, 400, 600);
+            vorige = nu;
             if (groep && anim) {
-                const a = (nu - anim.start) / 1000, eind = anim.duur / 1000;
-                if (a < 1.1) {   // van ver weg aan komen tollen
-                    const x = Math.min(1, a / 1.1), e = easeBack(x);
-                    groep.position.z = -4000 * (1 - e); groep.rotation.y = (1 - e) * -Math.PI * 2.2; groep.scale.setScalar(0.2 + 0.8 * Math.min(1, x * 1.4));
-                } else if (a < eind - 0.8) {
-                    groep.position.z = 0; groep.scale.setScalar(1);
-                    groep.rotation.y = Math.sin((a - 1.1) * 1.1) * 0.18; groep.rotation.x = Math.sin((a - 1.1) * 0.8) * 0.06;
-                    if (!anim.regelAan) { anim.regelAan = true; anim.bijAan(); }
-                } else {   // weg: achterover kantelen en kleiner worden
+                const a = (nu - anim.start) / 1000, eind = anim.duur / 1000, { kop, naam, icoon } = groep.userData;
+                const alle = [...kop.userData.letters, ...naam.userData.letters];
+                if (a < eind - 0.9) {
+                    // binnenvallen: elke letter valt van boven, landt met een deuk en stuitert nog even na
+                    alle.forEach((l, i) => {
+                        const s = a - 0.05 * i;
+                        if (s < 0) { l.visible = false; return; }
+                        l.visible = true;
+                        if (s < 0.4) { const p = s / 0.4; l.position.y = (1 - p * p) * 800; l.scale.set(0.85, 1.25, 0.85); l.rotation.z = 0; }
+                        else hop(l, (s - 0.4) / 0.45, 70 * Math.max(0, 1 - (s - 0.4) * 1.6));
+                        if (s > 1.4) hop(l, ((a + i * 0.09) % 3.2) / 0.5, 30);   // daarna af en toe een golfje
+                    });
+                    // icoon ploft erin en wiebelt
+                    const ip = Math.min(1, Math.max(0, (a - 0.3) / 0.35));
+                    icoon.scale.setScalar(ip < 1 ? ip * 1.25 : 1 + Math.sin(a * 6) * 0.05);
+                    icoon.rotation.z = Math.sin(a * 3.2) * 0.22; icoon.rotation.y = Math.sin(a * 1.7) * 0.5;
+                    if (a > 1.2 && !anim.regelAan) { anim.regelAan = true; anim.bijAan(); }
+                } else {
+                    // weg: elke letter springt nog één keer op en valt dan uit beeld
                     if (!anim.regelUit) { anim.regelUit = true; anim.bijUit(); }
-                    const x = Math.min(1, (a - (eind - 0.8)) / 0.8), e = x * x;
-                    groep.rotation.x = -e * Math.PI * 0.6; groep.position.y = 70 + e * 600; groep.scale.setScalar(1 - e * 0.9);
+                    const w = a - (eind - 0.9);
+                    alle.forEach((l, i) => { const s = Math.max(0, w - 0.03 * i); l.position.y = s * 900 - s * s * 2600; l.rotation.z = s * 2 * (i % 2 ? 1 : -1); });
+                    icoon.scale.setScalar(Math.max(0, 1 - w * 2));
                 }
-                if (groep.userData.icoon) groep.userData.icoon.rotation.y += dt * 2.4;
                 if (a >= eind) { scene.remove(groep); groep.traverse(o => o.geometry?.dispose()); groep = null; const k = anim.klaar; anim = null; k(); }
             }
-            // confetti
-            for (const d of stukjes) { d.v.y -= 0.55; d.v.multiplyScalar(0.985); d.p.add(d.v); d.r.x += d.vr; d.r.y += d.vr * 0.7; }
+            for (const d of stukjes) { d.v.y -= 0.45; d.v.multiplyScalar(0.985); d.p.add(d.v); d.r.x += d.vr; d.r.y += d.vr * 0.7; }
             stukjes = stukjes.filter(d => d.p.y > -700);
-            for (let i = sprites.length - 1; i >= 0; i--) {
-                const sp = sprites[i]; sp.userData.v.y -= 0.35; sp.userData.v.multiplyScalar(0.99); sp.position.add(sp.userData.v);
-                sp.material.rotation = 0;
-                if (sp.position.y < -900) { scene.remove(sp); sprites.splice(i, 1); }
-            }
             stukjes.forEach((d, i) => { hulp.position.copy(d.p); hulp.rotation.copy(d.r); hulp.updateMatrix(); conf.setMatrixAt(i, hulp.matrix); conf.setColorAt(i, d.k); });
             conf.count = stukjes.length; conf.instanceMatrix.needsUpdate = true; if (conf.instanceColor) conf.instanceColor.needsUpdate = true;
+            for (let i = sprites.length - 1; i >= 0; i--) {
+                const sp = sprites[i]; sp.userData.v.y -= 0.35; sp.userData.v.multiplyScalar(0.99); sp.position.add(sp.userData.v);
+                if (sp.position.y < -900) { scene.remove(sp); sprites.splice(i, 1); }
+            }
             r.render(scene, cam);
             if (!groep && !stukjes.length && !sprites.length) { r.setAnimationLoop(null); loopt = false; r.clear(); }
         }
@@ -402,17 +444,18 @@ if (document.body.classList.contains('drie')) {
         window.drie3D = {
             toon(soort, kop, naam, niveau, duur, bijAan, bijUit) {
                 return new Promise(klaar => {
-                    groep = new THREE.Group(); groep.position.y = 70;
-                    const n = tekst(naam, 136, voorWit, zijBlauw);
-                    const breed = n.geometry.boundingBox.max.x - n.geometry.boundingBox.min.x;
-                    if (breed > 1500) n.scale.setScalar(1500 / breed);
-                    const k = tekst(kop, 58, voorTurq, zijDiep); k.position.y = 140;
-                    const ic = vorm(soort); ic.position.set(0, 255, 0); groep.userData.icoon = ic;
-                    groep.add(n, k, ic); scene.add(groep);
+                    groep = new THREE.Group(); groep.position.y = 0;
+                    const n = letters(naam, 136, 0xffffff, 0x1e6bff);
+                    if (n.userData.breedte > 1500) n.scale.setScalar(1500 / n.userData.breedte);
+                    const k = letters(kop, 58, 0xffe66b, 0x062347); k.position.y = 175;
+                    const ic = vorm(soort); ic.position.set(0, 300, 0); ic.scale.setScalar(0);
+                    groep.add(n, k, ic); groep.userData = { kop: k, naam: n, icoon: ic };
+                    [...k.userData.letters, ...n.userData.letters].forEach(l => (l.visible = false));
+                    scene.add(groep);
                     anim = { start: performance.now(), duur, klaar, bijAan, bijUit };
                     start();
-                    setTimeout(() => { strooi3d(Math.min(MAX, 120 + niveau * 70), 70); emotes3d(Math.min(50, 8 + niveau * 8), 70); }, 900);
-                    if (niveau >= 3) setTimeout(() => strooi3d(160, 70), 1800);
+                    setTimeout(() => { strooi3d(Math.min(MAX, 120 + niveau * 70), 80); emotes3d(Math.min(50, 8 + niveau * 8), 80); }, 900);
+                    if (niveau >= 3) setTimeout(() => strooi3d(160, 80), 1800);
                 });
             },
         };
