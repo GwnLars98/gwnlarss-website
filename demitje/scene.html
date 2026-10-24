@@ -142,20 +142,37 @@
     const cv = document.getElementById('achter'), cx = cv.getContext('2d');
     // zijn kanaal-emotes zweven mee: in bubbels (speels) of gloeiend door de lucht (neon)
     const EMOTES = [];
-    fetch(API + '/emotes').then(r => r.json()).then(d => (d.emotes || []).forEach(e => { const i = new Image(); i.src = e.url; EMOTES.push(i); })).catch(() => { });
-    const emoteVan = n => { const k = EMOTES.filter(i => i.complete && i.naturalWidth); return k.length ? k[n % k.length] : null; };
+    fetch(API + '/emotes').then(r => r.json()).then(d => (d.emotes || []).forEach(e => { const i = new Image(); i.onload = () => klaar.push(i); i.src = e.url; EMOTES.push(i); })).catch(() => { });
+    const klaar = [];
+    const emoteVan = n => klaar.length ? klaar[n % klaar.length] : null;
     const zwevers = Array.from({ length: 14 }, (_, n) => ({ n, x: Math.random() * W, y: Math.random() * H, v: 0.3 + Math.random() * 0.6, f: Math.random() * 6.28, b: 80 + Math.random() * 50 }));
     const bubbels = Array.from({ length: 46 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 10 + Math.random() * 46, v: 0.4 + Math.random() * 1.4, f: Math.random() * 6.28 }));
+    const gloed = (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 128;
+        const g = c.getContext('2d'), rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+        rg.addColorStop(0, 'rgba(95,246,255,0.75)'); rg.addColorStop(0.5, 'rgba(34,227,208,0.25)'); rg.addColorStop(1, 'rgba(34,227,208,0)');
+        g.fillStyle = rg; g.fillRect(0, 0, 128, 128); return c;
+    })();
+    const grid = (() => {
+        const c = document.createElement('canvas'); c.width = W; c.height = H;
+        const g = c.getContext('2d'), hor = 640;
+        const lg = g.createLinearGradient(0, hor - 160, 0, hor + 20);
+        lg.addColorStop(0, 'rgba(34,227,208,0)'); lg.addColorStop(1, 'rgba(34,227,208,0.35)');
+        g.fillStyle = lg; g.fillRect(0, hor - 160, W, 180);
+        g.strokeStyle = '#5ff6ff'; g.lineWidth = 2; g.shadowColor = '#22e3d0'; g.shadowBlur = 10; g.globalAlpha = 0.5;
+        for (let i = -24; i <= 24; i++) { g.beginPath(); g.moveTo(W / 2 + i * 30, hor); g.lineTo(W / 2 + i * 260, H); g.stroke(); }
+        return c;
+    })();
     let vorige = 0;
     function teken(nu) {
         requestAnimationFrame(teken);
-        if (nu - vorige < 30) return;
+        const k = vorige ? Math.min(3, (nu - vorige) / 33.3) : 1;   // beweging gelijk bij elke beeldsnelheid
         vorige = nu;
         const t = nu / 1000;
         cx.clearRect(0, 0, W, H);
         if (STIJL === 'speels') {
             for (const b of bubbels) {
-                b.y -= b.v; if (b.y < -60) { b.y = H + 60; b.x = Math.random() * W; }
+                b.y -= b.v * k; if (b.y < -60) { b.y = H + 60; b.x = Math.random() * W; }
                 const x = b.x + Math.sin(t + b.f) * 20;
                 cx.globalAlpha = 0.28; cx.fillStyle = '#ffffff';
                 cx.beginPath(); cx.arc(x, b.y, b.r, 0, 6.28); cx.fill();
@@ -164,7 +181,7 @@
             // grote bubbels met een emote erin
             for (const z of zwevers) {
                 const img = emoteVan(z.n); if (!img) break;
-                z.y -= z.v * 1.4; if (z.y < -120) { z.y = H + 120; z.x = Math.random() * W; z.n += 14; }
+                z.y -= z.v * 1.4 * k; if (z.y < -120) { z.y = H + 120; z.x = Math.random() * W; z.n += 14; }
                 const x = z.x + Math.sin(t * 0.8 + z.f) * 30, rr = z.b * 0.75;
                 cx.globalAlpha = 0.22; cx.fillStyle = '#ffffff'; cx.beginPath(); cx.arc(x, z.y, rr, 0, 6.28); cx.fill();
                 cx.globalAlpha = 0.95; cx.drawImage(img, x - z.b / 2, z.y - z.b / 2, z.b, z.b);
@@ -174,25 +191,26 @@
         } else if (STIJL === 'neon') {
             // horizon-gloed en een perspectief-grid dat naar je toe rijdt
             const hor = 640;
-            const g = cx.createLinearGradient(0, hor - 160, 0, hor + 20);
-            g.addColorStop(0, 'rgba(34,227,208,0)'); g.addColorStop(1, 'rgba(34,227,208,0.35)');
-            cx.fillStyle = g; cx.fillRect(0, hor - 160, W, 180);
-            cx.strokeStyle = '#5ff6ff'; cx.lineWidth = 2; cx.shadowColor = '#22e3d0'; cx.shadowBlur = 10;
-            for (let i = -24; i <= 24; i++) { cx.globalAlpha = 0.5; cx.beginPath(); cx.moveTo(W / 2 + i * 30, hor); cx.lineTo(W / 2 + i * 260, H); cx.stroke(); }
+            cx.globalAlpha = 1; cx.drawImage(grid, 0, 0);
+            // de liggende lijnen rijden naar je toe; gloed als brede zachte streep onder een dunne felle
             const fase = (t * 0.6) % 1;
-            for (let k = 0; k < 14; k++) {
-                const z = (k + fase) / 14, y = hor + Math.pow(z, 2.2) * (H - hor);
-                cx.globalAlpha = 0.15 + z * 0.6; cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke();
+            cx.strokeStyle = '#5ff6ff';
+            for (let n = 0; n < 14; n++) {
+                const z = (n + fase) / 14, y = hor + Math.pow(z, 2.2) * (H - hor);
+                cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y);
+                cx.globalAlpha = (0.15 + z * 0.6) * 0.3; cx.lineWidth = 9; cx.stroke();
+                cx.globalAlpha = 0.15 + z * 0.6; cx.lineWidth = 2; cx.stroke();
             }
-            cx.shadowBlur = 0; cx.globalAlpha = 1;
+            cx.globalAlpha = 1;
             // emotes die gloeiend boven de horizon zweven
             for (const z of zwevers) {
                 const img = emoteVan(z.n); if (!img) break;
                 const x = (z.x + t * 40 * z.v) % (W + 200) - 100, y = 90 + (z.y * 0.4) % 430 + Math.sin(t + z.f) * 18;
-                cx.globalAlpha = 0.9; cx.shadowColor = '#22e3d0'; cx.shadowBlur = 26;
+                cx.globalAlpha = 0.9;
+                cx.drawImage(gloed, x - z.b, y - z.b, z.b * 2, z.b * 2);
                 cx.drawImage(img, x - z.b / 2, y - z.b / 2, z.b, z.b);
             }
-            cx.shadowBlur = 0; cx.globalAlpha = 1;
+            cx.globalAlpha = 1;
         }
         cx.globalAlpha = 1;
     }
@@ -311,12 +329,12 @@ if (document.body.classList.contains('drie')) {
         document.body.classList.add('drie-ok');
         let vorige = 0;
         r.setAnimationLoop(nu => {
-            if (nu - vorige < 15) return;
+            const k = vorige ? Math.min(3, (nu - vorige) / 16.7) : 1;
             vorige = nu;
             const t = nu / 1000, golf = t % 4;
             titel.userData.letters.forEach((l, i) => hop(l, (golf - i * 0.07) / 0.55, 60));
             for (const z of zwevers) {
-                z.position.y += z.userData.v; z.rotation.z = Math.sin(t + z.userData.f) * 0.2; z.rotation.y += z.userData.d;
+                z.position.y += z.userData.v * k; z.rotation.z = Math.sin(t + z.userData.f) * 0.2; z.rotation.y += z.userData.d * k;
                 if (z.position.y > 900) z.position.y = -900;
             }
             r.render(scene, cam);

@@ -30,7 +30,7 @@
     /* De rand: een verloop dat met een SVG-masker tot een band met ronde binnenhoeken wordt uitgesneden.
        De glans is een losse streep die alleen met transform beweegt, zodat er niets opnieuw getekend wordt. */
     .rand {
-        position: absolute; inset: 0; overflow: hidden;
+        position: absolute; inset: 0; overflow: hidden; will-change: transform;
         background: linear-gradient(120deg, var(--paars) 0%, #1aa8ff 35%, var(--roze) 65%, var(--paars) 100%);
         -webkit-mask: var(--masker) 0 0 / 100% 100% no-repeat;
         mask: var(--masker) 0 0 / 100% 100% no-repeat;
@@ -137,9 +137,10 @@
     body.feest .binnenlijn { animation: lijnFeest 2.4s ease-out; }
     @keyframes randFeest { 0% { filter: none; } 8% { filter: brightness(1.9) saturate(1.4); } 25% { filter: brightness(1.2); } 40% { filter: brightness(1.6) saturate(1.3); } 100% { filter: none; } }
     @keyframes lijnFeest { 10%, 40% { box-shadow: 0 0 0 3px #fff, 0 0 40px 12px var(--roze), 0 0 90px 20px var(--paars); } }
-    .doel.gehaald { animation: doelGehaald 1.2s ease-in-out infinite alternate; }
+    .doel.gehaald::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+        box-shadow: 0 0 0 3px #fff, 0 0 0 6px #ffd84a, 0 0 40px 10px rgba(255, 216, 74, 0.6); animation: doelGehaald 1.2s ease-in-out infinite alternate; }
     .doel.gehaald .vul { background: linear-gradient(90deg, #ffd84a, #fff3b0, #ffd84a); box-shadow: 0 0 14px #ffd84a; }
-    @keyframes doelGehaald { to { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #ffd84a, 0 0 40px 10px rgba(255, 216, 74, 0.6); } }
+    @keyframes doelGehaald { from { opacity: 0; } to { opacity: 1; } }
     .doel .vul { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--paars), var(--roze)); transition: width 1.2s ease; }
     .live[hidden] { display: flex; opacity: 0; transform: translateX(-50%) scale(0.6); }
     /* leeg rondje: alleen de ring, binnenin doorzichtig voor een eigen afbeelding uit OBS */
@@ -287,7 +288,6 @@
 
     // Glinsters: kleine twinkelende puntjes alleen in de rand, 30 fps, plus een uitbarsting bij een nieuwe naam
     const cv = document.getElementById('glinsters'), cx = cv.getContext('2d');
-    const bandPad = new Path2D(`M0 0H${W}V${H}H0Z ${gat}`);
     function inBand() {
         // willekeurig punt op de band: kies een zijde naar verhouding van lengte
         const lang = Math.random() * (2 * W + 2 * H);
@@ -331,12 +331,18 @@
         if (!loopt) start();
     }
     let loopt = false, vorige = 0;
+    let vonkenWaren = false;
     function teken(nu) {
-        if (nu - vorige < 32) { requestAnimationFrame(teken); return; }
+        // in rust (alleen twinkelen) is 30 fps genoeg; tijdens een feestje volle snelheid
+        if (!vonken.length && !vonkenWaren && vorige && nu - vorige < 31) { requestAnimationFrame(teken); return; }
+        const k = vorige ? Math.min(3, (nu - vorige) / 33.3) : 1;   // 1 = één stap van 30 fps; zo is de snelheid gelijk bij 30, 60 of 144 Hz
         vorige = nu;
-        cx.clearRect(0, 0, W, H);
+        // in rust alleen de randstroken wissen in plaats van het hele scherm
+        if (vonken.length || vonkenWaren) cx.clearRect(0, 0, W, H);
+        else { const b = RAND + 4; cx.clearRect(0, 0, W, b); cx.clearRect(0, H - b, W, b); cx.clearRect(0, b, b, H - 2 * b); cx.clearRect(W - b, b, b, H - 2 * b); }
+        vonkenWaren = vonken.length > 0;
         const t = nu / 1000;
-        cx.save(); cx.clip(bandPad, 'evenodd');
+        cx.save();
         cx.fillStyle = STIJL === 'neon' ? '#7ff8ff' : '#fff';
         for (const p of puntjes) {
             const a = Math.max(0, Math.sin(t * p.snel + p.fase));
@@ -360,8 +366,8 @@
         cx.restore();
         for (let i = vonken.length - 1; i >= 0; i--) {
             const v = vonken[i];
-            if (v.img) { v.x += v.vx; v.y += v.vy; v.vx *= 0.975; v.vy = v.vy * 0.975 + 0.04; v.leven -= 0.011; }
-            else { v.x += v.vx; v.y += v.vy; v.vy += 0.35; v.vx *= 0.97; v.leven -= 0.022; }
+            if (v.img) { v.x += v.vx * k; v.y += v.vy * k; v.vx *= Math.pow(0.975, k); v.vy = v.vy * Math.pow(0.975, k) + 0.04 * k; v.leven -= 0.011 * k; }
+            else { v.x += v.vx * k; v.y += v.vy * k; v.vy += 0.35 * k; v.vx *= Math.pow(0.97, k); v.leven -= 0.022 * k; }
             if (v.leven <= 0) { vonken.splice(i, 1); continue; }
             cx.globalAlpha = v.leven; cx.fillStyle = v.kleur;
             if (v.img) {   // emote: groeit even aan, zweeft verder en vervaagt
@@ -545,10 +551,7 @@ if (document.body.classList.contains('drie')) {
         naam.position.y = -20;
         scene.add(naam);
         document.body.classList.add('drie-ok');
-        let vorige = 0;
         r.setAnimationLoop(nu => {
-            if (nu - vorige < 32) return;
-            vorige = nu;
             const t = nu / 1000, golf = t % 6;
             naam.userData.letters.forEach((l, i) => hop(l, (golf - i * 0.09) / 0.55, 46));
             naam.rotation.y = Math.sin(t * 0.5) * 0.12;

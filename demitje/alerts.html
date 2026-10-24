@@ -148,7 +148,7 @@
                 deeltjes.push({ emote: img, x: 80 + Math.random() * (W - 160), y: -120 - Math.random() * 1500, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 2.5, b, leven: 1, draai: (Math.random() - 0.5) * 0.6, vd: (Math.random() - 0.5) * 0.04, valt: 1 });
             }
         }
-        if (!loopt) { loopt = true; requestAnimationFrame(teken); }
+        if (!loopt) { loopt = true; vorigeT = 0; requestAnimationFrame(teken); }
     }
     function strooi(n, x0, y0) {
         const k = KLEUREN[STIJL];
@@ -161,36 +161,48 @@
                     draai: Math.random() * 6.28, vd: (Math.random() - 0.5) * 0.4, b: 10 + Math.random() * 12, leven: 1, kleur: k[i % k.length] });
             }
         }
-        if (!loopt) { loopt = true; requestAnimationFrame(teken); }
+        if (!loopt) { loopt = true; vorigeT = 0; requestAnimationFrame(teken); }
     }
     let loopt = false;
-    function teken() {
+    const gloed = (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 128;
+        const g = c.getContext('2d'), rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+        rg.addColorStop(0, 'rgba(95,246,255,0.75)'); rg.addColorStop(0.5, 'rgba(34,227,208,0.25)'); rg.addColorStop(1, 'rgba(34,227,208,0)');
+        g.fillStyle = rg; g.fillRect(0, 0, 128, 128); return c;
+    })();
+    let vorigeT = 0;
+    function teken(nu) {
+        const k = vorigeT && nu ? Math.min(3, (nu - vorigeT) / 16.7) : 1;   // 1 = één stap van 60 fps
+        vorigeT = nu || 0;
         cx.clearRect(0, 0, W, H);
         for (let i = deeltjes.length - 1; i >= 0; i--) {
             const d = deeltjes[i];
             if (d.emote) {
-                if (d.valt) { d.vy = Math.min(d.vy + 0.05, 5); d.y += d.vy; d.x += d.vx; if (d.y > H + 200) d.leven = 0; }
-                else { d.x += d.vx; d.y += d.vy; d.vx *= 0.985; d.vy *= 0.985; d.leven -= 0.008; }
-                d.draai += d.vd;
-                cx.globalAlpha = Math.min(1, Math.max(0, d.leven)); cx.shadowColor = '#5ff6ff'; cx.shadowBlur = d.neon ? 24 : 0;
+                if (d.valt) { d.vy = Math.min(d.vy + 0.05 * k, 5); d.y += d.vy * k; d.x += d.vx * k; if (d.y > H + 200) d.leven = 0; }
+                else { d.x += d.vx * k; d.y += d.vy * k; d.vx *= Math.pow(0.985, k); d.vy *= Math.pow(0.985, k); d.leven -= 0.008 * k; }
+                d.draai += d.vd * k;
+                cx.globalAlpha = Math.min(1, Math.max(0, d.leven));
+                if (d.neon) cx.drawImage(gloed, d.x - d.b, d.y - d.b, d.b * 2, d.b * 2);
                 cx.save(); cx.translate(d.x, d.y); cx.rotate(d.draai); cx.drawImage(d.emote, -d.b / 2, -d.b / 2, d.b, d.b); cx.restore();
                 if (d.leven <= 0) deeltjes.splice(i, 1);
                 continue;
             }
             if (d.neon) {
                 const ox = d.x, oy = d.y;
-                d.x += d.vx; d.y += d.vy; d.vx *= 0.95; d.vy *= 0.95; d.leven -= 0.018;
-                cx.globalAlpha = Math.max(0, d.leven); cx.strokeStyle = d.kleur; cx.lineWidth = 3; cx.shadowColor = d.kleur; cx.shadowBlur = 12;
-                cx.beginPath(); cx.moveTo(ox - d.vx * 2, oy - d.vy * 2); cx.lineTo(d.x, d.y); cx.stroke();
+                d.x += d.vx * k; d.y += d.vy * k; d.vx *= Math.pow(0.95, k); d.vy *= Math.pow(0.95, k); d.leven -= 0.018 * k;
+                // gloed zonder shadowBlur: een brede doorzichtige streep onder een dunne felle
+                cx.strokeStyle = d.kleur; cx.beginPath(); cx.moveTo(ox - d.vx * 2, oy - d.vy * 2); cx.lineTo(d.x, d.y);
+                cx.globalAlpha = Math.max(0, d.leven) * 0.25; cx.lineWidth = 12; cx.stroke();
+                cx.globalAlpha = Math.max(0, d.leven); cx.lineWidth = 3; cx.stroke();
             } else {
-                d.vy = Math.min(d.vy + 0.16, 3.2); d.vx = d.vx * 0.98 + Math.sin(d.draai * 2) * 0.12; d.x += d.vx; d.y += d.vy; d.draai += d.vd;   // dwarrelen
+                d.vy = Math.min(d.vy + 0.16 * k, 3.2); d.vx = d.vx * Math.pow(0.98, k) + Math.sin(d.draai * 2) * 0.12 * k; d.x += d.vx * k; d.y += d.vy * k; d.draai += d.vd * k;   // dwarrelen
                 if (d.y > H + 40) d.leven = 0;
-                cx.globalAlpha = 1; cx.shadowBlur = 0; cx.fillStyle = d.kleur;
+                cx.globalAlpha = 1; cx.fillStyle = d.kleur;
                 cx.save(); cx.translate(d.x, d.y); cx.rotate(d.draai); cx.fillRect(-d.b / 2, -d.b / 4, d.b, d.b / 2); cx.restore();
             }
             if (d.leven <= 0) deeltjes.splice(i, 1);
         }
-        cx.globalAlpha = 1; cx.shadowBlur = 0;
+        cx.globalAlpha = 1;
         if (deeltjes.length) requestAnimationFrame(teken); else { loopt = false; cx.clearRect(0, 0, W, H); }
     }
 
@@ -399,7 +411,7 @@ if (document.body.classList.contains('drie')) {
 
         let groep = null, anim = null, loopt = false, vorige = 0;
         function stap(nu) {
-            if (nu - vorige < 15) return;
+            const k = vorige ? Math.min(3, (nu - vorige) / 16.7) : 1;   // beweging gelijk bij elke beeldsnelheid
             vorige = nu;
             if (groep && anim) {
                 const a = (nu - anim.start) / 1000, eind = anim.duur / 1000, { kop, naam, icoon } = groep.userData;
@@ -428,12 +440,12 @@ if (document.body.classList.contains('drie')) {
                 }
                 if (a >= eind) { scene.remove(groep); groep.traverse(o => o.geometry?.dispose()); groep = null; const k = anim.klaar; anim = null; k(); }
             }
-            for (const d of stukjes) { d.v.y -= 0.45; d.v.multiplyScalar(0.985); d.p.add(d.v); d.r.x += d.vr; d.r.y += d.vr * 0.7; }
+            for (const d of stukjes) { d.v.y -= 0.45 * k; d.v.multiplyScalar(Math.pow(0.985, k)); d.p.addScaledVector(d.v, k); d.r.x += d.vr * k; d.r.y += d.vr * 0.7 * k; }
             stukjes = stukjes.filter(d => d.p.y > -700);
             stukjes.forEach((d, i) => { hulp.position.copy(d.p); hulp.rotation.copy(d.r); hulp.updateMatrix(); conf.setMatrixAt(i, hulp.matrix); conf.setColorAt(i, d.k); });
             conf.count = stukjes.length; conf.instanceMatrix.needsUpdate = true; if (conf.instanceColor) conf.instanceColor.needsUpdate = true;
             for (let i = sprites.length - 1; i >= 0; i--) {
-                const sp = sprites[i]; sp.userData.v.y -= 0.35; sp.userData.v.multiplyScalar(0.99); sp.position.add(sp.userData.v);
+                const sp = sprites[i]; sp.userData.v.y -= 0.35 * k; sp.userData.v.multiplyScalar(Math.pow(0.99, k)); sp.position.addScaledVector(sp.userData.v, k);
                 if (sp.position.y < -900) { scene.remove(sp); sprites.splice(i, 1); }
             }
             r.render(scene, cam);
