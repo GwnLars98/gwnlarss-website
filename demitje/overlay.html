@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overlay, Demitje01</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+    /* Overlay voor Demitje01 (1920x1080): blauw-turquoise rand met glinsters rond de game, onderaan
+       laatste sub, zijn naam en laatste volger, rechtsboven zijn Twitch-profielfoto met LIVE en
+       optioneel een volgdoel (?doel=1200). Gegevens via zijn koppeling op gwnlarss.nl/demitje.
+       Het midden blijft doorzichtig. In OBS als browserbron van 1920x1080 boven de game-opname. */
+    :root {
+        --paars: #1e6bff;
+        --roze: #22e3d0;
+        --diep: #062347;
+        --live: #ff2e4d;
+        --rand: 26px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100vw; height: 100vh; background: transparent; overflow: hidden; }
+    body { font-family: 'Baloo 2', system-ui, sans-serif; }
+
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+
+    /* De rand: een verloop dat met een SVG-masker tot een band met ronde binnenhoeken wordt uitgesneden.
+       De glans is een losse streep die alleen met transform beweegt, zodat er niets opnieuw getekend wordt. */
+    .rand {
+        position: absolute; inset: 0; overflow: hidden;
+        background: linear-gradient(120deg, var(--paars) 0%, #1aa8ff 35%, var(--roze) 65%, var(--paars) 100%);
+        -webkit-mask: var(--masker) 0 0 / 100% 100% no-repeat;
+        mask: var(--masker) 0 0 / 100% 100% no-repeat;
+    }
+    .rand::after {
+        content: ''; position: absolute; top: -50%; left: 0; width: 360px; height: 200%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+        transform: translateX(-500px) rotate(18deg);
+        animation: glans 7s ease-in-out infinite;
+    }
+    @keyframes glans {
+        0%, 55% { transform: translateX(-500px) rotate(18deg); }
+        100% { transform: translateX(2400px) rotate(18deg); }
+    }
+    /* dunne lichte binnenrand langs het gat, geeft diepte zoals een lijst */
+    .binnenlijn {
+        position: absolute; inset: var(--rand); border-radius: 22px;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45), 0 0 24px 4px rgba(30, 140, 255, 0.55);
+        pointer-events: none;
+    }
+    #glinsters { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+
+    /* Onderbalk-plaatjes: laatste sub links, laatste volger rechts, half over de onderrand */
+    .plaat {
+        position: absolute; bottom: 6px; min-width: 300px; max-width: 520px;
+        padding: 10px 30px 8px; border-radius: 18px;
+        background: linear-gradient(180deg, rgba(8, 44, 92, 0.92), rgba(4, 22, 52, 0.94));
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 0 7px var(--paars), 0 10px 26px rgba(0, 0, 0, 0.5);
+        transform: skewX(-7deg);
+        text-align: center;
+    }
+    .plaat > * { transform: skewX(7deg); }
+    .plaat.links { left: 70px; }
+    .plaat.rechts { right: 70px; }
+    .plaat .label {
+        font-size: 24px; font-weight: 800; letter-spacing: 3px; line-height: 1;
+        background: linear-gradient(90deg, #c9fff8, var(--roze));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .plaat .wie {
+        font-size: 40px; font-weight: 800; line-height: 1.1; color: #fff;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+    }
+    .plaat.nieuw { animation: pop 0.9s cubic-bezier(.2, 1.6, .4, 1); }
+    @keyframes pop {
+        0% { transform: skewX(-7deg) scale(1); }
+        30% { transform: skewX(-7deg) scale(1.16); box-shadow: 0 0 0 3px #fff, 0 0 0 7px var(--roze), 0 0 60px 10px var(--roze); }
+        100% { transform: skewX(-7deg) scale(1); }
+    }
+
+    /* Naam onderaan in het midden: dikke speelse letters met een donkere omlijning, over de rand heen */
+    .naam, .plaat .label, .doel .label {
+        font-family: 'Lilita One', 'Baloo 2', sans-serif; font-weight: 400 !important;
+    }
+    .naam {
+        position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%) rotate(-2deg);
+        font-size: 104px; font-weight: 800; line-height: 1; letter-spacing: 1px; white-space: nowrap;
+    }
+    .naam span { display: block; }
+    .naam .achter {
+        position: absolute; inset: 0; color: var(--diep);
+        -webkit-text-stroke: 18px var(--diep); paint-order: stroke fill;
+        text-shadow: 0 8px 0 var(--diep), 0 14px 26px rgba(0, 0, 0, 0.55);
+    }
+    .naam .voor {
+        position: relative;
+        background: linear-gradient(180deg, #ffffff 0%, #dffcff 45%, #7ff0ff 70%, #39a6ff 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    /* Avatar rechtsboven, over de hoek heen, met LIVE-pil eronder */
+    .avatar {
+        position: absolute; right: 8px; top: 8px; width: 200px; height: 200px; border-radius: 50%;
+        padding: 9px; background: conic-gradient(from 200deg, var(--paars), var(--roze), #c9fff8, var(--paars));
+        box-shadow: 0 0 0 5px #fff, 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(34, 227, 208, 0.45);
+    }
+    .avatar img { width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; background: var(--diep); }
+    .live {
+        position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 8px;
+        padding: 3px 18px 1px; border-radius: 999px; background: var(--live); color: #fff;
+        font-size: 26px; font-weight: 800; letter-spacing: 2px; line-height: 1.2;
+        box-shadow: 0 0 0 4px #fff, 0 6px 16px rgba(0, 0, 0, 0.45);
+        transition: opacity 0.4s, transform 0.4s;
+    }
+    .live i { width: 12px; height: 12px; border-radius: 50%; background: #fff; animation: adem 1.4s ease-in-out infinite; }
+    @keyframes adem { 50% { opacity: 0.25; } }
+    .doel {
+        position: absolute; right: 22px; top: 248px; width: 300px; padding: 10px 18px 14px; border-radius: 16px;
+        background: linear-gradient(180deg, rgba(8, 44, 92, 0.92), rgba(4, 22, 52, 0.94));
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 0 6px var(--paars), 0 10px 26px rgba(0, 0, 0, 0.5);
+        color: #fff; text-align: center;
+    }
+    .doel[hidden] { display: none; }
+    .doel .label { font-size: 22px; letter-spacing: 2px; color: var(--roze); line-height: 1.1; }
+    .doel .tal { font-size: 30px; font-weight: 800; line-height: 1.15; }
+    .doel .balk { height: 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.15); overflow: hidden; margin-top: 4px; }
+    .doel .vul { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--paars), var(--roze)); transition: width 1.2s ease; }
+    .live[hidden] { display: flex; opacity: 0; transform: translateX(-50%) scale(0.6); }
+</style>
+</head>
+<body>
+<div id="podium">
+    <div class="rand" id="rand"></div>
+    <canvas id="glinsters" width="1920" height="1080"></canvas>
+    <div class="binnenlijn"></div>
+
+    <div class="plaat links" id="p-sub"><div class="label">LAATSTE SUB</div><div class="wie" id="w-sub">-</div></div>
+    <div class="plaat rechts" id="p-volger"><div class="label">LAATSTE VOLGER</div><div class="wie" id="w-volger">-</div></div>
+
+    <div class="naam"><span class="achter">Demitje01</span><span class="voor">Demitje01</span></div>
+
+    <div class="avatar">
+        <img id="foto" alt="">
+        <div class="live" id="live" hidden><i></i>LIVE</div>
+    </div>
+    <div class="doel" id="doel" hidden><div class="label">VOLGDOEL</div><div class="tal" id="doel-tal">-</div><div class="balk"><div class="vul" id="doel-vul"></div></div></div>
+</div>
+<script>
+(() => {
+    const W = 1920, H = 1080;
+    const q = new URLSearchParams(location.search);
+    const isDemo = q.get('demo') === '1';
+    const RAND = Math.max(10, Math.min(60, +q.get('rand') || 26));
+    const R = 22;
+    document.documentElement.style.setProperty('--rand', RAND + 'px');
+
+    // Podium op elke venstermaat passend schalen (in OBS is dat gewoon 1920x1080 = schaal 1)
+    const podium = document.getElementById('podium');
+    function pas() {
+        const s = Math.min(innerWidth / W, innerHeight / H);
+        podium.style.transform = `translate(${(innerWidth - W * s) / 2}px, ${(innerHeight - H * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pas); pas();
+
+    // Masker: volle rechthoek min een afgeronde binnenrechthoek (evenodd), zo blijft het gat echt leeg
+    const x0 = RAND, y0 = RAND, x1 = W - RAND, y1 = H - RAND;
+    const gat = `M${x0 + R} ${y0}H${x1 - R}A${R} ${R} 0 0 1 ${x1} ${y0 + R}V${y1 - R}A${R} ${R} 0 0 1 ${x1 - R} ${y1}H${x0 + R}A${R} ${R} 0 0 1 ${x0} ${y1 - R}V${y0 + R}A${R} ${R} 0 0 1 ${x0 + R} ${y0}Z`;
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${W} ${H}'><path fill-rule='evenodd' d='M0 0H${W}V${H}H0Z ${gat}'/></svg>`;
+    document.getElementById('rand').style.setProperty('--masker', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+
+    // Glinsters: kleine twinkelende puntjes alleen in de rand, 30 fps, plus een uitbarsting bij een nieuwe naam
+    const cv = document.getElementById('glinsters'), cx = cv.getContext('2d');
+    const bandPad = new Path2D(`M0 0H${W}V${H}H0Z ${gat}`);
+    function inBand() {
+        // willekeurig punt op de band: kies een zijde naar verhouding van lengte
+        const lang = Math.random() * (2 * W + 2 * H);
+        const d = Math.random() * RAND;
+        if (lang < W) return [lang, d];
+        if (lang < 2 * W) return [lang - W, H - d];
+        if (lang < 2 * W + H) return [d, lang - 2 * W];
+        return [W - d, lang - 2 * W - H];
+    }
+    const puntjes = Array.from({ length: 90 }, () => {
+        const [x, y] = inBand();
+        return { x, y, fase: Math.random() * 6.28, snel: 1 + Math.random() * 2.5, r: 1 + Math.random() * 2.2 };
+    });
+    const vonken = [];
+    function barst(x, y) {
+        for (let i = 0; i < 46; i++) {
+            const h = Math.random() * 6.28, v = 3 + Math.random() * 9;
+            vonken.push({ x, y, vx: Math.cos(h) * v, vy: Math.sin(h) * v - 4, leven: 1, kleur: Math.random() < 0.5 ? '#c9fff8' : '#ffffff' });
+        }
+        if (!loopt) start();
+    }
+    let loopt = false, vorige = 0;
+    function teken(nu) {
+        if (nu - vorige < 32) { requestAnimationFrame(teken); return; }
+        vorige = nu;
+        cx.clearRect(0, 0, W, H);
+        const t = nu / 1000;
+        cx.save(); cx.clip(bandPad, 'evenodd');
+        cx.fillStyle = '#fff';
+        for (const p of puntjes) {
+            const a = Math.max(0, Math.sin(t * p.snel + p.fase));
+            if (a < 0.05) continue;
+            cx.globalAlpha = a * 0.9;
+            cx.beginPath(); cx.arc(p.x, p.y, p.r * (0.6 + a * 0.6), 0, 6.28); cx.fill();
+            if (a > 0.92 && p.r > 2) { // kruisje bij de felste puntjes
+                cx.fillRect(p.x - 7 * a, p.y - 0.75, 14 * a, 1.5); cx.fillRect(p.x - 0.75, p.y - 7 * a, 1.5, 14 * a);
+            }
+        }
+        cx.restore();
+        for (let i = vonken.length - 1; i >= 0; i--) {
+            const v = vonken[i];
+            v.x += v.vx; v.y += v.vy; v.vy += 0.35; v.vx *= 0.97; v.leven -= 0.022;
+            if (v.leven <= 0) { vonken.splice(i, 1); continue; }
+            cx.globalAlpha = v.leven; cx.fillStyle = v.kleur;
+            cx.beginPath(); cx.arc(v.x, v.y, 2.5 + v.leven * 2, 0, 6.28); cx.fill();
+        }
+        cx.globalAlpha = 1;
+        requestAnimationFrame(teken);
+    }
+    function start() { loopt = true; requestAnimationFrame(teken); }
+    start();
+
+    // Gegevens: laatste sub/volger en volgers uit zijn koppeling (api.gwnlarss.nl), foto, live en volgers via decapi
+    const LOGIN = 'demitje01', API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
+    const DOEL = Math.max(0, +q.get('doel') || 0);
+    const DEMO = { laatste: { subscriber: { naam: 'GezelligeKijker', op: 2 }, follower: { naam: 'NieuweVolger123', op: 1 } }, totaal: { volgers: 1056 } };
+    fetch('https://decapi.me/twitch/avatar/' + LOGIN).then(r => r.text()).then(u => { if (u.trim().startsWith('https://')) document.getElementById('foto').src = u.trim(); }).catch(() => { });
+    const vorigeNaam = {};
+    function zet(sleutel, plaatId, wieId, naam) {
+        naam = naam || '-';
+        const el = document.getElementById(wieId);
+        if (vorigeNaam[sleutel] === naam) return;
+        const eersteKeer = !(sleutel in vorigeNaam);
+        vorigeNaam[sleutel] = naam;
+        el.textContent = naam;
+        if (eersteKeer) return;
+        const p = document.getElementById(plaatId);
+        p.classList.remove('nieuw'); void p.offsetWidth; p.classList.add('nieuw');
+        const b = p.getBoundingClientRect(), s = podium.getBoundingClientRect().width / W;
+        barst((b.left + b.width / 2 - podium.getBoundingClientRect().left) / s, (b.top - podium.getBoundingClientRect().top) / s + 10);
+    }
+    // laatste sub: de nieuwste van gewone sub, resub en gifted subs (dan de gever)
+    function laatsteSub(l) {
+        return ['subscriber', 'resub', 'gift'].map(k => l[k]).filter(Boolean).sort((x, y) => (y.op || 0) - (x.op || 0))[0];
+    }
+    let volgers = null;
+    function toonDoel() {
+        if (!DOEL || volgers == null) return;
+        document.getElementById('doel').hidden = false;
+        document.getElementById('doel-tal').textContent = volgers.toLocaleString('nl-NL') + ' / ' + DOEL.toLocaleString('nl-NL');
+        document.getElementById('doel-vul').style.width = Math.min(100, volgers / DOEL * 100) + '%';
+    }
+    async function haalStats() {
+        try {
+            const d = isDemo ? DEMO : await (await fetch(API + '/stats', { cache: 'no-store' })).json();
+            const l = d.laatste || {};
+            zet('sub', 'p-sub', 'w-sub', laatsteSub(l) && laatsteSub(l).naam);
+            zet('volger', 'p-volger', 'w-volger', l.follower && l.follower.naam);
+            if (d.totaal && d.totaal.volgers != null) { volgers = d.totaal.volgers; toonDoel(); }
+        } catch { }
+    }
+    async function haalLive() {
+        let live = q.get('live') === '1' || isDemo;
+        if (!isDemo) {
+            try { live = live || !/offline/i.test(await (await fetch('https://decapi.me/twitch/uptime/' + LOGIN, { cache: 'no-store' })).text()); } catch { }
+            // zolang hij nog niet gekoppeld is: volgers voor het doel via decapi
+            if (DOEL && volgers == null) {
+                try { const n = parseInt(await (await fetch('https://decapi.me/twitch/followcount/' + LOGIN)).text(), 10); if (n >= 0) { volgers = n; toonDoel(); volgers = null; } } catch { }
+            }
+        }
+        document.getElementById('live').hidden = !live;
+    }
+    haalStats(); haalLive();
+    setInterval(haalStats, 10000);
+    setInterval(haalLive, 60000);
+    document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
+})();
+</script>
+</body>
+</html>

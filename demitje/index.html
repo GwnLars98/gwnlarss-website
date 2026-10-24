@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overlay voor Demitje01</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+    /* Instelpagina voor de overlay van Demitje01: Twitch koppelen (laatste volger/sub, volgers),
+       OBS-link kopiëren met optioneel volgdoel, en een live voorbeeld. */
+    :root { --blauw: #1e6bff; --turquoise: #22e3d0; --diep: #041634; --kaart: #0a2550; --tekst: #e8f6ff; --zacht: #9cc3e6; }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; min-height: 100vh; color: var(--tekst); font-family: 'Baloo 2', system-ui, sans-serif;
+        background: radial-gradient(1200px 600px at 20% -10%, rgba(34, 227, 208, 0.25), transparent),
+                    radial-gradient(900px 500px at 100% 0%, rgba(30, 107, 255, 0.35), transparent), var(--diep);
+    }
+    main { max-width: 980px; margin: 0 auto; padding: 40px 16px 60px; }
+    h1 { font-family: 'Lilita One', sans-serif; font-weight: 400; font-size: clamp(40px, 7vw, 64px); margin: 0; line-height: 1;
+         background: linear-gradient(180deg, #fff, #7ff0ff 70%, #39a6ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sub { color: var(--zacht); font-size: 18px; margin: 8px 0 28px; }
+    .stap { background: var(--kaart); border-radius: 18px; padding: 22px; margin-bottom: 18px; box-shadow: 0 0 0 2px rgba(34, 227, 208, 0.25); }
+    .stap h2 { font-family: 'Lilita One', sans-serif; font-weight: 400; font-size: 26px; margin: 0 0 6px; letter-spacing: 0.5px; }
+    .stap p { margin: 0 0 14px; color: var(--zacht); font-size: 16px; line-height: 1.5; }
+    .knop { display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; text-decoration: none;
+            font: 800 18px 'Baloo 2', sans-serif; color: #fff; padding: 10px 22px; border-radius: 999px;
+            background: linear-gradient(90deg, var(--blauw), var(--turquoise)); box-shadow: 0 6px 18px rgba(30, 107, 255, 0.4); }
+    .knop.twitch { background: #9146ff; box-shadow: 0 6px 18px rgba(145, 70, 255, 0.4); }
+    .knop.klein { font-size: 15px; padding: 6px 16px; }
+    .melding { border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; font-weight: 700; }
+    .melding.ok { background: rgba(34, 227, 208, 0.15); box-shadow: 0 0 0 2px var(--turquoise); }
+    .link { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .link code { flex: 1 1 320px; min-width: 0; overflow-wrap: anywhere; background: #051a3d; padding: 10px 14px; border-radius: 10px; font-size: 15px; color: #c9fff8; }
+    label { display: inline-flex; align-items: center; gap: 10px; margin: 0 18px 12px 0; font-weight: 700; }
+    input[type=number] { width: 110px; font: 700 16px 'Baloo 2', sans-serif; padding: 6px 10px; border-radius: 10px; border: 0; background: #051a3d; color: #fff; }
+    .voorbeeld { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
+                 background: repeating-conic-gradient(#0d2a55 0 25%, #0a2148 0 50%) 0 0 / 40px 40px; }
+    .voorbeeld iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; }
+    ol { margin: 0; padding-left: 20px; color: var(--zacht); line-height: 1.7; }
+</style>
+</head>
+<body>
+<main>
+    <h1>Demitje01</h1>
+    <div class="sub">Jouw game-overlay voor OBS, gemaakt door GwnLarss.</div>
+
+    <div class="melding ok" id="verbonden" hidden>✅ Je Twitch is gekoppeld! Laatste volger en sub komen nu vanzelf in je overlay.</div>
+
+    <section class="stap">
+        <h2>1. Koppel je Twitch</h2>
+        <p>Nodig voor je laatste volger, laatste sub en het aantal volgers voor je volgdoel. Je geeft alleen leesrechten, er wordt niets namens jou gepost.</p>
+        <a class="knop twitch" href="https://api.gwnlarss.nl/api/streamer-alerts/verbind">Koppel met Twitch</a>
+    </section>
+
+    <section class="stap">
+        <h2>2. Zet hem in OBS</h2>
+        <p>Voeg een <b>Browserbron</b> toe van <b>1920 x 1080</b> en zet hem boven je game-opname. Het midden is doorzichtig.</p>
+        <label>Volgdoel <input type="number" id="doel" min="0" step="50" placeholder="bijv. 1200"></label>
+        <label><input type="checkbox" id="dik"> Dikkere rand</label>
+        <div class="link"><code id="obs"></code><button class="knop klein" id="kopieer">Kopieer</button></div>
+    </section>
+
+    <section class="stap">
+        <h2>Voorbeeld</h2>
+        <p>Met voorbeeldnamen, zodat je ziet hoe het eruitziet. In OBS staan je echte volgers en subs erin.</p>
+        <div class="voorbeeld" id="vb"><iframe id="frame" title="Voorbeeld"></iframe></div>
+    </section>
+
+    <section class="stap">
+        <h2>Wat zit erin</h2>
+        <ol>
+            <li>Blauw-turquoise rand met glinsters rond je game</li>
+            <li>Laatste sub links, laatste volger rechts, je naam in het midden</li>
+            <li>Je Twitch-profielfoto rechtsboven met LIVE zodra je live bent</li>
+            <li>Optioneel je volgdoel met balkje onder je foto</li>
+        </ol>
+    </section>
+</main>
+<script>
+(() => {
+    const BASIS = new URL('overlay.html', location.href).href;
+    const q = new URLSearchParams(location.search);
+    if (q.get('verbonden') === '1') document.getElementById('verbonden').hidden = false;
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);   // sleutel niet in de adresbalk laten staan
+
+    const doel = document.getElementById('doel'), dik = document.getElementById('dik');
+    try { doel.value = localStorage.getItem('demitje-doel') || ''; dik.checked = localStorage.getItem('demitje-dik') === '1'; } catch { }
+    function link(voorbeeld) {
+        const p = new URLSearchParams();
+        if (+doel.value > 0) p.set('doel', Math.round(+doel.value));
+        if (dik.checked) p.set('rand', 40);
+        if (voorbeeld) p.set('demo', '1');
+        const s = p.toString();
+        return BASIS + (s ? '?' + s : '');
+    }
+    let vorigeVb = '';
+    function bijwerken() {
+        document.getElementById('obs').textContent = link(false);
+        const vb = link(true);
+        if (vb !== vorigeVb) { document.getElementById('frame').src = vb; vorigeVb = vb; }
+        try { localStorage.setItem('demitje-doel', doel.value); localStorage.setItem('demitje-dik', dik.checked ? '1' : '0'); } catch { }
+    }
+    doel.addEventListener('input', bijwerken); dik.addEventListener('change', bijwerken);
+    document.getElementById('kopieer').addEventListener('click', async e => {
+        try { await navigator.clipboard.writeText(link(false)); e.target.textContent = 'Gekopieerd!'; setTimeout(() => (e.target.textContent = 'Kopieer'), 1500); } catch { }
+    });
+    function schaal() {
+        const vb = document.getElementById('vb');
+        document.getElementById('frame').style.transform = `scale(${vb.clientWidth / 1920})`;
+    }
+    addEventListener('resize', schaal); schaal(); bijwerken();
+})();
+</script>
+</body>
+</html>
