@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-    /* Spotify "now playing" voor OBS in tien stijlen. Eén vaste link: de stijl en kant komen van de server (opslaan op
+    /* Spotify "now playing" voor OBS in elf stijlen (waarvan één volledig scherm). Eén vaste link: de stijl en kant komen van de server (opslaan op
        nowplaying-setup.html), ?stijl= in de link gaat daar alleen voor voorbeelden overheen.
        Elke stijl heeft een eigen basismaat en schaalt mee met de browserbron. Schuift in beeld zodra er muziek
        speelt en weer weg bij pauze. ?demo=1 toont een voorbeeldnummer, ?voorbeeld=1 het echte nummer (of het
@@ -40,7 +40,7 @@
     body[data-stijl="kaart"] .blok.kaart, body[data-stijl="pil"] .blok.pil, body[data-stijl="vinyl"] .blok.vinyl,
     body[data-stijl="3d"] .blok.drie, body[data-stijl="aurora"] .blok.aurora,
     body[data-stijl="split"] .blok.split, body[data-stijl="transparant"] .blok.transparant, body[data-stijl="banner"] .blok.banner,
-    body[data-stijl="schuin"] .blok.schuin, body[data-stijl="golf"] .blok.golf { display: block; }
+    body[data-stijl="schuin"] .blok.schuin, body[data-stijl="golf"] .blok.golf, body[data-stijl="volledig"] .blok.volledig { display: block; }
     /* in- en uitschuiven */
     .schuif { transform: translateX(-120%); opacity: 0; transition: transform 0.75s cubic-bezier(.2, 1.2, .3, 1), opacity 0.5s; }
     body.rechts .schuif { transform: translateX(120%); }
@@ -210,6 +210,24 @@
     body.speelt .golf .golfje i.vol:nth-last-child(1 of .vol) { animation: tik 0.5s ease-in-out infinite alternate; }
     @keyframes tik { to { transform: scaleY(1.35); } }
 
+    /* ---------- 12. volledig scherm (1920 x 1080): wazige hoes over het hele beeld, grote hoes links, grote tekst rechts ---------- */
+    .volledig .vlak { position: absolute; inset: 0; overflow: hidden; background: #08060f; }
+    .volledig .achter { position: absolute; inset: -80px; background: center / cover no-repeat; filter: blur(60px) brightness(0.45) saturate(1.4); transform: scale(1.1); }
+    .volledig .vlak::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 50%, transparent 30%, rgba(0, 0, 0, 0.55) 100%); }
+    .volledig .schuif { transform: scale(0.96); }
+    body.rechts .volledig .schuif { transform: scale(0.96); }
+    body.aan .volledig .schuif { transform: none; }
+    .volledig .hoesgroot { position: absolute; left: 190px; top: 240px; width: 600px; height: 600px; border-radius: 34px; z-index: 1;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), 0 40px 90px rgba(0, 0, 0, 0.6), 0 0 120px color-mix(in srgb, var(--paars) 55%, transparent); transition: box-shadow 1.2s; }
+    .volledig .info { position: absolute; left: 880px; top: 330px; width: 880px; z-index: 1; }
+    .volledig .eq { height: 34px; gap: 6px; } .volledig .eq i { width: 8px; border-radius: 4px; }
+    .volledig .titel { font: 800 104px/1.08 'Baloo 2', sans-serif; margin-top: 14px; text-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); }
+    .volledig .artiest { font-size: 44px; font-weight: 700; color: color-mix(in srgb, var(--roze) 55%, #fff); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 1.2s; }
+    .volledig .tijden { display: flex; align-items: center; gap: 26px; margin-top: 44px; font-size: 28px; font-weight: 700; color: rgba(255, 255, 255, 0.75); font-variant-numeric: tabular-nums; }
+    .volledig .balk { flex: 1; height: 12px; } .volledig .vul { box-shadow: 0 0 18px var(--roze); }
+    .volledig .hierna { margin-top: 40px; font-size: 26px; color: rgba(255, 255, 255, 0.72); }
+    .volledig .hierna b { font-size: 22px; letter-spacing: 3px; }
+
     /* melding als Spotify nog niet gekoppeld is (ook in OBS, zodat je weet dat er iets moet gebeuren) */
     .hint { position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); max-width: 720px; padding: 16px 20px; border-radius: 16px;
         background: var(--kaart); font-size: 16px; line-height: 1.45; box-shadow: 0 0 0 2px var(--paars); }
@@ -327,12 +345,24 @@
             <div class="tijden"><span data-tijd>0:00</span><div class="golfje" id="golfje"></div><span data-lengte>0:00</span></div>
         </div>
     </div></div>
+
+    <div class="blok volledig"><div class="schuif" style="position:absolute;inset:0"><div class="vlak">
+        <div class="achter" data-hoes></div>
+        <div class="hoesgroot hoes" data-hoes></div>
+        <div class="info">
+            <span class="eq"><i></i><i></i><i></i><i></i></span>
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
+            <div class="hierna"><b>HIERNA</b><span data-volgende></span></div>
+        </div>
+    </div></div></div>
 </div>
 <div class="hint" id="hint" hidden></div>
 <script>
 (() => {
     const q = new URLSearchParams(location.search);
-    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], banner: [900, 170], schuin: [960, 240], golf: [960, 260] };
+    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], banner: [900, 170], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080] };
     const DEMO = q.get('demo') === '1';
     // ?voorbeeld=1 (instelpagina): het echte nummer als er iets speelt, anders het voorbeeldnummer, en altijd in beeld
     const VOORBEELD = q.get('voorbeeld') === '1';
