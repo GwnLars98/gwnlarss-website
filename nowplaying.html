@@ -417,9 +417,10 @@
             }, eerste ? 0 : 350);
         }
         document.body.classList.toggle('speelt', d.speelt);
-        clearTimeout(uitTimer);
-        if (d.speelt) document.body.classList.add('aan');
-        else uitTimer = setTimeout(() => document.body.classList.remove('aan'), 4000);   // even laten staan bij een korte pauze
+        // in beeld zolang er muziek speelt; bij pauze of stilte na 4 s weg. De klok alleen starten als hij nog niet loopt,
+        // anders zet elke nieuwe meting (elke 3 s) hem opnieuw op nul en verdwijnt de overlay nooit.
+        if (d.speelt) { clearTimeout(uitTimer); uitTimer = null; document.body.classList.add('aan'); }
+        else if (!uitTimer) uitTimer = setTimeout(() => { uitTimer = null; document.body.classList.remove('aan'); }, 4000);
     }
     // voortgang tussen de metingen door lokaal laten doorlopen (en bij de cassette de spoeltjes)
     const spoelL = document.getElementById('spoelL'), spoelR = document.getElementById('spoelR');
