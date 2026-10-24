@@ -90,7 +90,9 @@
         position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%) rotate(-2deg);
         font-size: 104px; font-weight: 800; line-height: 1; letter-spacing: 1px; white-space: nowrap;
     }
-    .naam span { display: block; }
+    .naam .l { position: relative; display: inline-block; }
+    .naam .l > span { display: block; }
+    .naam > .voor, .naam > .achter { display: block; }
     .naam .achter {
         position: absolute; inset: 0; color: var(--diep);
         -webkit-text-stroke: 18px var(--diep); paint-order: stroke fill;
@@ -136,6 +138,22 @@
     .avatar.leeg { background: transparent; box-shadow: inset 0 0 0 9px var(--paars), 0 0 0 5px #fff, 0 0 40px rgba(34, 227, 208, 0.45); }
     .avatar.leeg img { visibility: hidden; }
 
+    /* stickers op de plaatjes: hartje bij de sub, sterretje bij de volger */
+    .plaat .ikoon { position: absolute; top: -30px; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center;
+        background: #fff; box-shadow: 0 0 0 4px var(--paars), 0 6px 14px rgba(0, 0, 0, 0.4); }
+    .plaat.links .ikoon { left: -26px; transform: skewX(7deg) rotate(-14deg); }
+    .plaat.rechts .ikoon { right: -26px; transform: skewX(7deg) rotate(14deg); }
+    .plaat .ikoon svg { width: 36px; height: 36px; fill: var(--roze); }
+    .plaat.links .ikoon svg { fill: #ff4f8b; }
+    .plaat.nieuw .ikoon { animation: sticker 0.9s ease; }
+    @keyframes sticker { 30% { transform: skewX(7deg) rotate(0) scale(1.35); } }
+    .speels .plaat.links { rotate: -2deg; }
+    .speels .plaat.rechts { rotate: 2deg; }
+    /* speels: de letters van de naam maken om de paar seconden een golfje */
+    .speels .naam .l { animation: hup 7s ease-in-out infinite; animation-delay: calc(var(--i) * 0.07s); }
+    @keyframes hup { 0%, 13%, 100% { transform: none; } 5% { transform: translateY(-24px) rotate(-5deg); } 9% { transform: translateY(4px) rotate(2deg); } }
+    .hoek, .onderweg { display: none; }
+
     /* ---------- stijl 2: neon (?stijl=neon) ---------- */
     body.neon .rand { background: linear-gradient(120deg, #040b1c, #071a3a 50%, #040b1c); }
     body.neon .rand::after { background: linear-gradient(90deg, transparent, rgba(34, 227, 208, 0.35), transparent); }
@@ -155,6 +173,18 @@
     body.neon .avatar { background: #040b1c; padding: 7px; box-shadow: 0 0 0 4px #5ff6ff, 0 0 26px 6px rgba(34, 227, 208, 0.9), 0 0 60px 10px rgba(30, 107, 255, 0.5); }
     body.neon .avatar.leeg { background: transparent; box-shadow: inset 0 0 0 7px #040b1c, 0 0 0 4px #5ff6ff, 0 0 26px 6px rgba(34, 227, 208, 0.9); }
     body.neon .doel { background: rgba(3, 10, 26, 0.9); box-shadow: 0 0 0 3px #5ff6ff, 0 0 22px 3px rgba(34, 227, 208, 0.8); }
+    /* neon: HUD-hoeken binnen in het beeld, losse letters die haperen, iconen als neonbuis */
+    body.neon .hoek { display: block; position: absolute; width: 70px; height: 70px; border: 0 solid #5ff6ff;
+        filter: drop-shadow(0 0 6px #22e3d0); opacity: 0.9; animation: hoekAdem 3s ease-in-out infinite; }
+    @keyframes hoekAdem { 50% { opacity: 0.45; } }
+    body.neon .hoek.lb { left: calc(var(--rand) + 16px); top: calc(var(--rand) + 16px); border-width: 4px 0 0 4px; }
+    body.neon .hoek.rb { right: calc(var(--rand) + 230px); top: calc(var(--rand) + 16px); border-width: 4px 4px 0 0; }
+    body.neon .hoek.lo { left: calc(var(--rand) + 16px); bottom: calc(var(--rand) + 110px); border-width: 0 0 4px 4px; }
+    body.neon .hoek.ro { right: calc(var(--rand) + 16px); bottom: calc(var(--rand) + 110px); border-width: 0 4px 4px 0; }
+    body.neon .naam .l.uit .voor { opacity: 0.18; text-shadow: none; }
+    body.neon .plaat .ikoon { background: #030a1a; box-shadow: 0 0 0 3px #5ff6ff, 0 0 16px 3px rgba(34, 227, 208, 0.8); transform: rotate(0); }
+    body.neon .plaat .ikoon svg { fill: none; stroke: #5ff6ff; stroke-width: 2; filter: drop-shadow(0 0 4px #5ff6ff); }
+    body.neon .plaat .wie { background: repeating-linear-gradient(0deg, rgba(95, 246, 255, 0.07) 0 2px, transparent 2px 5px); }
     body.neon .doel .vul { background: linear-gradient(90deg, #1e6bff, #5ff6ff); box-shadow: 0 0 12px #5ff6ff; }
 
     /* ---------- stijl 3: snelweg (?stijl=weg), past bij Euro Truck Simulator ---------- */
@@ -181,6 +211,14 @@
     body.weg .avatar.leeg { background: transparent; }
     body.weg .doel { background: #1d4fa3; border-radius: 14px; box-shadow: inset 0 0 0 4px #1d4fa3, inset 0 0 0 7px #fff, 0 8px 20px rgba(0, 0, 0, 0.55); }
     body.weg .doel .vul { background: #f6c400; }
+    body.weg .plaat .ikoon { display: none; }
+    /* snelweg: groen bord bovenaan met hoelang hij al onderweg (live) is */
+    body.weg .onderweg { display: flex; align-items: center; gap: 16px; position: absolute; left: 50%; top: 4px; transform: translateX(-50%);
+        padding: 6px 26px 4px; border-radius: 12px; background: #0e7a3c; color: #fff; font-family: 'Overpass', sans-serif;
+        box-shadow: inset 0 0 0 3px #0e7a3c, inset 0 0 0 6px #fff, 0 8px 18px rgba(0, 0, 0, 0.5); }
+    body.weg .onderweg[hidden] { display: none; }
+    body.weg .onderweg .label { font-weight: 800; font-size: 22px; letter-spacing: 2px; }
+    body.weg .onderweg .tijd { font-weight: 900; font-size: 36px; font-variant-numeric: tabular-nums; line-height: 1.1; }
 </style>
 </head>
 <body>
@@ -189,10 +227,13 @@
     <canvas id="glinsters" width="1920" height="1080"></canvas>
     <div class="binnenlijn"></div>
 
-    <div class="plaat links" id="p-sub"><div class="label">LAATSTE SUB</div><div class="wie" id="w-sub">-</div></div>
-    <div class="plaat rechts" id="p-volger"><div class="label">LAATSTE VOLGER</div><div class="wie" id="w-volger">-</div></div>
+    <div class="plaat links" id="p-sub"><div class="ikoon"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.3 8.3 2.4 4 6.4 4c2.3 0 4 1.3 5.6 3.3C13.6 5.3 15.3 4 17.6 4c4 0 6.1 4.3 4.4 7.7C19.5 16.4 12 21 12 21z"/></svg></div><div class="label">LAATSTE SUB</div><div class="wie" id="w-sub">-</div></div>
+    <div class="plaat rechts" id="p-volger"><div class="ikoon"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg></div><div class="label">LAATSTE VOLGER</div><div class="wie" id="w-volger">-</div></div>
 
-    <div class="naam"><span class="achter">Demitje01</span><span class="voor">Demitje01</span></div>
+    <div class="naam" id="naam"></div>
+
+    <div class="hoek lb"></div><div class="hoek rb"></div><div class="hoek lo"></div><div class="hoek ro"></div>
+    <div class="onderweg" id="onderweg" hidden><div class="label">ONDERWEG</div><div class="tijd" id="tijd">0:00</div></div>
 
     <div class="avatar">
         <img id="foto" alt="">
@@ -226,6 +267,20 @@
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${W} ${H}'><path fill-rule='evenodd' d='M0 0H${W}V${H}H0Z ${gat}'/></svg>`;
     document.getElementById('rand').style.setProperty('--masker', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
 
+    // Naam: bij speels en neon als losse letters (golfje / haperende neonbuis), bij snelweg in hoofdletters op het kenteken
+    const NAAM = 'Demitje01', naamEl = document.getElementById('naam');
+    if (STIJL === 'weg') naamEl.innerHTML = '<span class="voor">' + NAAM + '</span>';
+    else naamEl.innerHTML = [...NAAM].map((c, i) => `<span class="l" style="--i:${i}"><span class="achter">${c}</span><span class="voor">${c}</span></span>`).join('');
+    if (STIJL === 'neon') {
+        const letters = naamEl.querySelectorAll('.l');
+        setInterval(() => {
+            if (Math.random() < 0.5) return;
+            const l = letters[Math.floor(Math.random() * letters.length)];
+            l.classList.add('uit'); setTimeout(() => l.classList.remove('uit'), 90);
+            setTimeout(() => { l.classList.add('uit'); setTimeout(() => l.classList.remove('uit'), 140); }, 200);
+        }, 2200);
+    }
+
     // Glinsters: kleine twinkelende puntjes alleen in de rand, 30 fps, plus een uitbarsting bij een nieuwe naam
     const cv = document.getElementById('glinsters'), cx = cv.getContext('2d');
     const bandPad = new Path2D(`M0 0H${W}V${H}H0Z ${gat}`);
@@ -245,6 +300,28 @@
     // middenlijn van de band (voor de wegstrepen)
     const m = RAND / 2, mr = R + m;
     const middenPad = new Path2D(`M${m + mr} ${m}H${W - m - mr}A${mr} ${mr} 0 0 1 ${W - m} ${m + mr}V${H - m - mr}A${mr} ${mr} 0 0 1 ${W - m - mr} ${H - m}H${m + mr}A${mr} ${mr} 0 0 1 ${m} ${H - m - mr}V${m + mr}A${mr} ${mr} 0 0 1 ${m + mr} ${m}Z`);
+    // punt op de middenlijn (met de klok mee: boven, rechts, onder, links) plus rijrichting, voor komeet en vrachtwagen
+    const BW = W - 2 * m, BH = H - 2 * m, OMTREK = 2 * BW + 2 * BH;
+    function opLijn(a) {
+        a = ((a % OMTREK) + OMTREK) % OMTREK;
+        if (a < BW) return [m + a, m, 0];
+        if ((a -= BW) < BH) return [W - m, m + a, Math.PI / 2];
+        if ((a -= BH) < BW) return [W - m - a, H - m, Math.PI];
+        a -= BW; return [m, H - m - a, -Math.PI / 2];
+    }
+    function vrachtwagen(t) {
+        const [x, y, hoek] = opLijn(t * 230), k = Math.min(1.3, RAND / 26);
+        cx.save(); cx.translate(x, y); cx.rotate(hoek); cx.scale(k, k);
+        cx.globalAlpha = 1;
+        cx.fillStyle = 'rgba(0,0,0,0.35)'; cx.fillRect(-74, -8, 96, 20);                     // schaduw
+        cx.fillStyle = '#1e6bff'; cx.fillRect(-76, -10, 66, 20);                              // oplegger
+        cx.fillStyle = '#22e3d0'; cx.fillRect(-76, -2, 66, 4);                                // streep
+        cx.fillStyle = '#2b2b2b'; cx.fillRect(-10, -3, 6, 6);                                 // koppeling
+        cx.fillStyle = '#22e3d0'; cx.fillRect(-5, -10, 24, 20);                               // cabine
+        cx.fillStyle = '#062347'; cx.fillRect(12, -8, 6, 16);                                 // voorruit
+        cx.fillStyle = '#fff7b0'; cx.fillRect(19, -8, 2, 4); cx.fillRect(19, 4, 2, 4);        // koplampen
+        cx.restore();
+    }
     const vonken = [];
     function barst(x, y) {
         for (let i = 0; i < 46; i++) {
@@ -266,6 +343,7 @@
             cx.globalAlpha = 0.9; cx.setLineDash([46, 34]); cx.lineDashOffset = -t * 160;
             cx.stroke(middenPad);
             cx.setLineDash([]); cx.globalAlpha = 0.55; cx.lineWidth = 3; cx.strokeRect(4, 4, W - 8, H - 8);
+            vrachtwagen(t);
             cx.restore();
         } else {
         cx.fillStyle = STIJL === 'neon' ? '#7ff8ff' : '#fff';
@@ -276,6 +354,16 @@
             cx.beginPath(); cx.arc(p.x, p.y, p.r * (0.6 + a * 0.6), 0, 6.28); cx.fill();
             if (a > 0.92 && p.r > 2) { // kruisje bij de felste puntjes
                 cx.fillRect(p.x - 7 * a, p.y - 0.75, 14 * a, 1.5); cx.fillRect(p.x - 0.75, p.y - 7 * a, 1.5, 14 * a);
+            }
+        }
+        if (STIJL === 'neon') {
+            // twee lichtkometen die rond het beeld racen
+            for (const start of [0, OMTREK / 2]) {
+                for (let k = 0; k < 36; k++) {
+                    const [x, y] = opLijn(start + t * 520 - k * 7), f = 1 - k / 36;
+                    cx.globalAlpha = f * 0.9; cx.fillStyle = k < 3 ? '#ffffff' : '#5ff6ff';
+                    cx.beginPath(); cx.arc(x, y, 1 + f * (RAND * 0.22), 0, 6.28); cx.fill();
+                }
             }
         }
         cx.restore();
@@ -335,10 +423,27 @@
             if (d.totaal && d.totaal.volgers != null) { volgers = d.totaal.volgers; toonDoel(); }
         } catch { }
     }
+    let liveSinds = isDemo ? Date.now() - (80 * 60 + 27) * 1000 : null;
+    function toonTijd() {
+        const bord = document.getElementById('onderweg');
+        bord.hidden = !liveSinds;
+        if (!liveSinds) return;
+        const sec = Math.floor((Date.now() - liveSinds) / 1000), u = Math.floor(sec / 3600), mi = Math.floor(sec / 60) % 60, se = sec % 60;
+        document.getElementById('tijd').textContent = (u ? u + ':' + String(mi).padStart(2, '0') : mi) + ':' + String(se).padStart(2, '0');
+    }
+    if (STIJL === 'weg') setInterval(toonTijd, 1000);
     async function haalLive() {
         let live = q.get('live') === '1' || isDemo;
         if (!isDemo) {
-            try { live = live || !/offline/i.test(await (await fetch('https://decapi.me/twitch/uptime/' + LOGIN, { cache: 'no-store' })).text()); } catch { }
+            try {
+                const tekst = await (await fetch('https://decapi.me/twitch/uptime/' + LOGIN, { cache: 'no-store' })).text();
+                const aan = !/offline/i.test(tekst) && /second|minute|hour|day/i.test(tekst);
+                live = live || aan;
+                if (aan) {
+                    const n = w => +((tekst.match(new RegExp('(\\d+) ' + w)) || [])[1] || 0);
+                    liveSinds = Date.now() - ((n('day') * 24 + n('hour')) * 3600 + n('minute') * 60 + n('second')) * 1000;
+                } else liveSinds = null;
+            } catch { }
             // zolang hij nog niet gekoppeld is: volgers voor het doel via decapi
             if (DOEL && volgers == null) {
                 try { const n = parseInt(await (await fetch('https://decapi.me/twitch/followcount/' + LOGIN)).text(), 10); if (n >= 0) { volgers = n; toonDoel(); volgers = null; } } catch { }
@@ -346,7 +451,7 @@
         }
         document.getElementById('live').hidden = !live;
     }
-    haalStats(); haalLive();
+    haalStats(); haalLive(); toonTijd();
     setInterval(haalStats, 10000);
     setInterval(haalLive, 60000);
     document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
