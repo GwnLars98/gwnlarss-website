@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alerts, Demitje01</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Lilita+One&family=Russo+One&family=Overpass:wght@800;900&display=swap" rel="stylesheet">
+<style>
+    /* Alerts voor Demitje01 in dezelfde drie stijlen als zijn overlay (?stijl=speels|neon|weg):
+       speels = stuiterend kaartje met confetti, neon = oplichtende neonbuis met lichtstralen,
+       weg = een vrachtwagen rijdt de alert op zijn oplegger binnen en toetert.
+       Live via api.gwnlarss.nl/api/streamer-alerts/demitje01/stream. 1920x1080, doorzichtig.
+       ?voorbeeld=1 is voor de instelpagina (testknoppen via postMessage). */
+    :root { --blauw: #1e6bff; --turq: #22e3d0; --diep: #062347; --grootte: 1; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100vw; height: 100vh; background: transparent; overflow: hidden; }
+    body { font-family: 'Baloo 2', system-ui, sans-serif; }
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    #confetti { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+    .plek { position: absolute; left: 50%; top: 110px; transform: translateX(-50%) scale(var(--grootte)); transform-origin: 50% 0; }
+
+    /* ---------- speels ---------- */
+    .kaart { position: relative; min-width: 760px; max-width: 1300px; padding: 30px 70px 34px; text-align: center; color: #fff; border-radius: 38px;
+        background: linear-gradient(160deg, #1e6bff, #1aa8ff 50%, #22e3d0);
+        box-shadow: 0 0 0 7px #fff, 0 0 0 13px #062347, 0 26px 50px rgba(0, 0, 0, 0.45); }
+    .kaart .kop { font: 400 46px 'Lilita One', sans-serif; letter-spacing: 3px; color: #062347; line-height: 1; }
+    .kaart .naam { font: 400 124px 'Lilita One', sans-serif; line-height: 1.05; white-space: nowrap; }
+    .kaart .naam .l { display: inline-block; text-shadow: 0 6px 0 #062347, 0 0 2px #062347; -webkit-text-stroke: 3px #062347; paint-order: stroke fill; }
+    .kaart .regel { font-size: 34px; font-weight: 800; line-height: 1.2; max-width: 1100px; margin: 4px auto 0; color: #eafffd; text-shadow: 0 2px 0 rgba(6, 35, 71, 0.6); }
+    .kaart .ikoon { position: absolute; left: -46px; top: -46px; width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center;
+        background: #fff; box-shadow: 0 0 0 7px #062347, 0 10px 20px rgba(0, 0, 0, 0.35); transform: rotate(-14deg); }
+    .kaart .ikoon svg { width: 70px; height: 70px; fill: #ff4f8b; }
+    .speels .kaart.in { animation: valIn 0.9s cubic-bezier(.2, 1.5, .4, 1) both; }
+    .speels .kaart.in .l { animation: letterIn 0.6s cubic-bezier(.2, 1.8, .4, 1) both, golf 2.4s ease-in-out 1.2s infinite; animation-delay: calc(0.35s + var(--i) * 0.05s), calc(1.2s + var(--i) * 0.08s); }
+    .speels .kaart.in .ikoon { animation: draai 1.2s ease 0.5s both; }
+    .speels .kaart.uit { animation: valUit 0.55s cubic-bezier(.5, 0, .9, .4) both; }
+    @keyframes valIn { from { transform: translateY(-900px) rotate(-6deg); } to { transform: none; } }
+    @keyframes valUit { to { transform: translateY(-900px) rotate(5deg) scale(0.8); } }
+    @keyframes letterIn { from { transform: translateY(60px) scale(0.2); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes golf { 0%, 100% { transform: none; } 30% { transform: translateY(-12px) rotate(-3deg); } }
+    @keyframes draai { from { transform: rotate(-200deg) scale(0); } to { transform: rotate(-14deg) scale(1); } }
+
+    /* ---------- neon ---------- */
+    .neon .kaart { background: rgba(3, 10, 26, 0.92); border-radius: 18px;
+        box-shadow: 0 0 0 3px #5ff6ff, 0 0 30px 6px rgba(34, 227, 208, 0.85), 0 0 90px 20px rgba(30, 107, 255, 0.45), inset 0 0 40px rgba(34, 227, 208, 0.3); }
+    .neon .kaart .kop { font-family: 'Russo One', sans-serif; color: #5ff6ff; text-shadow: 0 0 12px #22e3d0; }
+    .neon .kaart .naam { font-family: 'Russo One', sans-serif; font-size: 112px; letter-spacing: 3px; }
+    .neon .kaart .naam .l { -webkit-text-stroke: 0; color: #fff; text-shadow: 0 0 6px #fff, 0 0 20px #5ff6ff, 0 0 50px #22e3d0, 0 0 90px #1e6bff; }
+    .neon .kaart .regel { color: #bff9ff; text-shadow: 0 0 10px rgba(95, 246, 255, 0.6); font-family: 'Russo One', sans-serif; font-weight: 400; font-size: 30px; }
+    .neon .kaart .ikoon { background: #030a1a; box-shadow: 0 0 0 4px #5ff6ff, 0 0 26px 6px rgba(34, 227, 208, 0.85); transform: none; }
+    .neon .kaart .ikoon svg { fill: none; stroke: #5ff6ff; stroke-width: 1.6; filter: drop-shadow(0 0 6px #5ff6ff); }
+    .neon .kaart.in { animation: buisAan 0.8s ease-out both; }
+    .neon .kaart.in .kop, .neon .kaart.in .regel { animation: flikker 0.9s steps(1) 0.6s both; }
+    .neon .kaart.in .naam { animation: glitch 0.7s steps(2) 0.7s both; }
+    .neon .kaart.uit { animation: buisUit 0.5s ease-in both; }
+    @keyframes buisAan { 0% { clip-path: inset(48% 50% 48% 50%); opacity: 0; } 35% { clip-path: inset(48% 0 48% 0); opacity: 1; } 100% { clip-path: inset(-60px -60px -60px -60px); } }
+    @keyframes buisUit { 0% { clip-path: inset(-60px -60px -60px -60px); } 60% { clip-path: inset(48% 0 48% 0); opacity: 1; } 100% { clip-path: inset(48% 50% 48% 50%); opacity: 0; } }
+    @keyframes flikker { 0% { opacity: 0; } 20% { opacity: 1; } 30% { opacity: 0.2; } 45% { opacity: 1; } 55% { opacity: 0.4; } 70%, 100% { opacity: 1; } }
+    @keyframes glitch { 0% { opacity: 0; transform: translateX(-30px) skewX(20deg); filter: hue-rotate(90deg); } 40% { opacity: 1; transform: translateX(18px) skewX(-12deg); }
+        70% { transform: translateX(-6px); filter: none; } 100% { transform: none; opacity: 1; } }
+
+    /* ---------- snelweg: vrachtwagen met de alert op de oplegger ---------- */
+    .konvooi { position: absolute; left: 50%; top: 90px; display: flex; align-items: flex-end; transform-origin: 50% 0; }
+    .oplegger { position: relative; width: 1080px; padding: 26px 50px 40px; text-align: center; border-radius: 14px 14px 6px 6px;
+        background: linear-gradient(180deg, #ffffff, #e9eef5); color: #111; font-family: 'Overpass', sans-serif;
+        box-shadow: inset 0 -26px 0 #1e6bff, inset 0 -32px 0 #22e3d0, 0 18px 30px rgba(0, 0, 0, 0.45); }
+    .oplegger .kop { display: inline-block; padding: 6px 26px 2px; border-radius: 10px; background: #1d4fa3; color: #fff; font-weight: 900; font-size: 38px; letter-spacing: 3px;
+        box-shadow: inset 0 0 0 3px #1d4fa3, inset 0 0 0 6px #fff; }
+    .oplegger .naam { font-weight: 900; font-size: 104px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; letter-spacing: 2px; margin-top: 8px; }
+    .oplegger .regel { font-weight: 800; font-size: 30px; color: #34404f; margin-top: 2px; }
+    .koppeling { width: 34px; height: 18px; background: #2b2b2b; margin-bottom: 64px; }
+    .cabine { position: relative; width: 250px; height: 280px; border-radius: 26px 70px 10px 10px; background: linear-gradient(180deg, #22e3d0, #12b5a6);
+        box-shadow: inset -10px 0 0 rgba(0, 0, 0, 0.12), 0 18px 30px rgba(0, 0, 0, 0.45); }
+    .cabine::before { content: ''; position: absolute; right: 16px; top: 26px; width: 120px; height: 100px; border-radius: 10px 50px 8px 8px; background: linear-gradient(160deg, #a8e6ff, #2a6fa8); }
+    .cabine::after { content: ''; position: absolute; right: -8px; bottom: 26px; width: 26px; height: 46px; border-radius: 6px; background: #fff7b0; box-shadow: 0 0 30px 10px rgba(255, 247, 176, 0.6); }
+    .rooster { position: absolute; right: 14px; bottom: 80px; width: 70px; height: 70px; border-radius: 8px; background: repeating-linear-gradient(180deg, #0c6b62 0 6px, #0f8f83 6px 12px); }
+    .wiel { position: absolute; bottom: -42px; width: 84px; height: 84px; border-radius: 50%; background: radial-gradient(circle, #c9d1db 0 16px, #333 17px 22px, #151515 23px); }
+    .wiel::after { content: ''; position: absolute; left: 50%; top: 8px; width: 6px; height: 20px; margin-left: -3px; background: #555; border-radius: 3px; }
+    .rijdt .wiel { animation: rol 0.35s linear infinite; }
+    @keyframes rol { to { transform: rotate(360deg); } }
+    .konvooi.in { animation: rijIn 1.7s cubic-bezier(.15, .7, .25, 1) both; }
+    .konvooi.uit { animation: rijUit 1.3s cubic-bezier(.6, 0, .9, .5) both; }
+    @keyframes rijIn { from { transform: translateX(-3200px) scale(var(--grootte)); } to { transform: translateX(-50%) scale(var(--grootte)); } }
+    @keyframes rijUit { from { transform: translateX(-50%) scale(var(--grootte)); } to { transform: translateX(1400px) scale(var(--grootte)); } }
+    .konvooi.staat { transform: translateX(-50%) scale(var(--grootte)); }
+    .konvooi.staat .cabine { animation: schud 0.25s ease-in-out 3; }
+    @keyframes schud { 50% { transform: translateY(-3px); } }
+</style>
+</head>
+<body>
+<div id="podium">
+    <canvas id="confetti" width="1920" height="1080"></canvas>
+    <div id="toneel"></div>
+</div>
+<script>
+(() => {
+    const W = 1920, H = 1080;
+    const q = new URLSearchParams(location.search);
+    const LOGIN = 'demitje01', API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
+    const VOORBEELD = q.get('voorbeeld') === '1';
+    const STIJL = ['neon', 'weg'].includes(q.get('stijl')) ? q.get('stijl') : 'speels';
+    document.body.classList.add(STIJL);
+
+    const podium = document.getElementById('podium');
+    function pas() {
+        const s = Math.min(innerWidth / W, innerHeight / H);
+        podium.style.transform = `translate(${(innerWidth - W * s) / 2}px, ${(innerHeight - H * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pas); pas();
+
+    // ---------- teksten en niveau (meer confetti bij grotere alerts) ----------
+    const geld = (b, v) => { try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: v || 'EUR', maximumFractionDigits: 2 }).format(+b); } catch { return '€' + b; } };
+    const getal = n => (+n || 0).toLocaleString('nl-NL');
+    function tekst(e) {
+        const x = e.extra || {};
+        switch (e.soort) {
+            case 'follower': return ['NIEUWE VOLGER', 'Welkom in de cabine!'];
+            case 'subscriber': return [x.tier > 1 ? 'NIEUWE SUB · TIER ' + x.tier : 'NIEUWE SUB', 'Bedankt voor je steun!'];
+            case 'resub': return [getal(x.maanden) + ' MAANDEN SUB', x.bericht || 'Nog steeds aan boord!'];
+            case 'gift': return [getal(x.aantal) + (x.aantal == 1 ? ' SUB' : ' SUBS') + ' CADEAU', 'Wat een held!'];
+            case 'cheer': return [getal(x.bits) + ' BITS', x.bericht || ''];
+            case 'raid': return ['RAID · ' + getal(x.kijkers) + ' KIJKERS', 'Welkom allemaal!'];
+            case 'donatie': return ['DONATIE · ' + geld(x.bedrag, x.valuta), x.bericht || ''];
+        }
+        return ['BEDANKT', ''];
+    }
+    const trap = (w, grenzen) => grenzen.filter(g => w >= g).length;
+    function niveau(e) {
+        const x = e.extra || {};
+        if (e.soort === 'gift') return trap(+x.aantal, [5, 10, 20, 50, 100]);
+        if (e.soort === 'cheer') return trap(+x.bits, [500, 1000, 5000, 10000, 25000]);
+        if (e.soort === 'raid') return trap(+x.kijkers, [10, 25, 50, 100, 250]);
+        if (e.soort === 'donatie') return trap(+x.bedrag, [5, 10, 25, 50, 100]);
+        if (e.soort === 'resub') return trap(+x.maanden, [6, 12, 24, 36, 60]);
+        if (e.soort === 'subscriber') return (+x.tier || 1) - 1;
+        return 0;
+    }
+    const HART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.3 8.3 2.4 4 6.4 4c2.3 0 4 1.3 5.6 3.3C13.6 5.3 15.3 4 17.6 4c4 0 6.1 4.3 4.4 7.7C19.5 16.4 12 21 12 21z"/></svg>';
+    const STER = '<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
+    const DIAMANT = '<svg viewBox="0 0 24 24"><path d="M12 2l7 7-7 13L5 9z"/></svg>';
+    const PIJL = '<svg viewBox="0 0 24 24"><path d="M3 10h11V5l7 7-7 7v-5H3z"/></svg>';
+    const MUNT = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>';
+    const IKOON = { follower: STER, subscriber: HART, resub: HART, gift: HART, cheer: DIAMANT, raid: PIJL, donatie: MUNT };
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // ---------- confetti / stralen ----------
+    const cv = document.getElementById('confetti'), cx = cv.getContext('2d');
+    const deeltjes = [];
+    const KLEUREN = { speels: ['#ffffff', '#22e3d0', '#1e6bff', '#ff4f8b', '#ffd84a'], neon: ['#5ff6ff', '#ffffff', '#1e6bff'], weg: ['#f6c400', '#ffffff', '#1d4fa3', '#22e3d0'] };
+    function strooi(n, x0, y0) {
+        const k = KLEUREN[STIJL];
+        for (let i = 0; i < n; i++) {
+            if (STIJL === 'neon') {
+                const h = Math.random() * 6.28, v = 10 + Math.random() * 22;
+                deeltjes.push({ neon: 1, x: x0, y: y0, vx: Math.cos(h) * v, vy: Math.sin(h) * v * 0.7, leven: 1, kleur: k[i % k.length] });
+            } else {
+                deeltjes.push({ x: x0 + (Math.random() - 0.5) * 900, y: y0 - Math.random() * 300, vx: (Math.random() - 0.5) * 8, vy: -4 - Math.random() * 10,
+                    draai: Math.random() * 6.28, vd: (Math.random() - 0.5) * 0.4, b: 10 + Math.random() * 12, leven: 1, kleur: k[i % k.length] });
+            }
+        }
+        if (!loopt) { loopt = true; requestAnimationFrame(teken); }
+    }
+    let loopt = false;
+    function teken() {
+        cx.clearRect(0, 0, W, H);
+        for (let i = deeltjes.length - 1; i >= 0; i--) {
+            const d = deeltjes[i];
+            if (d.neon) {
+                const ox = d.x, oy = d.y;
+                d.x += d.vx; d.y += d.vy; d.vx *= 0.95; d.vy *= 0.95; d.leven -= 0.018;
+                cx.globalAlpha = Math.max(0, d.leven); cx.strokeStyle = d.kleur; cx.lineWidth = 3; cx.shadowColor = d.kleur; cx.shadowBlur = 12;
+                cx.beginPath(); cx.moveTo(ox - d.vx * 2, oy - d.vy * 2); cx.lineTo(d.x, d.y); cx.stroke();
+            } else {
+                d.x += d.vx; d.y += d.vy; d.vy += 0.32; d.vx *= 0.99; d.draai += d.vd;
+                if (d.y > H + 40) d.leven = 0;
+                cx.globalAlpha = 1; cx.shadowBlur = 0; cx.fillStyle = d.kleur;
+                cx.save(); cx.translate(d.x, d.y); cx.rotate(d.draai); cx.fillRect(-d.b / 2, -d.b / 4, d.b, d.b / 2); cx.restore();
+            }
+            if (d.leven <= 0) deeltjes.splice(i, 1);
+        }
+        cx.globalAlpha = 1; cx.shadowBlur = 0;
+        if (deeltjes.length) requestAnimationFrame(teken); else { loopt = false; cx.clearRect(0, 0, W, H); }
+    }
+
+    // ---------- geluid: eigen geluid van de server, anders een korte klank per stijl ----------
+    let instellingen = { volume: 0.7, duur: 7000, grootte: 1 }, geluiden = {};
+    let ac = null;
+    function klank(volume) {
+        try {
+            ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+            const nu = ac.currentTime, uit = ac.createGain(); uit.gain.value = volume * 0.5; uit.connect(ac.destination);
+            const toon = (f, start, lengte, type = 'triangle', piek = 0.6) => {
+                const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = f;
+                g.gain.setValueAtTime(0, nu + start); g.gain.linearRampToValueAtTime(piek, nu + start + 0.02); g.gain.exponentialRampToValueAtTime(0.001, nu + start + lengte);
+                o.connect(g); g.connect(uit); o.start(nu + start); o.stop(nu + start + lengte + 0.05); return o;
+            };
+            if (STIJL === 'speels') [523, 659, 784, 1047, 1319].forEach((f, i) => toon(f, i * 0.08, 0.35));
+            else if (STIJL === 'neon') { const o = toon(180, 0, 0.7, 'sawtooth', 0.25); o.frequency.exponentialRampToValueAtTime(1400, nu + 0.5); [659, 988, 1319].forEach(f => toon(f, 0.45, 0.8, 'sine', 0.35)); }
+            else {   // toeter: twee keer een lage dubbeltoon
+                const filter = ac.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1400; filter.connect(uit);
+                for (const [s, l] of [[0, 0.32], [0.42, 0.6]]) for (const f of [233, 294]) {
+                    const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.value = f;
+                    g.gain.setValueAtTime(0, nu + s); g.gain.linearRampToValueAtTime(0.35, nu + s + 0.03); g.gain.setValueAtTime(0.35, nu + s + l - 0.05); g.gain.linearRampToValueAtTime(0, nu + s + l);
+                    o.connect(g); g.connect(filter); o.start(nu + s); o.stop(nu + s + l + 0.05);
+                }
+            }
+        } catch { }
+    }
+    function geluid(soort) {
+        const v = instellingen.volume ?? 0.7;
+        if (geluiden[soort]) { const a = new Audio(`${API}/geluid/${soort}?v=${geluiden[soort]}`); a.volume = v; a.play().catch(() => klank(v)); }
+        else klank(v);
+    }
+    const haalInstellingen = () => fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => {
+        if (d?.instellingen) instellingen = d.instellingen; geluiden = d?.geluiden ?? {};
+        document.documentElement.style.setProperty('--grootte', Math.min(1.3, instellingen.grootte ?? 1));
+    }).catch(() => { });
+
+    // ---------- tonen ----------
+    const toneel = document.getElementById('toneel');
+    const wachtrij = []; let bezig = false;
+    const wacht = ms => new Promise(r => setTimeout(r, ms));
+    function letters(naam) { return [...naam].map((c, i) => `<span class="l" style="--i:${i}">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join(''); }
+    async function volgende() {
+        if (bezig || !wachtrij.length) return;
+        bezig = true;
+        const e = wachtrij.shift(), [kop, regel] = tekst(e), n = niveau(e), duur = Math.max(4000, instellingen.duur ?? 7000);
+        const aantal = Math.min(420, 90 * (1 + n * 0.8));
+        if (STIJL === 'weg') {
+            toneel.innerHTML = `<div class="konvooi in rijdt"><div class="oplegger"><div class="kop">${esc(kop)}</div><div class="naam">${esc(e.naam)}</div>${regel ? `<div class="regel">${esc(regel)}</div>` : ''}
+                <div class="wiel" style="left:60px"></div><div class="wiel" style="left:160px"></div><div class="wiel" style="right:90px"></div></div>
+                <div class="koppeling"></div><div class="cabine"><div class="rooster"></div><div class="wiel" style="left:40px"></div><div class="wiel" style="right:30px"></div></div></div>`;
+            const k = toneel.firstElementChild;
+            await wacht(1500);
+            k.classList.remove('in', 'rijdt'); k.classList.add('staat');
+            geluid(e.soort); strooi(aantal, W / 2, 200);
+            await wacht(duur - 2800);
+            k.classList.remove('staat'); k.classList.add('uit', 'rijdt');
+            await wacht(1300);
+        } else {
+            toneel.innerHTML = `<div class="plek"><div class="kaart in"><div class="ikoon">${IKOON[e.soort] || STER}</div><div class="kop">${esc(kop)}</div>
+                <div class="naam">${letters(e.naam)}</div>${regel ? `<div class="regel">${esc(regel)}</div>` : ''}</div></div>`;
+            const k = toneel.querySelector('.kaart');
+            geluid(e.soort);
+            await wacht(STIJL === 'neon' ? 500 : 450);
+            strooi(STIJL === 'neon' ? Math.min(160, 40 + n * 24) : aantal, W / 2, STIJL === 'neon' ? 260 : 120);
+            if (n >= 3) { await wacht(900); strooi(STIJL === 'neon' ? 80 : aantal / 2, W / 2, STIJL === 'neon' ? 260 : 80); }
+            await wacht(duur - (n >= 3 ? 1900 : 1000));
+            k.classList.remove('in'); k.classList.add('uit');
+            await wacht(600);
+        }
+        toneel.innerHTML = '';
+        bezig = false;
+        setTimeout(volgende, 400);
+    }
+    function nieuw(e) { wachtrij.push(e); volgende(); }
+
+    // testknoppen van de instelpagina (voorbeeld), zonder server
+    const TEST = { follower: ['TestVolger', {}], subscriber: ['TestSub', { tier: 1 }], resub: ['TestResub', { maanden: 12, bericht: 'Al een jaar mee op de weg!' }],
+        gift: ['TestGifter', { aantal: 5 }], cheer: ['TestBits', { bits: 1000, bericht: 'Gas erop!' }], raid: ['TestRaider', { kijkers: 42 }],
+        donatie: ['TestDonateur', { bedrag: 5, valuta: 'EUR', bericht: 'Voor de diesel!' }] };
+    addEventListener('message', m => {
+        const d = m.data || {};
+        if (d.test && TEST[d.test]) nieuw({ soort: d.test, naam: TEST[d.test][0], extra: { ...TEST[d.test][1], ...(d.extra || {}) } });
+        if (d.volume != null) instellingen.volume = +d.volume;
+    });
+
+    haalInstellingen();
+    function verbind() {
+        const bron = new EventSource(API + '/stream?bron=' + (VOORBEELD ? 'voorbeeld' : 'alerts'));
+        bron.onmessage = m => {
+            try {
+                const d = JSON.parse(m.data);
+                if (d.soort === '_instellingen') { instellingen = d.instellingen ?? instellingen; geluiden = d.geluiden ?? {}; document.documentElement.style.setProperty('--grootte', Math.min(1.3, instellingen.grootte ?? 1)); return; }
+                if (VOORBEELD && !d.extra?.test) return;   // op de instelpagina alleen tests laten zien
+                nieuw(d);
+            } catch { }
+        };
+        bron.onerror = () => { bron.close(); setTimeout(verbind, 5000); };
+    }
+    verbind();
+    document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
+    window.toonTest = s => nieuw({ soort: s, naam: TEST[s][0], extra: TEST[s][1] });   // voor screenshots
+})();
+</script>
+</body>
+</html>

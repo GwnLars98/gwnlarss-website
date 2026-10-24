@@ -44,6 +44,8 @@
     input[type=number] { width: 110px; font: 700 16px 'Baloo 2', sans-serif; padding: 6px 10px; border-radius: 10px; border: 0; background: #051a3d; color: #fff; }
     .voorbeeld { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
                  background: repeating-conic-gradient(#0d2a55 0 25%, #0a2148 0 50%) 0 0 / 40px 40px; }
+    .tests { display: flex; flex-wrap: wrap; gap: 8px; }
+    input[type=range] { width: 200px; accent-color: var(--turquoise); }
     .voorbeeld iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; }
     ol { margin: 0; padding-left: 20px; color: var(--zacht); line-height: 1.7; }
 </style>
@@ -78,9 +80,31 @@
     </section>
 
     <section class="stap">
+        <h2>3. Alerts in OBS</h2>
+        <p>Alerts voor volgers, subs, gifted subs, bits en raids, in dezelfde stijl als je overlay. Voeg een tweede <b>Browserbron</b> toe van <b>1920 x 1080</b>, boven de overlay. Zet in OBS bij die bron <b>"Audio via OBS regelen"</b> aan als je het geluid op je stream wilt.</p>
+        <div class="link"><code id="obsA"></code><button class="knop klein" id="kopieerA">Kopieer</button></div>
+        <p style="margin:16px 0 8px"><b>Testen</b> (zie het voorbeeld hieronder):</p>
+        <div class="tests" id="tests">
+            <button class="knop klein" data-test="follower">Volger</button>
+            <button class="knop klein" data-test="subscriber">Sub</button>
+            <button class="knop klein" data-test="resub">Resub</button>
+            <button class="knop klein" data-test="gift">5 gifted</button>
+            <button class="knop klein" data-test="gift" data-extra='{"aantal":50}'>50 gifted</button>
+            <button class="knop klein" data-test="cheer">1000 bits</button>
+            <button class="knop klein" data-test="cheer" data-extra='{"bits":10000}'>10.000 bits</button>
+            <button class="knop klein" data-test="raid">Raid</button>
+        </div>
+        <div id="metSleutel" hidden style="margin-top:14px">
+            <label><input type="checkbox" id="ookObs"> Tests ook in OBS laten zien</label>
+            <label>Volume <input type="range" id="volume" min="0" max="1" step="0.05"></label>
+        </div>
+        <p id="zonderSleutel" style="margin:12px 0 0;font-size:14px">Na het koppelen met Twitch kun je hier ook in OBS testen en het volume instellen.</p>
+    </section>
+
+    <section class="stap">
         <h2>Voorbeeld</h2>
         <p>Met voorbeeldnamen, zodat je ziet hoe het eruitziet. In OBS staan je echte volgers en subs erin.</p>
-        <div class="voorbeeld" id="vb"><iframe id="frame" title="Voorbeeld"></iframe></div>
+        <div class="voorbeeld" id="vb"><iframe id="frame" title="Voorbeeld"></iframe><iframe id="frameA" title="Voorbeeld alerts"></iframe></div>
     </section>
 
     <section class="stap">
@@ -90,6 +114,7 @@
             <li>Laatste sub links, laatste volger rechts, je naam in het midden</li>
             <li>Rechtsboven je Twitch-profielfoto of je eigen logo, met LIVE zodra je live bent</li>
             <li>Optioneel je volgdoel met balkje onder je foto</li>
+            <li>Alerts: speels kaartje met confetti, neonbuis met lichtstralen, of een vrachtwagen die je alert binnenrijdt en toetert. Hoe groter de gift of bits, hoe meer feest</li>
         </ol>
     </section>
 </main>
@@ -98,7 +123,13 @@
     const BASIS = new URL('overlay.html', location.href).href;
     const q = new URLSearchParams(location.search);
     if (q.get('verbonden') === '1') document.getElementById('verbonden').hidden = false;
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);   // sleutel niet in de adresbalk laten staan
+    // sleutel na het koppelen (in de hash): bewaren voor testen in OBS en volume, daarna uit de adresbalk halen
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/demitje01';
+    let sleutel = '';
+    try { sleutel = localStorage.getItem('demitje-sleutel') || ''; } catch { }
+    const hs = new URLSearchParams(location.hash.slice(1)).get('sleutel');
+    if (hs) { sleutel = hs; try { localStorage.setItem('demitje-sleutel', hs); } catch { } }
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 
     let stijl = 'speels';
     const doel = document.getElementById('doel'), dik = document.getElementById('dik'), logo = document.getElementById('logo'), leeg = document.getElementById('leeg');
@@ -114,9 +145,12 @@
         const s = p.toString();
         return BASIS + (s ? '?' + s : '');
     }
-    let vorigeVb = '';
+    const linkA = voorbeeld => new URL('alerts.html', location.href).href + (stijl !== 'speels' || voorbeeld ? '?' + new URLSearchParams({ ...(stijl !== 'speels' ? { stijl } : {}), ...(voorbeeld ? { voorbeeld: '1' } : {}) }) : '');
+    let vorigeVb = '', vorigeA = '';
     function bijwerken() {
         document.getElementById('obs').textContent = link(false);
+        document.getElementById('obsA').textContent = linkA(false);
+        if (linkA(true) !== vorigeA) { vorigeA = linkA(true); document.getElementById('frameA').src = vorigeA; }
         const vb = link(true);
         if (vb !== vorigeVb) { document.getElementById('frame').src = vb; vorigeVb = vb; }
         try { localStorage.setItem('demitje-doel', doel.value); localStorage.setItem('demitje-dik', dik.checked ? '1' : '0'); localStorage.setItem('demitje-logo', logo.value); localStorage.setItem('demitje-leeg', leeg.checked ? '1' : '0'); localStorage.setItem('demitje-stijl', stijl); } catch { }
@@ -127,9 +161,32 @@
     document.getElementById('kopieer').addEventListener('click', async e => {
         try { await navigator.clipboard.writeText(link(false)); e.target.textContent = 'Gekopieerd!'; setTimeout(() => (e.target.textContent = 'Kopieer'), 1500); } catch { }
     });
+    document.getElementById('kopieerA').addEventListener('click', async e => {
+        try { await navigator.clipboard.writeText(linkA(false)); e.target.textContent = 'Gekopieerd!'; setTimeout(() => (e.target.textContent = 'Kopieer'), 1500); } catch { }
+    });
+    // testknoppen: altijd in het voorbeeld, en met sleutel desgewenst ook via de server in OBS
+    const ookObs = document.getElementById('ookObs'), volume = document.getElementById('volume');
+    document.querySelectorAll('[data-test]').forEach(k => k.addEventListener('click', () => {
+        const extra = k.dataset.extra ? JSON.parse(k.dataset.extra) : {};
+        document.getElementById('frameA').contentWindow.postMessage({ test: k.dataset.test, extra }, '*');
+        if (sleutel && ookObs.checked) fetch(API + '/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, soort: k.dataset.test, extra }) }).catch(() => { });
+    }));
+    if (sleutel) {
+        fetch(API + '/controleer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel }) }).then(r => r.json()).then(d => {
+            if (!d.ok) return;
+            document.getElementById('metSleutel').hidden = false; document.getElementById('zonderSleutel').hidden = true;
+            volume.value = d.instellingen?.volume ?? 0.7;
+        }).catch(() => { });
+        let wacht;
+        volume.addEventListener('input', () => {
+            document.getElementById('frameA').contentWindow.postMessage({ volume: volume.value }, '*');
+            clearTimeout(wacht);
+            wacht = setTimeout(() => fetch(API + '/instellingen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, volume: +volume.value }) }).catch(() => { }), 400);
+        });
+    }
     function schaal() {
         const vb = document.getElementById('vb');
-        document.getElementById('frame').style.transform = `scale(${vb.clientWidth / 1920})`;
+        document.querySelectorAll('#vb iframe').forEach(f => (f.style.transform = `scale(${vb.clientWidth / 1920})`));
     }
     addEventListener('resize', schaal); schaal(); bijwerken();
 })();
