@@ -132,28 +132,58 @@
     let ac = null;
     const ontgrendel = () => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch { } };
     addEventListener('pointerdown', ontgrendel);
-    function tik() {
-        document.getElementById('wijzer').classList.remove('tik'); void document.getElementById('wijzer').offsetWidth; document.getElementById('wijzer').classList.add('tik');
-        if (!GELUID) return;
-        try {
-            ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-            const o = ac.createOscillator(), g = ac.createGain(), nu = ac.currentTime;
-            o.type = 'triangle'; o.frequency.value = 1500;
-            g.gain.setValueAtTime(0.18, nu); g.gain.exponentialRampToValueAtTime(0.001, nu + 0.05);
-            o.connect(g); g.connect(ac.destination); o.start(nu); o.stop(nu + 0.06);
-        } catch { }
+    // Geluid zonder samples maar wel natuurlijk: korte ruisklikjes (flapje langs een pinnetje), een zachte zwiep
+    // bij het aanduwen en een bel met de onregelmatige boventonen van een echte bel, in plaats van kale piepjes.
+    function audio() { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); return ac; } catch { return null; } }
+    let ruis = null;
+    function ruisBuffer(a) {
+        if (ruis) return ruis;
+        ruis = a.createBuffer(1, a.sampleRate, a.sampleRate);
+        const d = ruis.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        return ruis;
     }
-    function fanfare() {
-        if (!GELUID) return;
-        try {
-            ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-            const nu = ac.currentTime;
-            [523, 659, 784, 1047].forEach((f, i) => {
-                const o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.value = f;
-                g.gain.setValueAtTime(0, nu + i * 0.09); g.gain.linearRampToValueAtTime(0.25, nu + i * 0.09 + 0.02); g.gain.exponentialRampToValueAtTime(0.001, nu + i * 0.09 + 0.5);
-                o.connect(g); g.connect(ac.destination); o.start(nu + i * 0.09); o.stop(nu + i * 0.09 + 0.55);
-            });
-        } catch { }
+    function tik(kracht = 1) {
+        const w = document.getElementById('wijzer'); w.classList.remove('tik'); void w.offsetWidth; w.classList.add('tik');
+        const a = GELUID && audio(); if (!a) return;
+        const nu = a.currentTime, bron = a.createBufferSource(), bp = a.createBiquadFilter(), g = a.createGain();
+        bron.buffer = ruisBuffer(a);
+        bp.type = 'bandpass'; bp.frequency.value = 2600 + Math.random() * 900; bp.Q.value = 3.5;
+        const v = 0.35 + 0.45 * kracht;
+        g.gain.setValueAtTime(0, nu); g.gain.linearRampToValueAtTime(v, nu + 0.002); g.gain.exponentialRampToValueAtTime(0.001, nu + 0.035);
+        bron.connect(bp); bp.connect(g); g.connect(a.destination);
+        bron.start(nu, Math.random() * 0.5, 0.05);
+        // het houten 'tok' eronder: een heel kort laag tikje
+        const o = a.createOscillator(), og = a.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(420 + Math.random() * 60, nu); o.frequency.exponentialRampToValueAtTime(180, nu + 0.03);
+        og.gain.setValueAtTime(0.18 * kracht, nu); og.gain.exponentialRampToValueAtTime(0.001, nu + 0.04);
+        o.connect(og); og.connect(a.destination); o.start(nu); o.stop(nu + 0.05);
+    }
+    function zwiep() {
+        const a = GELUID && audio(); if (!a) return;
+        const nu = a.currentTime, bron = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+        bron.buffer = ruisBuffer(a);
+        f.type = 'bandpass'; f.Q.value = 0.9; f.frequency.setValueAtTime(400, nu); f.frequency.exponentialRampToValueAtTime(1800, nu + 0.35); f.frequency.exponentialRampToValueAtTime(700, nu + 0.7);
+        g.gain.setValueAtTime(0, nu); g.gain.linearRampToValueAtTime(0.22, nu + 0.15); g.gain.exponentialRampToValueAtTime(0.001, nu + 0.75);
+        bron.connect(f); f.connect(g); g.connect(a.destination); bron.start(nu, 0, 0.8);
+    }
+    function bel() {
+        const a = GELUID && audio(); if (!a) return;
+        const nu = a.currentTime, grond = 660, uit = a.createGain();
+        uit.gain.value = 0.5; uit.connect(a.destination);
+        // boventonen van een kleine bel (verhoudingen en uitklinktijd per toon), licht ontstemd voor een levendige klank
+        for (const [verh, sterkte, klinkt] of [[1, 0.5, 2.6], [2.0, 0.22, 1.8], [2.76, 0.28, 1.5], [5.4, 0.12, 0.8], [8.93, 0.06, 0.45]]) {
+            for (const ont of [-1.5, 1.5]) {
+                const o = a.createOscillator(), g = a.createGain();
+                o.type = 'sine'; o.frequency.value = grond * verh + ont;
+                g.gain.setValueAtTime(0, nu); g.gain.linearRampToValueAtTime(sterkte / 2, nu + 0.004); g.gain.exponentialRampToValueAtTime(0.0008, nu + klinkt);
+                o.connect(g); g.connect(uit); o.start(nu); o.stop(nu + klinkt + 0.05);
+            }
+        }
+        // het aanslaan: een heel kort metalig tikje
+        const bron = a.createBufferSource(), hp = a.createBiquadFilter(), g = a.createGain();
+        bron.buffer = ruisBuffer(a); hp.type = 'highpass'; hp.frequency.value = 5000;
+        g.gain.setValueAtTime(0.15, nu); g.gain.exponentialRampToValueAtTime(0.001, nu + 0.03);
+        bron.connect(hp); hp.connect(g); g.connect(a.destination); bron.start(nu, 0, 0.04);
     }
 
     // ---------- confetti ----------
@@ -181,13 +211,14 @@
         const duurMs = e.duur * 1000, begin = performance.now() - Math.max(0, Date.now() - e.start);
         anim = { van, doel, begin, duurMs, seg, vorigVak: Math.floor((van) / seg), id: e.id };
         draaitNu = true;
+        if (Date.now() - e.start < 1000) zwiep();
         document.getElementById('winnaar').classList.remove('aan');
         clearTimeout(verbergTimer); document.body.classList.remove('verborgen');
     }
     function toonWinnaar(tekst) {
         document.getElementById('winnaarTekst').textContent = tekst;
         document.getElementById('winnaar').classList.add('aan');
-        confetti(); fanfare();
+        confetti(); bel();
         if (instellingen.verbergen && !PAGINA) { clearTimeout(verbergTimer); verbergTimer = setTimeout(() => document.body.classList.add('verborgen'), 9000); }
     }
     function lus(nu) {
@@ -197,7 +228,7 @@
             const t = Math.min(1, (nu - anim.begin) / anim.duurMs);
             hoek = anim.van + (anim.doel - anim.van) * easeOut(t);
             const vak = Math.floor(hoek / anim.seg);
-            if (vak !== anim.vorigVak) { anim.vorigVak = vak; tik(); }
+            if (vak !== anim.vorigVak) { anim.vorigVak = vak; tik(Math.max(0.25, 1 - t)); }   // zachter naarmate het rad afremt
             if (t >= 1) { anim = null; draaitNu = false; }
         } else if (!PAGINA && !draaitNu) {
             hoek += 0.0008;   // in rust heel langzaam doordraaien
