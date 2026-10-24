@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-    /* Spotify "now playing" voor OBS in elf stijlen (waarvan één volledig scherm). Eén vaste link: de stijl en kant komen van de server (opslaan op
+    /* Spotify "now playing" voor OBS in tien stijlen (waarvan één volledig scherm). Eén vaste link: de stijl en kant komen van de server (opslaan op
        nowplaying-setup.html), ?stijl= in de link gaat daar alleen voor voorbeelden overheen.
        Elke stijl heeft een eigen basismaat en schaalt mee met de browserbron. Schuift in beeld zodra er muziek
        speelt en weer weg bij pauze. ?demo=1 toont een voorbeeldnummer, ?voorbeeld=1 het echte nummer (of het
@@ -39,7 +39,7 @@
     .blok { display: none; position: relative; width: 100%; height: 100%; }
     body[data-stijl="kaart"] .blok.kaart, body[data-stijl="pil"] .blok.pil, body[data-stijl="vinyl"] .blok.vinyl,
     body[data-stijl="3d"] .blok.drie, body[data-stijl="aurora"] .blok.aurora,
-    body[data-stijl="split"] .blok.split, body[data-stijl="transparant"] .blok.transparant, body[data-stijl="banner"] .blok.banner,
+    body[data-stijl="split"] .blok.split, body[data-stijl="transparant"] .blok.transparant,
     body[data-stijl="schuin"] .blok.schuin, body[data-stijl="golf"] .blok.golf, body[data-stijl="volledig"] .blok.volledig { display: block; }
     /* in- en uitschuiven */
     .schuif { transform: translateX(-120%); opacity: 0; transition: transform 0.75s cubic-bezier(.2, 1.2, .3, 1), opacity 0.5s; }
@@ -173,18 +173,6 @@
     .transparant .artiest { font-size: 20px; font-weight: 700; color: var(--roze); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 1.2s; }
     .transparant .balk { margin-top: 12px; width: 360px; height: 4px; background: rgba(255, 255, 255, 0.25); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
 
-    /* ---------- 9. banner (900 x 170): breed, met de wazige hoes als achtergrond ---------- */
-    .banner .doos { position: absolute; left: 20px; top: 15px; width: 860px; height: 140px; border-radius: 18px; overflow: hidden; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
-    .banner .achter { position: absolute; inset: -30px; filter: blur(22px) brightness(0.5) saturate(1.4); transform: scale(1.1); }
-    .banner .doos::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.1) 60%, rgba(0, 0, 0, 0.45)); }
-    .banner .hoes { position: absolute; left: 14px; top: 14px; width: 112px; height: 112px; border-radius: 12px; z-index: 1; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
-    .banner .info { position: absolute; left: 148px; top: 18px; right: 24px; z-index: 1; }
-    .banner .boven { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; letter-spacing: 3px; color: rgba(255, 255, 255, 0.75); }
-    .banner .titel { font: 800 40px/1.15 'Baloo 2', sans-serif; text-transform: uppercase;
-        background: linear-gradient(90deg, #fff, color-mix(in srgb, var(--roze) 55%, #fff)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .banner .artiest { font-size: 17px; font-weight: 600; color: rgba(255, 255, 255, 0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .banner .lijn { position: absolute; left: 0; bottom: 0; height: 5px; width: calc(var(--p) * 100%); z-index: 1; background: linear-gradient(90deg, var(--paars), var(--roze)); box-shadow: 0 0 14px var(--roze); }
-
     /* ---------- 10. schuin (960 x 240): hoes links schuin afgesneden met een gekleurde streep, titel groot in hoofdletters ---------- */
     .schuin .doos { position: absolute; left: 20px; top: 20px; width: 920px; height: 200px; border-radius: 20px; overflow: hidden; background: rgba(10, 8, 16, 0.94); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5); }
     .schuin .hoes { position: absolute; left: 0; top: 0; width: 340px; height: 200px; clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); }
@@ -315,17 +303,6 @@
         </div>
     </div></div>
 
-    <div class="blok banner"><div class="schuif" style="position:absolute;inset:0"><div class="doos">
-        <div class="achter hoes" data-hoes></div>
-        <div class="hoes" data-hoes></div>
-        <div class="info">
-            <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span><span class="hierna" style="margin-left:auto;max-width:340px;letter-spacing:0"><b>HIERNA</b><span data-volgende></span></span></div>
-            <div class="titelvak"><span class="titel" data-titel></span></div>
-            <div class="artiest" data-artiest></div>
-        </div>
-        <div class="lijn"></div>
-    </div></div></div>
-
     <div class="blok schuin"><div class="schuif" style="position:absolute;inset:0"><div class="doos">
         <div class="waas" data-hoes></div>
         <div class="hoes" data-hoes></div><div class="streep"></div>
@@ -362,7 +339,7 @@
 <script>
 (() => {
     const q = new URLSearchParams(location.search);
-    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], banner: [900, 170], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080] };
+    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080] };
     const DEMO = q.get('demo') === '1';
     // ?voorbeeld=1 (instelpagina): het echte nummer als er iets speelt, anders het voorbeeldnummer, en altijd in beeld
     const VOORBEELD = q.get('voorbeeld') === '1';
@@ -507,7 +484,7 @@
         if (d.id && d.id !== vorigeId) {
             const eerste = vorigeId === null;
             vorigeId = d.id;
-            // achtergrondlagen (wazige hoes, gloed, banner-achtergrond) vloeien over naar de nieuwe hoes; alleen de hoes zelf draait om
+            // achtergrondlagen (wazige hoes, gloed, achtergrond van volledig scherm) vloeien over naar de nieuwe hoes; alleen de hoes zelf draait om
             const hoezen = [...alle('[data-hoes]:not([data-laag])')], achter = hoezen.filter(isAchter), voor = hoezen.filter(h => !isAchter(h));
             if (eerste) achter.forEach(h => (h.style.backgroundImage = d.hoes ? `url("${d.hoes}")` : ''));
             else achter.forEach(h => vervaag(h, d.hoes));
