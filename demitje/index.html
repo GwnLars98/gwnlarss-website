@@ -44,6 +44,8 @@
     input[type=number] { width: 110px; font: 700 16px 'Baloo 2', sans-serif; padding: 6px 10px; border-radius: 10px; border: 0; background: #051a3d; color: #fff; }
     .voorbeeld { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
                  background: repeating-conic-gradient(#0d2a55 0 25%, #0a2148 0 50%) 0 0 / 40px 40px; }
+    .scenes { display: grid; gap: 10px; margin-top: 6px; }
+    .scenenaam { flex: 0 0 140px; }
     .tests { display: flex; flex-wrap: wrap; gap: 8px; }
     input[type=range] { width: 200px; accent-color: var(--turquoise); }
     .voorbeeld iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; }
@@ -102,6 +104,18 @@
     </section>
 
     <section class="stap">
+        <h2>4. Scènes</h2>
+        <p>Volledige schermen voor tussendoor, in dezelfde stijl, met je emotes en je laatste volger en sub. Maak in OBS voor elk een eigen scène met een <b>Browserbron</b> van <b>1920 x 1080</b>.</p>
+        <label>Aftellen bij start <input type="number" id="minuten" min="0" max="60" step="1" placeholder="minuten"></label>
+        <div class="scenes">
+            <div class="link"><b class="scenenaam">We beginnen zo</b><code id="obs-start"></code><button class="knop klein" data-kopieer="start">Kopieer</button><button class="knop klein" data-bekijk="start">Bekijk</button></div>
+            <div class="link"><b class="scenenaam">Even pauze</b><code id="obs-pauze"></code><button class="knop klein" data-kopieer="pauze">Kopieer</button><button class="knop klein" data-bekijk="pauze">Bekijk</button></div>
+            <div class="link"><b class="scenenaam">Bedankt</b><code id="obs-einde"></code><button class="knop klein" data-kopieer="einde">Kopieer</button><button class="knop klein" data-bekijk="einde">Bekijk</button></div>
+        </div>
+        <div class="voorbeeld" id="vbS" style="margin-top:14px"><iframe id="frameS" title="Voorbeeld scène"></iframe></div>
+    </section>
+
+    <section class="stap">
         <h2>Voorbeeld</h2>
         <p>Met voorbeeldnamen, zodat je ziet hoe het eruitziet. In OBS staan je echte volgers en subs erin.</p>
         <div class="voorbeeld" id="vb"><iframe id="frame" title="Voorbeeld"></iframe><iframe id="frameA" title="Voorbeeld alerts"></iframe></div>
@@ -114,6 +128,8 @@
             <li>Laatste sub links, laatste volger rechts, je naam in het midden</li>
             <li>Rechtsboven je Twitch-profielfoto of je eigen logo, met LIVE zodra je live bent</li>
             <li>Optioneel je volgdoel met balkje onder je foto</li>
+            <li>Scènes: "We beginnen zo" met aftelklok, "Even pauze" en "Bedankt", met je emotes erin</li>
+            <li>Je eigen kanaal-emotes vliegen mee bij alerts, in de overlay en in de scènes</li>
             <li>Alerts: speels kaartje met confetti, neonbuis met lichtstralen, of 3D-letters die van ver aan komen tollen met een draaiend 3D-icoon en 3D-confetti. Hoe groter de gift of bits, hoe meer feest</li>
         </ol>
     </section>
@@ -146,10 +162,24 @@
         return BASIS + (s ? '?' + s : '');
     }
     const linkA = voorbeeld => new URL('alerts.html', location.href).href + (stijl !== 'speels' || voorbeeld ? '?' + new URLSearchParams({ ...(stijl !== 'speels' ? { stijl } : {}), ...(voorbeeld ? { voorbeeld: '1' } : {}) }) : '');
-    let vorigeVb = '', vorigeA = '';
+    const minuten = document.getElementById('minuten');
+    try { minuten.value = localStorage.getItem('demitje-min') || '5'; } catch { }
+    let sceneVb = 'start';
+    function linkS(scene, voorbeeld) {
+        const p = new URLSearchParams({ scene });
+        if (stijl !== 'speels') p.set('stijl', stijl);
+        if (scene === 'start' && +minuten.value > 0) p.set('min', Math.round(+minuten.value));
+        if (leeg.checked) p.set('foto', '0'); else if (logo.value.trim().startsWith('https://')) p.set('logo', logo.value.trim());
+        if (voorbeeld) p.set('demo', '1');
+        return new URL('scene.html', location.href).href + '?' + p;
+    }
+    let vorigeVb = '', vorigeA = '', vorigeS = '';
     function bijwerken() {
         document.getElementById('obs').textContent = link(false);
         document.getElementById('obsA').textContent = linkA(false);
+        for (const sc of ['start', 'pauze', 'einde']) document.getElementById('obs-' + sc).textContent = linkS(sc, false);
+        if (linkS(sceneVb, true) !== vorigeS) { vorigeS = linkS(sceneVb, true); document.getElementById('frameS').src = vorigeS; }
+        try { localStorage.setItem('demitje-min', minuten.value); } catch { }
         if (linkA(true) !== vorigeA) { vorigeA = linkA(true); document.getElementById('frameA').src = vorigeA; }
         const vb = link(true);
         if (vb !== vorigeVb) { document.getElementById('frame').src = vb; vorigeVb = vb; }
@@ -161,6 +191,11 @@
     document.getElementById('kopieer').addEventListener('click', async e => {
         try { await navigator.clipboard.writeText(link(false)); e.target.textContent = 'Gekopieerd!'; setTimeout(() => (e.target.textContent = 'Kopieer'), 1500); } catch { }
     });
+    minuten.addEventListener('input', bijwerken);
+    document.querySelectorAll('[data-kopieer]').forEach(k => k.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(linkS(k.dataset.kopieer, false)); k.textContent = 'Gekopieerd!'; setTimeout(() => (k.textContent = 'Kopieer'), 1500); } catch { }
+    }));
+    document.querySelectorAll('[data-bekijk]').forEach(k => k.addEventListener('click', () => { sceneVb = k.dataset.bekijk; bijwerken(); }));
     document.getElementById('kopieerA').addEventListener('click', async e => {
         try { await navigator.clipboard.writeText(linkA(false)); e.target.textContent = 'Gekopieerd!'; setTimeout(() => (e.target.textContent = 'Kopieer'), 1500); } catch { }
     });
@@ -168,7 +203,7 @@
     const ookObs = document.getElementById('ookObs'), volume = document.getElementById('volume');
     document.querySelectorAll('[data-test]').forEach(k => k.addEventListener('click', () => {
         const extra = k.dataset.extra ? JSON.parse(k.dataset.extra) : {};
-        document.getElementById('frameA').contentWindow.postMessage({ test: k.dataset.test, extra }, '*');
+        document.getElementById('frameA').contentWindow.postMessage({ test: k.dataset.test, extra }, '*'); document.getElementById('frame').contentWindow.postMessage({ test: k.dataset.test, extra }, '*');
         if (sleutel && ookObs.checked) fetch(API + '/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, soort: k.dataset.test, extra }) }).catch(() => { });
     }));
     if (sleutel) {
@@ -187,6 +222,7 @@
     function schaal() {
         const vb = document.getElementById('vb');
         document.querySelectorAll('#vb iframe').forEach(f => (f.style.transform = `scale(${vb.clientWidth / 1920})`));
+        document.getElementById('frameS').style.transform = `scale(${document.getElementById('vbS').clientWidth / 1920})`;
     }
     addEventListener('resize', schaal); schaal(); bijwerken();
 })();

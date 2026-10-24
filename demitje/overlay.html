@@ -132,6 +132,14 @@
     .doel .label { font-size: 22px; letter-spacing: 2px; color: var(--roze); line-height: 1.1; }
     .doel .tal { font-size: 30px; font-weight: 800; line-height: 1.15; }
     .doel .balk { height: 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.15); overflow: hidden; margin-top: 4px; }
+    /* feest bij een alert: de rand licht op en pulseert even */
+    body.feest .rand { animation: randFeest 2.4s ease-out; }
+    body.feest .binnenlijn { animation: lijnFeest 2.4s ease-out; }
+    @keyframes randFeest { 0% { filter: none; } 8% { filter: brightness(1.9) saturate(1.4); } 25% { filter: brightness(1.2); } 40% { filter: brightness(1.6) saturate(1.3); } 100% { filter: none; } }
+    @keyframes lijnFeest { 10%, 40% { box-shadow: 0 0 0 3px #fff, 0 0 40px 12px var(--roze), 0 0 90px 20px var(--paars); } }
+    .doel.gehaald { animation: doelGehaald 1.2s ease-in-out infinite alternate; }
+    .doel.gehaald .vul { background: linear-gradient(90deg, #ffd84a, #fff3b0, #ffd84a); box-shadow: 0 0 14px #ffd84a; }
+    @keyframes doelGehaald { to { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #ffd84a, 0 0 40px 10px rgba(255, 216, 74, 0.6); } }
     .doel .vul { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--paars), var(--roze)); transition: width 1.2s ease; }
     .live[hidden] { display: flex; opacity: 0; transform: translateX(-50%) scale(0.6); }
     /* leeg rondje: alleen de ring, binnenin doorzichtig voor een eigen afbeelding uit OBS */
@@ -234,7 +242,7 @@
         <img id="foto" alt="">
         <div class="live" id="live" hidden><i></i>LIVE</div>
     </div>
-    <div class="doel" id="doel" hidden><div class="label">VOLGDOEL</div><div class="tal" id="doel-tal">-</div><div class="balk"><div class="vul" id="doel-vul"></div></div></div>
+    <div class="doel" id="doel" hidden><div class="label" id="doel-label">VOLGDOEL</div><div class="tal" id="doel-tal">-</div><div class="balk"><div class="vul" id="doel-vul"></div></div></div>
 </div>
 <script>
 (() => {
@@ -302,6 +310,17 @@
         a -= BW; return [m, H - m - a, -Math.PI / 2];
     }
     const vonken = [];
+    // zijn kanaal-emotes: bij een alert springen er een paar uit de rand het beeld in
+    const EMOTES = [];
+    fetch('https://api.gwnlarss.nl/api/streamer-alerts/demitje01/emotes').then(r => r.json()).then(d => (d.emotes || []).forEach(e => { const i = new Image(); i.src = e.url; EMOTES.push(i); })).catch(() => { });
+    function emoteSprong(x, y) {
+        const klaar = EMOTES.filter(i => i.complete && i.naturalWidth);
+        if (!klaar.length) return;
+        // richting het midden van het beeld, met een boogje
+        const dx = W / 2 - x, dy = H / 2 - y, l = Math.hypot(dx, dy) || 1, v = 7 + Math.random() * 5;
+        vonken.push({ img: klaar[Math.floor(Math.random() * klaar.length)], x, y, vx: dx / l * v, vy: dy / l * v - 3, leven: 1.6, draai: (Math.random() - 0.5) * 0.5 });
+        if (!loopt) start();
+    }
     function barst(x, y) {
         for (let i = 0; i < 46; i++) {
             const h = Math.random() * 6.28, v = 3 + Math.random() * 9;
@@ -339,9 +358,16 @@
         cx.restore();
         for (let i = vonken.length - 1; i >= 0; i--) {
             const v = vonken[i];
-            v.x += v.vx; v.y += v.vy; v.vy += 0.35; v.vx *= 0.97; v.leven -= 0.022;
+            if (v.img) { v.x += v.vx; v.y += v.vy; v.vx *= 0.975; v.vy = v.vy * 0.975 + 0.04; v.leven -= 0.011; }
+            else { v.x += v.vx; v.y += v.vy; v.vy += 0.35; v.vx *= 0.97; v.leven -= 0.022; }
             if (v.leven <= 0) { vonken.splice(i, 1); continue; }
             cx.globalAlpha = v.leven; cx.fillStyle = v.kleur;
+            if (v.img) {   // emote: groeit even aan, zweeft verder en vervaagt
+                const b = 96 * Math.min(1, (1.6 - v.leven) * 5 + 0.3);
+                cx.globalAlpha = Math.min(1, v.leven);
+                cx.save(); cx.translate(v.x, v.y); cx.rotate(v.draai); cx.drawImage(v.img, -b / 2, -b / 2, b, b); cx.restore();
+                continue;
+            }
             cx.beginPath(); cx.arc(v.x, v.y, 2.5 + v.leven * 2, 0, 6.28); cx.fill();
         }
         cx.globalAlpha = 1;
@@ -377,8 +403,14 @@
         return ['subscriber', 'resub', 'gift'].map(k => l[k]).filter(Boolean).sort((x, y) => (y.op || 0) - (x.op || 0))[0];
     }
     let volgers = null;
+    let doelWasGehaald = null;
     function toonDoel() {
         if (!DOEL || volgers == null) return;
+        const gehaald = volgers >= DOEL;
+        document.getElementById('doel').classList.toggle('gehaald', gehaald);
+        document.getElementById('doel-label').textContent = gehaald ? 'DOEL GEHAALD!' : 'VOLGDOEL';
+        if (gehaald && doelWasGehaald === false) feest(3);   // net gehaald terwijl de overlay openstaat
+        doelWasGehaald = gehaald;
         document.getElementById('doel').hidden = false;
         document.getElementById('doel-tal').textContent = volgers.toLocaleString('nl-NL') + ' / ' + DOEL.toLocaleString('nl-NL');
         document.getElementById('doel-vul').style.width = Math.min(100, volgers / DOEL * 100) + '%';
@@ -406,6 +438,34 @@
         }
         document.getElementById('live').hidden = !live;
     }
+    // Feest: de rand licht op en er spatten vonken van rondom het beeld (meer bij grotere alerts)
+    function feest(niveau = 0) {
+        document.body.classList.remove('feest'); void document.body.offsetWidth; document.body.classList.add('feest');
+        clearTimeout(feest.t); feest.t = setTimeout(() => document.body.classList.remove('feest'), 2500);
+        const plekken = 6 + niveau * 3;
+        for (let i = 0; i < plekken; i++) setTimeout(() => { const [x, y] = inBand(); barst(x, y); if (i % 2 === 0) emoteSprong(x, y); }, i * 120);
+    }
+    const NIVEAU = e => { const x = e.extra || {}, t = (w, g) => g.filter(v => w >= v).length;
+        return e.soort === 'gift' ? t(+x.aantal, [5, 10, 20, 50, 100]) : e.soort === 'cheer' ? t(+x.bits, [500, 1000, 5000, 10000, 25000]) : e.soort === 'raid' ? t(+x.kijkers, [10, 25, 50, 100, 250]) : 0; };
+    // Live-verbinding: namen meteen bijwerken bij een echte alert (niet bij tests), en altijd feest
+    function opAlert(e) {
+        if (!e || !e.soort || e.soort[0] === '_') return;
+        if (!e.extra?.test) {
+            if (e.soort === 'follower') { zet('volger', 'p-volger', 'w-volger', e.naam); if (volgers != null) { volgers++; toonDoel(); } }
+            if (['subscriber', 'resub', 'gift'].includes(e.soort)) zet('sub', 'p-sub', 'w-sub', e.naam);
+        }
+        feest(NIVEAU(e));
+    }
+    if (!isDemo) {
+        (function verbind() {
+            const bron = new EventSource(API + '/stream?bron=stats');
+            bron.onmessage = m => { try { opAlert(JSON.parse(m.data)); } catch { } };
+            bron.onerror = () => { bron.close(); setTimeout(verbind, 5000); };
+        })();
+    }
+    // testknoppen op de instelpagina (voorbeeld)
+    addEventListener('message', m => { const d = m.data || {}; if (d.test) opAlert({ soort: d.test, naam: 'Test', extra: { ...(d.extra || {}), test: true } }); });
+
     haalStats(); haalLive();
     setInterval(haalStats, 10000);
     setInterval(haalLive, 60000);

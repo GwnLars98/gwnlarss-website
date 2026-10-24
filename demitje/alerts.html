@@ -133,6 +133,23 @@
     const cv = document.getElementById('confetti'), cx = cv.getContext('2d');
     const deeltjes = [];
     const KLEUREN = { speels: ['#ffffff', '#22e3d0', '#1e6bff', '#ff4f8b', '#ffd84a'], neon: ['#5ff6ff', '#ffffff', '#1e6bff'], drie: ['#ffffff', '#22e3d0', '#1e6bff'] };
+    // zijn eigen kanaal-emotes (via api.gwnlarss.nl, plaatjes rechtstreeks van Twitch)
+    const EMOTES = [];
+    fetch(API + '/emotes').then(r => r.json()).then(d => (d.emotes || []).forEach(e => { const i = new Image(); i.src = e.url; EMOTES.push(i); })).catch(() => { });
+    function emoteRegen(n, x0, y0) {
+        const klaar = EMOTES.filter(i => i.complete && i.naturalWidth);
+        if (!klaar.length) { if (!emoteRegen.opnieuw) { emoteRegen.opnieuw = 1; setTimeout(() => emoteRegen(n, x0, y0), 900); } return; }
+        for (let i = 0; i < n; i++) {
+            const img = klaar[Math.floor(Math.random() * klaar.length)], b = 90 + Math.random() * 70;
+            if (STIJL === 'neon') {
+                const h = Math.random() * 6.28, v = 4 + Math.random() * 9;
+                deeltjes.push({ emote: img, neon: 1, x: x0, y: y0, vx: Math.cos(h) * v, vy: Math.sin(h) * v * 0.7, leven: 1.4, b, draai: 0, vd: (Math.random() - 0.5) * 0.06 });
+            } else {
+                deeltjes.push({ emote: img, x: 80 + Math.random() * (W - 160), y: -120 - Math.random() * 1500, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 2.5, b, leven: 1, draai: (Math.random() - 0.5) * 0.6, vd: (Math.random() - 0.5) * 0.04, valt: 1 });
+            }
+        }
+        if (!loopt) { loopt = true; requestAnimationFrame(teken); }
+    }
     function strooi(n, x0, y0) {
         const k = KLEUREN[STIJL];
         for (let i = 0; i < n; i++) {
@@ -151,13 +168,22 @@
         cx.clearRect(0, 0, W, H);
         for (let i = deeltjes.length - 1; i >= 0; i--) {
             const d = deeltjes[i];
+            if (d.emote) {
+                if (d.valt) { d.vy = Math.min(d.vy + 0.05, 5); d.y += d.vy; d.x += d.vx; if (d.y > H + 200) d.leven = 0; }
+                else { d.x += d.vx; d.y += d.vy; d.vx *= 0.985; d.vy *= 0.985; d.leven -= 0.008; }
+                d.draai += d.vd;
+                cx.globalAlpha = Math.min(1, Math.max(0, d.leven)); cx.shadowColor = '#5ff6ff'; cx.shadowBlur = d.neon ? 24 : 0;
+                cx.save(); cx.translate(d.x, d.y); cx.rotate(d.draai); cx.drawImage(d.emote, -d.b / 2, -d.b / 2, d.b, d.b); cx.restore();
+                if (d.leven <= 0) deeltjes.splice(i, 1);
+                continue;
+            }
             if (d.neon) {
                 const ox = d.x, oy = d.y;
                 d.x += d.vx; d.y += d.vy; d.vx *= 0.95; d.vy *= 0.95; d.leven -= 0.018;
                 cx.globalAlpha = Math.max(0, d.leven); cx.strokeStyle = d.kleur; cx.lineWidth = 3; cx.shadowColor = d.kleur; cx.shadowBlur = 12;
                 cx.beginPath(); cx.moveTo(ox - d.vx * 2, oy - d.vy * 2); cx.lineTo(d.x, d.y); cx.stroke();
             } else {
-                d.x += d.vx; d.y += d.vy; d.vy += 0.32; d.vx *= 0.99; d.draai += d.vd;
+                d.vy = Math.min(d.vy + 0.16, 3.2); d.vx = d.vx * 0.98 + Math.sin(d.draai * 2) * 0.12; d.x += d.vx; d.y += d.vy; d.draai += d.vd;   // dwarrelen
                 if (d.y > H + 40) d.leven = 0;
                 cx.globalAlpha = 1; cx.shadowBlur = 0; cx.fillStyle = d.kleur;
                 cx.save(); cx.translate(d.x, d.y); cx.rotate(d.draai); cx.fillRect(-d.b / 2, -d.b / 4, d.b, d.b / 2); cx.restore();
@@ -219,6 +245,7 @@
             geluid(e.soort);
             await wacht(STIJL === 'neon' ? 500 : 450);
             strooi(STIJL === 'neon' ? Math.min(160, 40 + n * 24) : aantal, W / 2, STIJL === 'neon' ? 260 : 120);
+            emoteRegen(Math.min(60, 8 + n * 9), W / 2, 260);
             if (n >= 3) { await wacht(900); strooi(STIJL === 'neon' ? 80 : aantal / 2, W / 2, STIJL === 'neon' ? 260 : 80); }
             await wacht(duur - (n >= 3 ? 1900 : 1000));
             k.classList.remove('in'); k.classList.add('uit');
@@ -307,6 +334,21 @@ if (document.body.classList.contains('drie')) {
         conf.instanceMatrix.setUsage(THREE.DynamicDrawUsage); conf.count = 0; conf.frustumCulled = false; scene.add(conf);
         const KL = [0xffffff, 0x22e3d0, 0x1e6bff, 0xff4f8b, 0xffd84a].map(c => new THREE.Color(c));
         let stukjes = [];
+        const emoteMat = [], sprites = [];
+        fetch('https://api.gwnlarss.nl/api/streamer-alerts/demitje01/emotes').then(r => r.json()).then(d => {
+            const tl = new THREE.TextureLoader(); tl.setCrossOrigin('anonymous');
+            (d.emotes || []).forEach(e => tl.load(e.url, tex => { tex.colorSpace = THREE.SRGBColorSpace; emoteMat.push(new THREE.SpriteMaterial({ map: tex, transparent: true })); }));
+        }).catch(() => { });
+        function emotes3d(n, y) {
+            for (let i = 0; i < n && emoteMat.length; i++) {
+                const sp = new THREE.Sprite(emoteMat[Math.floor(Math.random() * emoteMat.length)]);
+                const a = Math.random() * Math.PI * 2, v = 6 + Math.random() * 14, b = 110 + Math.random() * 70;
+                sp.scale.set(b, b, 1); sp.position.set(0, y, -160);
+                sp.userData.v = new THREE.Vector3(Math.cos(a) * v, Math.sin(a) * v * 0.7 + 12, -4 - Math.random() * 14);
+                scene.add(sp); sprites.push(sp);
+            }
+            start();
+        }
         const hulp = new THREE.Object3D();
         function strooi3d(n, y) {
             for (let i = 0; i < n && stukjes.length < MAX; i++) {
@@ -345,10 +387,15 @@ if (document.body.classList.contains('drie')) {
             // confetti
             for (const d of stukjes) { d.v.y -= 0.55; d.v.multiplyScalar(0.985); d.p.add(d.v); d.r.x += d.vr; d.r.y += d.vr * 0.7; }
             stukjes = stukjes.filter(d => d.p.y > -700);
+            for (let i = sprites.length - 1; i >= 0; i--) {
+                const sp = sprites[i]; sp.userData.v.y -= 0.35; sp.userData.v.multiplyScalar(0.99); sp.position.add(sp.userData.v);
+                sp.material.rotation = 0;
+                if (sp.position.y < -900) { scene.remove(sp); sprites.splice(i, 1); }
+            }
             stukjes.forEach((d, i) => { hulp.position.copy(d.p); hulp.rotation.copy(d.r); hulp.updateMatrix(); conf.setMatrixAt(i, hulp.matrix); conf.setColorAt(i, d.k); });
             conf.count = stukjes.length; conf.instanceMatrix.needsUpdate = true; if (conf.instanceColor) conf.instanceColor.needsUpdate = true;
             r.render(scene, cam);
-            if (!groep && !stukjes.length) { r.setAnimationLoop(null); loopt = false; r.clear(); }
+            if (!groep && !stukjes.length && !sprites.length) { r.setAnimationLoop(null); loopt = false; r.clear(); }
         }
         function start() { if (!loopt) { loopt = true; vorige = 0; r.setAnimationLoop(stap); } }
 
@@ -364,7 +411,7 @@ if (document.body.classList.contains('drie')) {
                     groep.add(n, k, ic); scene.add(groep);
                     anim = { start: performance.now(), duur, klaar, bijAan, bijUit };
                     start();
-                    setTimeout(() => strooi3d(Math.min(MAX, 120 + niveau * 70), 70), 900);
+                    setTimeout(() => { strooi3d(Math.min(MAX, 120 + niveau * 70), 70); emotes3d(Math.min(50, 8 + niveau * 8), 70); }, 900);
                     if (niveau >= 3) setTimeout(() => strooi3d(160, 70), 1800);
                 });
             },

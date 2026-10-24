@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scène, Demitje01</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Lilita+One&family=Russo+One&display=swap" rel="stylesheet">
+<style>
+    /* Volledige scènes voor Demitje01 (1920x1080, met achtergrond): ?scene=start|pauze|einde,
+       ?stijl=speels|neon|3d, ?min=5 voor een aftelklok bij start, ?logo= / ?foto=0 zoals de overlay.
+       Toont ook zijn laatste volger en sub. */
+    :root { --blauw: #1e6bff; --turq: #22e3d0; --diep: #041634; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100vw; height: 100vh; overflow: hidden; background: var(--diep); }
+    body { font-family: 'Baloo 2', system-ui, sans-serif; color: #fff; }
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
+    #achter, #drie { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+    #drie { display: none; }
+    .inhoud { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .foto { width: 250px; height: 250px; border-radius: 50%; padding: 10px; margin-bottom: 26px;
+        background: conic-gradient(from 200deg, var(--blauw), var(--turq), #c9fff8, var(--blauw));
+        box-shadow: 0 0 0 6px #fff, 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 60px rgba(34, 227, 208, 0.5); animation: zweef 5s ease-in-out infinite; }
+    .foto img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; background: var(--diep); }
+    .foto.leeg { background: transparent; box-shadow: inset 0 0 0 10px var(--blauw), 0 0 0 6px #fff; }
+    .foto.leeg img { visibility: hidden; }
+    @keyframes zweef { 50% { transform: translateY(-14px); } }
+    .titel { font: 400 132px 'Lilita One', sans-serif; line-height: 1; letter-spacing: 2px; }
+    .titel .l { display: inline-block; animation: hup 4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.06s); }
+    @keyframes hup { 0%, 20%, 100% { transform: none; } 8% { transform: translateY(-26px) rotate(-4deg); } 14% { transform: translateY(4px); } }
+    .sub { font-size: 44px; font-weight: 800; margin-top: 14px; opacity: 0.95; min-height: 60px; }
+    .klok { font: 400 120px 'Lilita One', sans-serif; margin-top: 8px; letter-spacing: 4px; font-variant-numeric: tabular-nums; }
+    .klok[hidden] { display: none; }
+    .naam { position: absolute; left: 60px; top: 46px; font: 400 54px 'Lilita One', sans-serif; letter-spacing: 1px; }
+    .chips { position: absolute; bottom: 54px; left: 0; right: 0; display: flex; justify-content: center; gap: 30px; }
+    .chip { padding: 12px 34px 10px; border-radius: 20px; text-align: center; min-width: 320px;
+        background: rgba(4, 22, 52, 0.75); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 0 7px var(--blauw), 0 14px 30px rgba(0, 0, 0, 0.4); }
+    .chip .label { font: 400 24px 'Lilita One', sans-serif; letter-spacing: 3px; color: var(--turq); }
+    .chip .wie { font-size: 40px; font-weight: 800; line-height: 1.1; }
+
+    /* speels */
+    body.speels { background: linear-gradient(135deg, #1e6bff, #1aa8ff 45%, #22e3d0); }
+    body.speels .titel, body.speels .klok, body.speels .naam { color: #fff; -webkit-text-stroke: 10px #062347; paint-order: stroke fill; text-shadow: 0 10px 0 #062347; }
+    body.speels .sub { color: #fff; text-shadow: 0 3px 0 rgba(6, 35, 71, 0.6); }
+
+    /* neon */
+    body.neon { background: radial-gradient(1400px 600px at 50% 70%, #0b2a6a, #020611 70%); }
+    body.neon .titel, body.neon .klok, body.neon .naam { font-family: 'Russo One', sans-serif; color: #fff; text-shadow: 0 0 8px #fff, 0 0 26px #5ff6ff, 0 0 60px #22e3d0, 0 0 110px #1e6bff; }
+    body.neon .titel .l { animation: none; }
+    body.neon .titel { animation: zoem 5s infinite; }
+    @keyframes zoem { 0%, 90%, 100% { opacity: 1; } 91% { opacity: 0.5; } 93% { opacity: 1; } 95% { opacity: 0.7; } }
+    body.neon .sub { font-family: 'Russo One', sans-serif; font-weight: 400; color: #bff9ff; text-shadow: 0 0 12px #22e3d0; }
+    body.neon .foto { background: #020611; box-shadow: 0 0 0 4px #5ff6ff, 0 0 30px 8px rgba(34, 227, 208, 0.9), 0 0 80px 14px rgba(30, 107, 255, 0.5); }
+    body.neon .chip { background: rgba(2, 6, 17, 0.85); box-shadow: 0 0 0 3px #5ff6ff, 0 0 24px 4px rgba(34, 227, 208, 0.8); }
+    body.neon .chip .label { font-family: 'Russo One', sans-serif; color: #5ff6ff; }
+
+    /* 3d */
+    body.drie { background: radial-gradient(1600px 900px at 50% 40%, #1aa8ff, #1e6bff 40%, #062347 100%); }
+    body.drie #drie { display: block; }
+    body.drie-ok .titel { visibility: hidden; height: 132px; }
+    body.drie .sub, body.drie .klok, body.drie .naam { -webkit-text-stroke: 8px #062347; paint-order: stroke fill; text-shadow: 0 8px 0 #062347; }
+    body.drie .chip { transform: perspective(900px) rotateX(14deg); box-shadow: 0 0 0 3px #fff, 0 0 0 7px var(--blauw), 0 12px 0 6px #082a66, 0 30px 40px rgba(0, 0, 0, 0.5); }
+</style>
+</head>
+<body>
+<div id="podium">
+    <canvas id="achter" width="1920" height="1080"></canvas>
+    <canvas id="drie" width="1920" height="1080"></canvas>
+    <div class="naam">Demitje01</div>
+    <div class="inhoud">
+        <div class="foto" id="foto"><img id="fotoImg" alt=""></div>
+        <div class="titel" id="titel"></div>
+        <div class="klok" id="klok" hidden>05:00</div>
+        <div class="sub" id="sub"></div>
+    </div>
+    <div class="chips">
+        <div class="chip"><div class="label">LAATSTE VOLGER</div><div class="wie" id="w-volger">-</div></div>
+        <div class="chip"><div class="label">LAATSTE SUB</div><div class="wie" id="w-sub">-</div></div>
+    </div>
+</div>
+<script>
+(() => {
+    const W = 1920, H = 1080;
+    const q = new URLSearchParams(location.search);
+    const LOGIN = 'demitje01', API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
+    const STIJL = q.get('stijl') === 'neon' ? 'neon' : ['3d', 'weg'].includes(q.get('stijl')) ? 'drie' : 'speels';
+    const SCENE = ['pauze', 'einde'].includes(q.get('scene')) ? q.get('scene') : 'start';
+    document.body.classList.add(STIJL);
+
+    const podium = document.getElementById('podium');
+    function pas() {
+        const s = Math.max(innerWidth / W, innerHeight / H);   // scène vult altijd het hele beeld
+        podium.style.transform = `translate(${(innerWidth - W * s) / 2}px, ${(innerHeight - H * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pas); pas();
+
+    // teksten
+    const TEKST = {
+        start: ['WE BEGINNEN ZO', 'Pak wat te drinken, we gaan zo los!'],
+        pauze: ['EVEN PAUZE', 'Ik ben zo terug, niet weggaan!'],
+        einde: ['BEDANKT!', 'Tot de volgende stream!'],
+    }[SCENE];
+    window.sceneTitel = TEKST[0];
+    document.getElementById('titel').innerHTML = [...TEKST[0]].map((c, i) => `<span class="l" style="--i:${i}">${c === ' ' ? '&nbsp;' : c}</span>`).join('');
+    document.getElementById('sub').textContent = TEKST[1];
+
+    // aftelklok bij start (?min=5)
+    const MIN = +q.get('min') || 0;
+    if (SCENE === 'start' && MIN > 0) {
+        const eind = Date.now() + MIN * 60000, klok = document.getElementById('klok');
+        klok.hidden = false;
+        const tik = () => {
+            const s = Math.max(0, Math.round((eind - Date.now()) / 1000));
+            klok.textContent = s ? String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0') : 'NU!';
+            if (!s) document.getElementById('sub').textContent = 'We beginnen!';
+        };
+        tik(); setInterval(tik, 1000);
+    }
+
+    // foto of eigen logo
+    const eigenLogo = (q.get('logo') || '').trim(), img = document.getElementById('fotoImg');
+    if (q.get('foto') === '0') document.getElementById('foto').classList.add('leeg');
+    else if (eigenLogo.startsWith('https://')) img.src = eigenLogo;
+    else fetch('https://decapi.me/twitch/avatar/' + LOGIN).then(r => r.text()).then(u => { if (u.trim().startsWith('https://')) img.src = u.trim(); }).catch(() => { });
+
+    // laatste volger en sub
+    async function haal() {
+        try {
+            const l = (q.get('demo') === '1' ? { laatste: { follower: { naam: 'NieuweVolger123' }, subscriber: { naam: 'GezelligeKijker' } } } : await (await fetch(API + '/stats', { cache: 'no-store' })).json()).laatste || {};
+            const sub = ['subscriber', 'resub', 'gift'].map(k => l[k]).filter(Boolean).sort((a, b) => (b.op || 0) - (a.op || 0))[0];
+            document.getElementById('w-volger').textContent = l.follower?.naam || '-';
+            document.getElementById('w-sub').textContent = sub?.naam || '-';
+        } catch { }
+    }
+    haal(); setInterval(haal, 15000);
+
+    // achtergrond: speels = opstijgende bubbels, neon = rijdend lichtgrid; 3d tekent three.js hieronder
+    const cv = document.getElementById('achter'), cx = cv.getContext('2d');
+    // zijn kanaal-emotes zweven mee: in bubbels (speels) of gloeiend door de lucht (neon)
+    const EMOTES = [];
+    fetch(API + '/emotes').then(r => r.json()).then(d => (d.emotes || []).forEach(e => { const i = new Image(); i.src = e.url; EMOTES.push(i); })).catch(() => { });
+    const emoteVan = n => { const k = EMOTES.filter(i => i.complete && i.naturalWidth); return k.length ? k[n % k.length] : null; };
+    const zwevers = Array.from({ length: 14 }, (_, n) => ({ n, x: Math.random() * W, y: Math.random() * H, v: 0.3 + Math.random() * 0.6, f: Math.random() * 6.28, b: 80 + Math.random() * 50 }));
+    const bubbels = Array.from({ length: 46 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 10 + Math.random() * 46, v: 0.4 + Math.random() * 1.4, f: Math.random() * 6.28 }));
+    let vorige = 0;
+    function teken(nu) {
+        requestAnimationFrame(teken);
+        if (nu - vorige < 30) return;
+        vorige = nu;
+        const t = nu / 1000;
+        cx.clearRect(0, 0, W, H);
+        if (STIJL === 'speels') {
+            for (const b of bubbels) {
+                b.y -= b.v; if (b.y < -60) { b.y = H + 60; b.x = Math.random() * W; }
+                const x = b.x + Math.sin(t + b.f) * 20;
+                cx.globalAlpha = 0.28; cx.fillStyle = '#ffffff';
+                cx.beginPath(); cx.arc(x, b.y, b.r, 0, 6.28); cx.fill();
+                cx.globalAlpha = 0.6; cx.beginPath(); cx.arc(x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.22, 0, 6.28); cx.fill();
+            }
+            // grote bubbels met een emote erin
+            for (const z of zwevers) {
+                const img = emoteVan(z.n); if (!img) break;
+                z.y -= z.v * 1.4; if (z.y < -120) { z.y = H + 120; z.x = Math.random() * W; z.n += 14; }
+                const x = z.x + Math.sin(t * 0.8 + z.f) * 30, rr = z.b * 0.75;
+                cx.globalAlpha = 0.22; cx.fillStyle = '#ffffff'; cx.beginPath(); cx.arc(x, z.y, rr, 0, 6.28); cx.fill();
+                cx.globalAlpha = 0.95; cx.drawImage(img, x - z.b / 2, z.y - z.b / 2, z.b, z.b);
+                cx.globalAlpha = 0.7; cx.lineWidth = 3; cx.strokeStyle = '#ffffff'; cx.beginPath(); cx.arc(x, z.y, rr, 0, 6.28); cx.stroke();
+                cx.globalAlpha = 0.8; cx.beginPath(); cx.arc(x - rr * 0.4, z.y - rr * 0.4, rr * 0.14, 0, 6.28); cx.fillStyle = '#fff'; cx.fill();
+            }
+        } else if (STIJL === 'neon') {
+            // horizon-gloed en een perspectief-grid dat naar je toe rijdt
+            const hor = 640;
+            const g = cx.createLinearGradient(0, hor - 160, 0, hor + 20);
+            g.addColorStop(0, 'rgba(34,227,208,0)'); g.addColorStop(1, 'rgba(34,227,208,0.35)');
+            cx.fillStyle = g; cx.fillRect(0, hor - 160, W, 180);
+            cx.strokeStyle = '#5ff6ff'; cx.lineWidth = 2; cx.shadowColor = '#22e3d0'; cx.shadowBlur = 10;
+            for (let i = -24; i <= 24; i++) { cx.globalAlpha = 0.5; cx.beginPath(); cx.moveTo(W / 2 + i * 30, hor); cx.lineTo(W / 2 + i * 260, H); cx.stroke(); }
+            const fase = (t * 0.6) % 1;
+            for (let k = 0; k < 14; k++) {
+                const z = (k + fase) / 14, y = hor + Math.pow(z, 2.2) * (H - hor);
+                cx.globalAlpha = 0.15 + z * 0.6; cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke();
+            }
+            cx.shadowBlur = 0; cx.globalAlpha = 1;
+            // emotes die gloeiend boven de horizon zweven
+            for (const z of zwevers) {
+                const img = emoteVan(z.n); if (!img) break;
+                const x = (z.x + t * 40 * z.v) % (W + 200) - 100, y = 90 + (z.y * 0.4) % 430 + Math.sin(t + z.f) * 18;
+                cx.globalAlpha = 0.9; cx.shadowColor = '#22e3d0'; cx.shadowBlur = 26;
+                cx.drawImage(img, x - z.b / 2, y - z.b / 2, z.b, z.b);
+            }
+            cx.shadowBlur = 0; cx.globalAlpha = 1;
+        }
+        cx.globalAlpha = 1;
+    }
+    if (STIJL !== 'drie') requestAnimationFrame(teken);
+    document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
+})();
+</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module">
+// 3d: titel in 3D-letters met zwevende glimmende vormen eromheen en een langzaam draaiende camera.
+if (document.body.classList.contains('drie')) {
+    try {
+        const THREE = await import('three');
+        const { FontLoader } = await import('three/addons/loaders/FontLoader.js');
+        const { TextGeometry } = await import('three/addons/geometries/TextGeometry.js');
+        const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
+        const r = new THREE.WebGLRenderer({ canvas: document.getElementById('drie'), alpha: true, antialias: true });
+        r.setPixelRatio(1); r.setSize(1920, 1080, false);
+        r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+        const scene = new THREE.Scene();
+        scene.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+        const cam = new THREE.PerspectiveCamera(35, 1920 / 1080, 10, 10000); cam.position.set(0, 0, 1700);
+        const zon = new THREE.DirectionalLight(0xffffff, 1.6); zon.position.set(-600, 800, 1000); scene.add(zon);
+        const glans = new THREE.PointLight(0x22e3d0, 8, 0, 0); scene.add(glans);
+
+        const font = await new FontLoader().loadAsync('lilita.typeface.json');
+        const g = new TextGeometry(window.sceneTitel, { font, size: 150, height: 50, depth: 50, curveSegments: 6, bevelEnabled: true, bevelThickness: 9, bevelSize: 5, bevelSegments: 4 });
+        g.computeBoundingBox(); g.center();
+        const titel = new THREE.Mesh(g, [new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.2, clearcoat: 1, metalness: 0.1 }), new THREE.MeshStandardMaterial({ color: 0x1e6bff, metalness: 0.55, roughness: 0.3 })]);
+        const breed = g.boundingBox.max.x - g.boundingBox.min.x; titel.scale.setScalar(Math.min(0.82, 1250 / breed));
+        titel.position.y = 10;   // komt op de plek van de platte titel
+        scene.add(titel);
+
+        // zwevende vormen
+        const vormen = [new THREE.IcosahedronGeometry(70, 0), new THREE.TorusGeometry(60, 22, 20, 48), new THREE.OctahedronGeometry(70), new THREE.TorusKnotGeometry(46, 16, 90, 14), new THREE.SphereGeometry(55, 32, 20)];
+        const kleuren = [0x22e3d0, 0xffffff, 0x1e6bff, 0xff4f8b, 0xffd84a];
+        const zwevers = [];
+        for (let i = 0; i < 22; i++) {
+            const m = new THREE.Mesh(vormen[i % vormen.length], new THREE.MeshPhysicalMaterial({ color: kleuren[i % kleuren.length], metalness: 0.3, roughness: 0.18, clearcoat: 1 }));
+            const hoek = (i / 22) * Math.PI * 2 + Math.random() * 0.3, afstand = 620 + Math.random() * 380;
+            m.position.set(Math.cos(hoek) * afstand * 1.45, Math.sin(hoek) * afstand * 0.75, -200 - Math.random() * 900);
+            m.userData = { v: new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.3 + Math.random() * 0.6, 0), d: new THREE.Vector3(Math.random(), Math.random(), Math.random()).multiplyScalar(0.01) };
+            m.scale.setScalar(0.6 + Math.random() * 0.9);
+            scene.add(m); zwevers.push(m);
+        }
+        fetch('https://api.gwnlarss.nl/api/streamer-alerts/demitje01/emotes').then(r => r.json()).then(d => {
+            const tl = new THREE.TextureLoader(); tl.setCrossOrigin('anonymous');
+            (d.emotes || []).slice(0, 16).forEach((e, i) => tl.load(e.url, tex => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+                const hoek = ((i + 0.5) / 16) * Math.PI * 2, afstand = 560 + Math.random() * 300, b = 150 + Math.random() * 60;
+                sp.position.set(Math.cos(hoek) * afstand * 1.5, Math.sin(hoek) * afstand * 0.75, -100 - Math.random() * 600);
+                sp.scale.set(b, b, 1);
+                sp.userData = { v: new THREE.Vector3(0, 0.4 + Math.random() * 0.5, 0), d: new THREE.Vector3() };
+                scene.add(sp); zwevers.push(sp);
+            }));
+        }).catch(() => { });
+        document.body.classList.add('drie-ok');
+        let vorige = 0;
+        r.setAnimationLoop(nu => {
+            if (nu - vorige < 15) return;
+            vorige = nu;
+            const t = nu / 1000;
+            titel.rotation.y = Math.sin(t * 0.6) * 0.2; titel.rotation.x = Math.sin(t * 0.45) * 0.07;
+            titel.position.y = 10 + Math.sin(t * 1.2) * 10;
+            for (const z of zwevers) {
+                z.position.add(z.userData.v); z.rotation.x += z.userData.d.x; z.rotation.y += z.userData.d.y;
+                if (z.position.y > 900) z.position.y = -900;
+            }
+            cam.position.set(Math.sin(t * 0.15) * 160, 170, 1700); cam.lookAt(0, 0, 0);
+            glans.position.set(Math.sin(t * 0.8) * 1000, 300, 700);
+            r.render(scene, cam);
+        });
+    } catch (err) { console.warn('3D niet beschikbaar', err); document.body.classList.remove('drie-ok'); }
+}
+</script>
+</body>
+</html>
