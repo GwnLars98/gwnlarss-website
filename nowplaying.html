@@ -10,19 +10,36 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
-    /* Spotify "now playing" voor OBS in vijf stijlen. Eén vaste link: de stijl en kant komen van de server (opslaan op
+    /* Spotify "now playing" voor OBS in negen stijlen. Eén vaste link: de stijl en kant komen van de server (opslaan op
        nowplaying-setup.html), ?stijl= in de link gaat daar alleen voor voorbeelden overheen.
        Elke stijl heeft een eigen basismaat en schaalt mee met de browserbron. Schuift in beeld zodra er muziek
        speelt en weer weg bij pauze. ?demo=1 toont een voorbeeldnummer, ?voorbeeld=1 het echte nummer (of het
        voorbeeldnummer als er niets speelt) en blijft altijd in beeld.
        Data: /api/spotify/nu (utils/spotify.js), elke 3 seconden; de voortgang loopt tussendoor lokaal door. */
+    /* --paars/--roze zijn de accentkleuren: standaard het GwnLarss-merk, met kleur=hoes die van de albumhoes (vloeiende overgang) */
+    @property --paars { syntax: '<color>'; inherits: true; initial-value: #9146ff; }
+    @property --roze { syntax: '<color>'; inherits: true; initial-value: #ff3ea5; }
     :root { --paars: #9146ff; --roze: #ff3ea5; --kaart: rgba(18, 9, 38, 0.86); --p: 0; }
+    body { transition: --paars 1.2s ease, --roze 1.2s ease; }
+    /* wazige gloed van de albumhoes achter de overlay */
+    .gloed { position: absolute; background: linear-gradient(135deg, var(--paars), var(--roze)) center / cover no-repeat; filter: blur(34px) saturate(1.5); opacity: 0.55; pointer-events: none; transition: opacity 0.6s; }
+    .kaart .gloed { left: 50px; top: 34px; width: 700px; height: 150px; border-radius: 40px; }
+    .pil .gloed { left: 30px; top: 24px; width: 560px; height: 62px; border-radius: 999px; opacity: 0.45; }
+    .vinyl .gloed { left: 30px; top: 20px; width: 260px; height: 260px; border-radius: 50%; opacity: 0.6; }
+    .drie .gloed { left: 40px; top: 40px; width: 240px; height: 240px; border-radius: 50%; opacity: 0.6; }
+    /* "Hierna": het volgende nummer uit de wachtrij */
+    .hierna { font-size: 14px; font-weight: 600; color: #cbb8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hierna b { color: var(--roze); font-weight: 700; letter-spacing: 1px; margin-right: 6px; transition: color 1.2s; }
+    body.geenvolgende .hierna { display: none; }
+    .kaart .boven .hierna { margin-left: auto; max-width: 300px; letter-spacing: 0; font-size: 13px; }
+    .vinyl .hierna, .drie .hierna { margin-top: 10px; width: 440px; font-size: 16px; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); }
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100vw; height: 100vh; background: transparent; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; color: #fff; }
     #podium { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
     .blok { display: none; position: relative; width: 100%; height: 100%; }
     body[data-stijl="kaart"] .blok.kaart, body[data-stijl="pil"] .blok.pil, body[data-stijl="vinyl"] .blok.vinyl,
-    body[data-stijl="cassette"] .blok.cassette, body[data-stijl="3d"] .blok.drie { display: block; }
+    body[data-stijl="cassette"] .blok.cassette, body[data-stijl="3d"] .blok.drie, body[data-stijl="aurora"] .blok.aurora,
+    body[data-stijl="split"] .blok.split, body[data-stijl="transparant"] .blok.transparant, body[data-stijl="banner"] .blok.banner { display: block; }
     /* in- en uitschuiven */
     .schuif { transform: translateX(-120%); opacity: 0; transition: transform 0.75s cubic-bezier(.2, 1.2, .3, 1), opacity 0.5s; }
     body.rechts .schuif { transform: translateX(120%); }
@@ -47,7 +64,7 @@
     @keyframes wissel { 0% { transform: perspective(600px) rotateY(0); } 50% { transform: perspective(600px) rotateY(90deg); } 100% { transform: perspective(600px) rotateY(0); } }
 
     /* ---------- 1. kaart (800 x 220) ---------- */
-    .kaart .doos { position: absolute; left: 24px; top: 30px; width: 752px; height: 160px; display: flex; align-items: center; gap: 22px;
+    .kaart .doos { z-index: 1; position: absolute; left: 24px; top: 30px; width: 752px; height: 160px; display: flex; align-items: center; gap: 22px;
         padding: 0 26px 0 20px; border-radius: 26px; background: var(--kaart); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 34px rgba(145, 70, 255, 0.35); }
     .kaart .doos::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 3px; pointer-events: none;
         background: linear-gradient(120deg, var(--paars), var(--roze), var(--paars));
@@ -66,7 +83,7 @@
     .kaart .balk { flex: 1; }
 
     /* ---------- 2. pil (640 x 110) ---------- */
-    .pil .doos { position: absolute; left: 16px; top: 18px; width: 608px; height: 74px; border-radius: 999px; display: flex; align-items: center; gap: 14px;
+    .pil .doos { z-index: 1; position: absolute; left: 16px; top: 18px; width: 608px; height: 74px; border-radius: 999px; display: flex; align-items: center; gap: 14px;
         padding: 0 26px 0 8px; background: var(--kaart); box-shadow: 0 0 0 2px rgba(145, 70, 255, 0.7), 0 10px 26px rgba(0, 0, 0, 0.45); overflow: hidden; }
     .pil .rond { flex: 0 0 58px; height: 58px; border-radius: 50%; box-shadow: 0 0 0 3px #1a1030, 0 0 0 5px var(--roze); position: relative; }
     .pil .rond::after { content: ''; position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: #120a26; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4); }
@@ -117,6 +134,55 @@
     .drie .artiest { font-size: 22px; font-weight: 700; color: #ffb3dc; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); }
     .drie .balk { margin-top: 14px; width: 440px; height: 8px; box-shadow: 0 0 14px rgba(255, 62, 165, 0.45); }
 
+    /* ---------- 6. aurora (820 x 200): donkere kaart met bewegend noorderlicht in de kleuren van de hoes ---------- */
+    .aurora .doos { position: absolute; left: 20px; top: 20px; width: 780px; height: 160px; border-radius: 24px; overflow: hidden; display: flex; align-items: center; gap: 22px; padding: 0 28px 0 20px;
+        background: rgba(6, 8, 18, 0.88); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 40px rgba(0, 0, 0, 0.5); }
+    .aurora .licht { position: absolute; width: 360px; height: 360px; border-radius: 50%; filter: blur(70px); opacity: 0.32; pointer-events: none; }
+    .aurora .licht.a { background: var(--paars); left: -60px; top: -180px; animation: aurora1 11s ease-in-out infinite alternate; }
+    .aurora .licht.b { background: var(--roze); right: -40px; top: -60px; animation: aurora2 13s ease-in-out infinite alternate; }
+    .aurora .licht.c { background: color-mix(in srgb, var(--paars) 50%, #22e3d0); left: 260px; top: 60px; width: 300px; height: 220px; opacity: 0.2; animation: aurora1 9s ease-in-out infinite alternate-reverse; }
+    @keyframes aurora1 { to { transform: translate(180px, 60px) scale(1.2); } }
+    @keyframes aurora2 { to { transform: translate(-220px, -40px) scale(0.85); } }
+    .aurora .hoes { position: relative; flex: 0 0 120px; height: 120px; border-radius: 16px; box-shadow: 0 0 30px color-mix(in srgb, var(--paars) 60%, transparent), 0 8px 20px rgba(0, 0, 0, 0.5); }
+    .aurora .info { position: relative; flex: 1; min-width: 0; }
+    .aurora .boven { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: 3px; color: rgba(255, 255, 255, 0.7); }
+    .aurora .titel { font: 800 34px/1.2 'Baloo 2', sans-serif; }
+    .aurora .artiest { font-size: 19px; font-weight: 600; color: rgba(255, 255, 255, 0.72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .aurora .tijden { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.6); font-variant-numeric: tabular-nums; }
+    .aurora .balk { flex: 1; height: 4px; }
+    .aurora .vul { box-shadow: 0 0 12px var(--roze); }
+
+    /* ---------- 7. split (760 x 140): blok "NU OP SPOTIFY", een streep, dan artiest en titel in hoofdletters ---------- */
+    .split .doos { position: absolute; left: 20px; top: 20px; width: 720px; height: 100px; display: flex; align-items: stretch; border-radius: 6px; overflow: hidden;
+        background: rgba(14, 12, 26, 0.9); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
+    .split .blokje { flex: 0 0 150px; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; gap: 4px;
+        background: linear-gradient(135deg, var(--paars), var(--roze)); font: 800 22px/1 'Baloo 2', sans-serif; letter-spacing: 1px; }
+    .split .blokje small { font: 700 11px 'Inter', sans-serif; letter-spacing: 3px; opacity: 0.85; }
+    .split .blokje .eq i { background: #fff; }
+    .split .rechts { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 24px; }
+    .split .artiest { font-size: 15px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .split .titel { font: 800 30px/1.2 'Baloo 2', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; }
+    .split .lijn { position: absolute; left: 0; bottom: 0; height: 4px; width: calc(var(--p) * 100%); background: linear-gradient(90deg, var(--paars), var(--roze)); }
+
+    /* ---------- 8. transparant (760 x 160): geen kader, alleen hoes en tekst met schaduw ---------- */
+    .transparant .hoes { position: absolute; left: 20px; top: 20px; width: 120px; height: 120px; border-radius: 14px; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55); }
+    .transparant .info { position: absolute; left: 162px; top: 30px; width: 580px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 18px rgba(0, 0, 0, 0.5); }
+    .transparant .titel { font: 800 38px/1.15 'Baloo 2', sans-serif; }
+    .transparant .artiest { font-size: 20px; font-weight: 700; color: var(--roze); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 1.2s; }
+    .transparant .balk { margin-top: 12px; width: 360px; height: 4px; background: rgba(255, 255, 255, 0.25); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
+
+    /* ---------- 9. banner (900 x 170): breed, met de wazige hoes als achtergrond ---------- */
+    .banner .doos { position: absolute; left: 20px; top: 15px; width: 860px; height: 140px; border-radius: 18px; overflow: hidden; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); }
+    .banner .achter { position: absolute; inset: -30px; filter: blur(22px) brightness(0.5) saturate(1.4); transform: scale(1.1); }
+    .banner .doos::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.1) 60%, rgba(0, 0, 0, 0.45)); }
+    .banner .hoes { position: absolute; left: 14px; top: 14px; width: 112px; height: 112px; border-radius: 12px; z-index: 1; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+    .banner .info { position: absolute; left: 148px; top: 18px; right: 24px; z-index: 1; }
+    .banner .boven { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; letter-spacing: 3px; color: rgba(255, 255, 255, 0.75); }
+    .banner .titel { font: 800 40px/1.15 'Baloo 2', sans-serif; text-transform: uppercase;
+        background: linear-gradient(90deg, #fff, color-mix(in srgb, var(--roze) 55%, #fff)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .banner .artiest { font-size: 17px; font-weight: 600; color: rgba(255, 255, 255, 0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .banner .lijn { position: absolute; left: 0; bottom: 0; height: 5px; width: calc(var(--p) * 100%); z-index: 1; background: linear-gradient(90deg, var(--paars), var(--roze)); box-shadow: 0 0 14px var(--roze); }
+
     /* melding als Spotify nog niet gekoppeld is (ook in OBS, zodat je weet dat er iets moet gebeuren) */
     .hint { position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); max-width: 720px; padding: 16px 20px; border-radius: 16px;
         background: var(--kaart); font-size: 16px; line-height: 1.45; box-shadow: 0 0 0 2px var(--paars); }
@@ -126,24 +192,24 @@
 </head>
 <body data-stijl="kaart">
 <div id="podium">
-    <div class="blok kaart"><div class="doos schuif">
+    <div class="blok kaart"><div class="schuif" style="position:absolute;inset:0"><div class="gloed" data-hoes></div><div class="doos">
         <div class="hoesvak"><div class="plaat draait"></div><div class="hoes" data-hoes></div></div>
         <div class="info">
-            <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY</div>
+            <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY<span class="hierna"><b>HIERNA</b><span data-volgende></span></span></div>
             <div class="titelvak"><span class="titel" data-titel></span></div>
             <div class="artiest" data-artiest></div>
             <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
         </div>
-    </div></div>
+    </div></div></div>
 
-    <div class="blok pil"><div class="doos schuif">
+    <div class="blok pil"><div class="schuif" style="position:absolute;inset:0"><div class="gloed" data-hoes></div><div class="doos">
         <div class="rond hoes draait" data-hoes></div>
         <span class="eq"><i></i><i></i><i></i><i></i></span>
         <div class="titelvak"><span class="titel"><span data-titel></span> <span class="wie">· <span data-artiest></span></span></span></div>
         <div class="lijn"></div>
-    </div></div>
+    </div></div></div>
 
-    <div class="blok vinyl"><div class="schuif" style="position:absolute;inset:0">
+    <div class="blok vinyl"><div class="schuif" style="position:absolute;inset:0"><div class="gloed" data-hoes></div>
         <div class="plaat draait"><div class="label hoes" data-hoes></div><div class="licht"></div></div>
         <div class="arm"><i></i><b></b></div>
         <div class="info">
@@ -151,6 +217,7 @@
             <div class="titelvak"><span class="titel" data-titel></span></div>
             <div class="artiest" data-artiest></div>
             <div class="balk"><div class="vul"></div></div>
+            <div class="hierna"><b>HIERNA</b><span data-volgende></span></div>
         </div>
     </div></div>
 
@@ -163,28 +230,69 @@
         <div class="artiest" data-artiest></div>
     </div></div>
 
-    <div class="blok drie"><div class="schuif" style="position:absolute;inset:0">
+    <div class="blok drie"><div class="schuif" style="position:absolute;inset:0"><div class="gloed" data-hoes></div>
         <canvas id="drie" width="320" height="320"></canvas>
         <div class="info">
             <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY</div>
             <div class="titelvak"><span class="titel" data-titel></span></div>
             <div class="artiest" data-artiest></div>
             <div class="balk"><div class="vul"></div></div>
+            <div class="hierna"><b>HIERNA</b><span data-volgende></span></div>
         </div>
     </div></div>
+
+    <div class="blok aurora"><div class="schuif" style="position:absolute;inset:0"><div class="doos">
+        <div class="licht a"></div><div class="licht b"></div><div class="licht c"></div>
+        <div class="hoes" data-hoes></div>
+        <div class="info">
+            <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY</div>
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
+        </div>
+    </div></div></div>
+
+    <div class="blok split"><div class="schuif" style="position:absolute;inset:0"><div class="doos">
+        <div class="blokje"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP<small>SPOTIFY</small></div>
+        <div class="rechts">
+            <div class="artiest" data-artiest></div>
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="lijn"></div>
+        </div>
+    </div></div></div>
+
+    <div class="blok transparant"><div class="schuif" style="position:absolute;inset:0">
+        <div class="hoes" data-hoes></div>
+        <div class="info">
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="balk"><div class="vul"></div></div>
+        </div>
+    </div></div>
+
+    <div class="blok banner"><div class="schuif" style="position:absolute;inset:0"><div class="doos">
+        <div class="achter hoes" data-hoes></div>
+        <div class="hoes" data-hoes></div>
+        <div class="info">
+            <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY<span class="hierna" style="margin-left:auto;max-width:340px;letter-spacing:0"><b>HIERNA</b><span data-volgende></span></span></div>
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+        </div>
+        <div class="lijn"></div>
+    </div></div></div>
 </div>
 <div class="hint" id="hint" hidden></div>
 <script>
 (() => {
     const q = new URLSearchParams(location.search);
-    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320] };
+    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], banner: [900, 170] };
     const DEMO = q.get('demo') === '1';
     // ?voorbeeld=1 (instelpagina): het echte nummer als er iets speelt, anders het voorbeeldnummer, en altijd in beeld
     const VOORBEELD = q.get('voorbeeld') === '1';
     // kopie op gwnlarss.nl voor andere streamers (?id= uit nowplaying-setup.html); het origineel staat in de bot-repo (public/nowplaying.html)
     const API_BASE = 'https://api.gwnlarss.nl', ID = q.get('id') || '';
     const KOPPEL = ID ? 'https://gwnlarss.nl/nowplaying-setup.html' : API_BASE + '/api/spotify/verbind';
-    const VOORBEELDNUMMER = { geconfigureerd: true, gekoppeld: true, speelt: true, id: 'demo', titel: 'Een heel lang nummer met een titel die niet past', artiest: 'GwnLarss, Vrienden', hoes: '', duur: 213000, positie: 64000 };
+    const VOORBEELDNUMMER = { geconfigureerd: true, gekoppeld: true, speelt: true, id: 'demo', titel: 'Een heel lang nummer met een titel die niet past', artiest: 'GwnLarss, Vrienden', hoes: new URL('nowplaying/demo-hoes.webp', location.href).href, duur: 213000, positie: 64000, volgende: { titel: 'Het volgende nummer', artiest: 'Een andere artiest' } };
 
     // Stijl en kant: vast uit de link (?stijl=, voor voorbeelden), anders de opgeslagen keuze van de server.
     // Zo blijft de OBS-link altijd hetzelfde; na opslaan op de instelpagina laadt de overlay zichzelf opnieuw.
@@ -228,6 +336,56 @@
             }
         }
     }
+    // twee accentkleuren uit de albumhoes: de meest voorkomende levendige tint en een tweede die er genoeg van verschilt
+    function hsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+        if (!d) return [0, 0, l];
+        const s = d / (1 - Math.abs(2 * l - 1));
+        const h = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        return [h * 60, s, l];
+    }
+    const kleurCache = new Map();
+    function haalKleuren(url) {
+        if (kleurCache.has(url)) return Promise.resolve(kleurCache.get(url));
+        return new Promise(klaar => {
+            const img = new Image(); img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                try {
+                    const c = document.createElement('canvas'); c.width = c.height = 36;
+                    const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, 36, 36);
+                    const px = g.getImageData(0, 0, 36, 36).data, bakken = Array.from({ length: 18 }, () => ({ w: 0, h: 0, s: 0 }));
+                    for (let i = 0; i < px.length; i += 4) {
+                        const [h, sat, l] = hsl(px[i], px[i + 1], px[i + 2]);
+                        if (sat < 0.25 || l < 0.15 || l > 0.85) continue;   // grijs, zwart en wit tellen niet mee
+                        const b = bakken[Math.floor(h / 20) % 18], w = sat * (1 - Math.abs(l - 0.5));
+                        b.w += w; b.h += h * w; b.s += sat * w;
+                    }
+                    const top = bakken.map((b, i) => ({ ...b, i })).filter(b => b.w > 0).sort((a, b) => b.w - a.w);
+                    if (!top.length) { kleurCache.set(url, null); return klaar(null); }
+                    const tint = b => b.h / b.w;
+                    const h1 = tint(top[0]);
+                    const tweede = top.find(b => Math.min(Math.abs(tint(b) - h1), 360 - Math.abs(tint(b) - h1)) > 40);
+                    const h2 = tweede ? tint(tweede) : (h1 + 50) % 360;
+                    const uit = [`hsl(${h1.toFixed(0)} 85% 62%)`, `hsl(${h2.toFixed(0)} 85% 64%)`];
+                    kleurCache.set(url, uit); klaar(uit);
+                } catch { klaar(null); }   // geen toegang tot de pixels: merk-kleuren houden
+            };
+            img.onerror = () => klaar(null);
+            img.src = url;
+        });
+    }
+    let kleurVoor = null;
+    async function zetKleur(d) {
+        const wil = (q.get('kleur') || d.instellingen?.kleur || 'hoes') === 'hoes' && d.hoes ? d.hoes : null;   // ?kleur= alleen voor voorbeelden
+        if (wil === kleurVoor) return;
+        kleurVoor = wil;
+        const k = wil ? await haalKleuren(wil) : null;
+        if (kleurVoor !== wil) return;
+        if (k) { document.body.style.setProperty('--paars', k[0]); document.body.style.setProperty('--roze', k[1]); }
+        else { document.body.style.removeProperty('--paars'); document.body.style.removeProperty('--roze'); }
+        window.npKleur?.(k ?? ['#9146ff', '#ff3ea5']);
+    }
     let nu = null, vorigeId = null, uitTimer = null;
     function verwerk(d) {
         // opgeslagen stijl/kant: de eerste keer toepassen, bij een wijziging opnieuw laden
@@ -241,6 +399,10 @@
         if (!d.gekoppeld && !DEMO) { if (!q.get('fout')) { hint.hidden = false; hint.innerHTML = 'Spotify is nog niet gekoppeld. <a href="' + KOPPEL + '">Koppel je Spotify</a>' + (ID ? '.' : ' (alleen met je beheer-login).'); } return; }
         if (!q.get('gekoppeld') && !q.get('fout')) hint.hidden = true;
         nu = d;
+        zetKleur(d);
+        const volg = d.volgende && (q.has('volgende') ? q.get('volgende') !== '0' : (d.instellingen?.volgende ?? true));
+        document.body.classList.toggle('geenvolgende', !volg);
+        if (volg) alle('[data-volgende]').forEach(e => (e.textContent = d.volgende.titel + (d.volgende.artiest ? ' · ' + d.volgende.artiest : '')));
         if (d.id && d.id !== vorigeId) {
             const eerste = vorigeId === null;
             vorigeId = d.id;
@@ -333,6 +495,7 @@ if (await window.npStijlKlaar === '3d') {
 
     const laad = new THREE.TextureLoader(); laad.setCrossOrigin('anonymous');
     let klap = 0;
+    window.npKleur = ([a, b]) => { paars.color.set(new THREE.Color().setStyle(a)); roze.color.set(new THREE.Color().setStyle(b)); };
     window.npHoes = url => {
         klap = 1;   // omklappen bij een nieuw nummer
         if (!url) { labelMat.map = standaard; labelMat.needsUpdate = true; return; }

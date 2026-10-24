@@ -1,5 +1,5 @@
 // Het massieve 3D-logo uit versie 1: parelwitte voorkant, paarse chroomkant, draaiende lampen,
-// zwevende kristallen en een neonvloer. Transparant getekend boven het deeltjesveld; bij het
+// (de zwevende kristallen en de neonvloer zijn op verzoek weggehaald). Transparant getekend boven het deeltjesveld; bij het
 // scrollen draait het weg en vervaagt het.
 import * as THREE from 'three';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
@@ -35,16 +35,6 @@ export function logoPodium(canvas, font) {
     });
     const zon = new THREE.DirectionalLight(0xffffff, 0.8); zon.position.set(2, 4, 6); scene.add(zon);
 
-    const vloer = new THREE.GridHelper(120, 120, PAARS, 0x3a1d6e);
-    vloer.material.transparent = true; vloer.material.opacity = 0.55; vloer.position.y = -3.2; scene.add(vloer);
-
-    const vormen = [new THREE.OctahedronGeometry(0.32), new THREE.IcosahedronGeometry(0.26), new THREE.TetrahedronGeometry(0.3)];
-    const kleuren = [PAARS, ROZE, GOUD, 0xffffff];
-    const kristallen = Array.from({ length: 16 }, (_, i) => {
-        const m = new THREE.Mesh(vormen[i % 3], glans(kleuren[i % 4], { flatShading: true }));
-        m.scale.setScalar(0.6 + Math.random() * 0.9); scene.add(m);
-        return { m, hoek: (i / 16) * Math.PI * 2, straal: 5 + (i % 4) * 1.1, hoogte: (Math.random() - 0.5) * 4.5, diepte: -2.8 - Math.random() * 5, snel: 0.05 + Math.random() * 0.06 };
-    });
 
     let logoSchaal = 1;
     function maat() {
@@ -76,9 +66,7 @@ export function logoPodium(canvas, font) {
         logo.rotation.x = muis.y * 0.4 - scroll * 0.5;
         logoHouder.position.y = 0.9 + Math.sin(t * 0.8) * 0.12 + scroll * 3.5;
         lampen.forEach(({ l, r, v, f, h }) => { const a = t * v + f; l.position.set(Math.cos(a) * r, h + Math.sin(a * 1.7) * 0.8, 2.6 + Math.sin(a) * 1.8); });
-        vloer.position.z = (t * 1.6) % 1;
         camera.position.x = muis.x * 0.8; camera.position.y = 0.4 - muis.y * 0.4; camera.lookAt(0, 0.4, 0);
-        kristallen.forEach(k => { const a = k.hoek + t * k.snel; k.m.position.set(Math.cos(a) * k.straal, k.hoogte + Math.sin(t * 0.7 + k.hoek * 3) * 0.35, k.diepte + Math.sin(a)); k.m.rotation.x += dt * 0.5; k.m.rotation.y += dt * 0.7; });
         renderer.render(scene, camera);
     });
 }
