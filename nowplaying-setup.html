@@ -31,7 +31,8 @@
     .maat-tekst { color: var(--dim); font-size: 0.85rem; margin: 0; }
     .schakel { display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
     .schakel input { width: 18px; height: 18px; accent-color: var(--roze); flex: 0 0 auto; }
-    .schakel small { color: var(--dim); font-weight: 400; }
+    .schakel { flex-wrap: wrap; row-gap: 0; }
+    .schakel small { flex-basis: 100%; padding-left: 28px; color: var(--dim); font-weight: 400; font-size: 0.82rem; }
 </style>
 </head>
 <body>
@@ -66,7 +67,7 @@
 
     <p class="thema-label">2. Kies een stijl</p>
     <div class="stijl-grid" id="stijl-grid">
-        <button type="button" class="stijl-kaart is-actief" data-stijl="kaart"><b>Kaart</b><span>Hoes met plaat, titel en voortgang</span></button>
+        <button type="button" class="stijl-kaart is-actief" data-stijl="kaart"><b>Kaart</b><span>Hoes, titel en voortgang</span></button>
         <button type="button" class="stijl-kaart" data-stijl="pil"><b>Pil</b><span>Klein en strak, voor in een hoek</span></button>
         <button type="button" class="stijl-kaart" data-stijl="vinyl"><b>Vinyl</b><span>Draaiende plaat met naald</span></button>
         <button type="button" class="stijl-kaart" data-stijl="cassette"><b>Cassette</b><span>Retro bandje, spoeltjes lopen mee</span></button>
@@ -75,11 +76,14 @@
         <button type="button" class="stijl-kaart" data-stijl="split"><b>Split</b><span>Strak blok en titel in hoofdletters</span></button>
         <button type="button" class="stijl-kaart" data-stijl="transparant"><b>Transparant</b><span>Geen kader, alleen hoes en tekst</span></button>
         <button type="button" class="stijl-kaart" data-stijl="banner"><b>Banner</b><span>Breed, met de wazige hoes erachter</span></button>
+        <button type="button" class="stijl-kaart" data-stijl="schuin"><b>Schuin</b><span>Schuin afgesneden hoes, grote titel</span></button>
+        <button type="button" class="stijl-kaart" data-stijl="golf"><b>Golf</b><span>Hoes steekt uit, voortgang als geluidsgolf</span></button>
     </div>
 
     <p class="thema-label">Extra</p>
     <label class="schakel"><input type="checkbox" id="kleur-check"> Kleuren van de albumhoes <small>(rand, gloed en balk kleuren mee met elk nummer)</small></label>
     <label class="schakel"><input type="checkbox" id="volgende-check"> Laat zien wat er hierna komt <small>(bij kaart, vinyl, 3D en banner)</small></label>
+    <label class="schakel"><input type="checkbox" id="beweging-check"> Bewegende hoes <small>(de hoes zoomt en schuift rustig)</small></label>
 
     <p class="thema-label">Kant van het scherm</p>
     <div class="grootte-rij" id="plek-rij">
@@ -99,7 +103,7 @@
         </div>
         <ol class="steps" id="steps" hidden>
             <li>Open OBS en voeg een nieuwe <strong>Browser Source</strong> toe.</li>
-            <li>Plak het linkje hierboven als URL en zet de maat op <strong>900 x 430</strong> (elke stijl past daarin).</li>
+            <li>Plak het linkje hierboven als URL en zet de maat op <strong>960 x 430</strong> (elke stijl past daarin).</li>
             <li>Zet een nummer aan op Spotify, dan schuift hij in beeld.</li>
             <li>Andere stijl? Kies hem hierboven en klik op Opslaan. De link in OBS hoef je niet te veranderen.</li>
         </ol>
@@ -120,14 +124,14 @@
 <script>
 (() => {
     const API = 'https://api.gwnlarss.nl/api/spotify';
-    const MATEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], banner: [900, 170] };
+    const MATEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], banner: [900, 170], schuin: [960, 240], golf: [960, 260] };
     const $ = id => document.getElementById(id);
     const q = new URLSearchParams(location.search);
     const toastEl = $('toast');
     const toast = t => { toastEl.textContent = t; toastEl.classList.add('is-visible'); setTimeout(() => toastEl.classList.remove('is-visible'), 2500); };
 
     // eigen id na het koppelen (in de hash), bewaard in deze browser
-    let id = '', stijl = 'kaart', plek = 'links', kleur = 'hoes', volgende = true, opgeslagen = null;
+    let id = '', stijl = 'kaart', plek = 'links', kleur = 'hoes', volgende = true, beweging = false, opgeslagen = null;
     try { id = localStorage.getItem('np-id') || ''; } catch { }
     const hashId = new URLSearchParams(location.hash.slice(1)).get('id');
     if (hashId) { id = hashId; try { localStorage.setItem('np-id', id); } catch { } }
@@ -135,7 +139,7 @@
     const basis = new URL('nowplaying.html', location.href).href;
     // de OBS-link: alleen de eigen id; het voorbeeld: het echte nummer als er iets speelt (of een voorbeeldnummer)
     const obsLink = () => basis + '?' + new URLSearchParams({ id });
-    const voorbeeld = () => basis + '?' + new URLSearchParams({ ...(id ? { voorbeeld: '1', id } : { demo: '1' }), stijl, kleur, volgende: volgende ? '1' : '0', ...(plek === 'rechts' ? { plek } : {}) });
+    const voorbeeld = () => basis + '?' + new URLSearchParams({ ...(id ? { voorbeeld: '1', id } : { demo: '1' }), stijl, kleur, volgende: volgende ? '1' : '0', beweging: beweging ? '1' : '0', ...(plek === 'rechts' ? { plek } : {}) });
     function bijwerken() {
         document.querySelectorAll('.stijl-kaart').forEach(k => k.classList.toggle('is-actief', k.dataset.stijl === stijl));
         document.querySelectorAll('#plek-rij .grootte-knop').forEach(k => k.classList.toggle('is-actief', k.dataset.plek === plek));
@@ -144,14 +148,15 @@
         $('maat-tekst').innerHTML = `OBS-maat: <strong>${w} x ${h}</strong> (groter of kleiner mag, hij schaalt mee)`;
         const vb = voorbeeld(); if ($('vb').src !== vb) $('vb').src = vb;
         if (id) $('link-output').value = obsLink();
-        $('kleur-check').checked = kleur === 'hoes'; $('volgende-check').checked = volgende;
-        const anders = Boolean(opgeslagen) && (stijl !== opgeslagen.stijl || plek !== opgeslagen.plek || kleur !== opgeslagen.kleur || volgende !== opgeslagen.volgende);
+        $('kleur-check').checked = kleur === 'hoes'; $('volgende-check').checked = volgende; $('beweging-check').checked = beweging;
+        const anders = Boolean(opgeslagen) && (stijl !== opgeslagen.stijl || plek !== opgeslagen.plek || kleur !== opgeslagen.kleur || volgende !== opgeslagen.volgende || beweging !== Boolean(opgeslagen.beweging));
         $('opslaan-btn').hidden = !anders; $('opslaan-hint').hidden = !anders;
     }
     document.querySelectorAll('.stijl-kaart').forEach(k => k.addEventListener('click', () => { stijl = k.dataset.stijl; bijwerken(); }));
     document.querySelectorAll('#plek-rij .grootte-knop').forEach(k => k.addEventListener('click', () => { plek = k.dataset.plek; bijwerken(); }));
     $('kleur-check').addEventListener('change', e => { kleur = e.target.checked ? 'hoes' : 'merk'; bijwerken(); });
     $('volgende-check').addEventListener('change', e => { volgende = e.target.checked; bijwerken(); });
+    $('beweging-check').addEventListener('change', e => { beweging = e.target.checked; bijwerken(); });
 
     function toonResultaat(goed, titel, tekst) {
         const r = $('result');
@@ -171,7 +176,7 @@
             $('koppel-tekst').textContent = 'Gekoppeld' + (d.naam ? ' als ' + d.naam : '');
             $('koppel-btn').textContent = 'Opnieuw koppelen'; $('koppel-btn').classList.replace('btn--spotify', 'btn--ghost');
             $('ontkoppel-btn').hidden = false;
-            if (d.instellingen) { opgeslagen = { ...d.instellingen }; ({ stijl, plek, kleur, volgende } = opgeslagen); }
+            if (d.instellingen) { opgeslagen = { ...d.instellingen }; ({ stijl, plek, kleur, volgende } = opgeslagen); beweging = Boolean(opgeslagen.beweging); }
             toonResultaat(true, 'Je overlay-link', 'Plak deze link één keer in OBS. Een andere stijl kiezen en opslaan kan daarna altijd, de link blijft hetzelfde.');
             bijwerken();
             if (q.get('gekoppeld') === '1') toast('✅ Spotify gekoppeld!');
@@ -180,7 +185,7 @@
     $('opslaan-btn').addEventListener('click', async () => {
         $('opslaan-btn').disabled = true;
         try {
-            const r = await fetch(API + '/instellingen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, stijl, plek, kleur, volgende }) });
+            const r = await fetch(API + '/instellingen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, stijl, plek, kleur, volgende, beweging }) });
             const d = await r.json();
             if (!r.ok) throw new Error(d.fout || 'Opslaan mislukt');
             opgeslagen = { ...d.instellingen }; bijwerken();

@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
-    /* Spotify "now playing" voor OBS in negen stijlen. Eén vaste link: de stijl en kant komen van de server (opslaan op
+    /* Spotify "now playing" voor OBS in elf stijlen. Eén vaste link: de stijl en kant komen van de server (opslaan op
        nowplaying-setup.html), ?stijl= in de link gaat daar alleen voor voorbeelden overheen.
        Elke stijl heeft een eigen basismaat en schaalt mee met de browserbron. Schuift in beeld zodra er muziek
        speelt en weer weg bij pauze. ?demo=1 toont een voorbeeldnummer, ?voorbeeld=1 het echte nummer (of het
@@ -39,7 +39,8 @@
     .blok { display: none; position: relative; width: 100%; height: 100%; }
     body[data-stijl="kaart"] .blok.kaart, body[data-stijl="pil"] .blok.pil, body[data-stijl="vinyl"] .blok.vinyl,
     body[data-stijl="cassette"] .blok.cassette, body[data-stijl="3d"] .blok.drie, body[data-stijl="aurora"] .blok.aurora,
-    body[data-stijl="split"] .blok.split, body[data-stijl="transparant"] .blok.transparant, body[data-stijl="banner"] .blok.banner { display: block; }
+    body[data-stijl="split"] .blok.split, body[data-stijl="transparant"] .blok.transparant, body[data-stijl="banner"] .blok.banner,
+    body[data-stijl="schuin"] .blok.schuin, body[data-stijl="golf"] .blok.golf { display: block; }
     /* in- en uitschuiven */
     .schuif { transform: translateX(-120%); opacity: 0; transition: transform 0.75s cubic-bezier(.2, 1.2, .3, 1), opacity 0.5s; }
     body.rechts .schuif { transform: translateX(120%); }
@@ -61,21 +62,21 @@
     body.speelt .draait { animation-play-state: running; }
     @keyframes draai { to { transform: rotate(360deg); } }
     .wissel { animation: wissel 0.7s ease; }
+    /* bewegende hoes (instelling 'beweging'): rustig inzoomen en verschuiven, zoals in een filmpje */
+    body.beweeg [data-hoes] { background-size: 135%; animation: kenburns 16s ease-in-out infinite alternate; }
+    body.beweeg .draait[data-hoes] { animation: draai 2.4s linear infinite, kenburns 16s ease-in-out infinite alternate; }
+    @keyframes kenburns { 0% { background-position: 20% 30%; } 50% { background-position: 70% 45%; } 100% { background-position: 40% 80%; } }
     @keyframes wissel { 0% { transform: perspective(600px) rotateY(0); } 50% { transform: perspective(600px) rotateY(90deg); } 100% { transform: perspective(600px) rotateY(0); } }
 
-    /* ---------- 1. kaart (800 x 220) ---------- */
+    /* ---------- 1. kaart (800 x 220): hoes, titel, artiest en voortgang ---------- */
     .kaart .doos { z-index: 1; position: absolute; left: 24px; top: 30px; width: 752px; height: 160px; display: flex; align-items: center; gap: 22px;
         padding: 0 26px 0 20px; border-radius: 26px; background: var(--kaart); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 34px rgba(145, 70, 255, 0.35); }
     .kaart .doos::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 3px; pointer-events: none;
         background: linear-gradient(120deg, var(--paars), var(--roze), var(--paars));
         -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
     .kaart .hoesvak { position: relative; flex: 0 0 120px; height: 120px; }
-    .kaart .plaat { position: absolute; left: 10px; top: 6px; width: 108px; height: 108px; border-radius: 50%;
-        background: radial-gradient(circle, var(--roze) 0 13px, #1a1a1a 14px 16px, transparent 17px), repeating-radial-gradient(circle, #121212 0 2px, #1d1d1d 2px 4px);
-        transition: transform 0.9s cubic-bezier(.2, 1, .3, 1); }
-    body.speelt .kaart .plaat { transform: translateX(46px); }
     .kaart .hoes { position: absolute; inset: 0; border-radius: 18px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); }
-    .kaart .info { flex: 1; min-width: 0; padding-left: 42px; }
+    .kaart .info { flex: 1; min-width: 0; padding-left: 4px; }
     .kaart .boven { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #d9c8ff; }
     .kaart .titel { font: 800 34px/1.2 'Baloo 2', sans-serif; margin-top: 4px; }
     .kaart .artiest { font-size: 19px; font-weight: 600; color: #cbb8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -183,6 +184,31 @@
     .banner .artiest { font-size: 17px; font-weight: 600; color: rgba(255, 255, 255, 0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .banner .lijn { position: absolute; left: 0; bottom: 0; height: 5px; width: calc(var(--p) * 100%); z-index: 1; background: linear-gradient(90deg, var(--paars), var(--roze)); box-shadow: 0 0 14px var(--roze); }
 
+    /* ---------- 10. schuin (960 x 240): hoes links schuin afgesneden met een gekleurde streep, titel groot in hoofdletters ---------- */
+    .schuin .doos { position: absolute; left: 20px; top: 20px; width: 920px; height: 200px; border-radius: 20px; overflow: hidden; background: rgba(10, 8, 16, 0.94); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5); }
+    .schuin .hoes { position: absolute; left: 0; top: 0; width: 340px; height: 200px; clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); }
+    .schuin .streep { position: absolute; left: 315px; top: -6px; width: 7px; height: 212px; transform: skewX(-11.6deg); background: linear-gradient(180deg, var(--paars), var(--roze)); box-shadow: 0 0 16px var(--roze); }
+    .schuin .info { position: absolute; left: 372px; top: 30px; right: 44px; }
+    .schuin .titel { font: 800 54px/1.1 'Baloo 2', sans-serif; text-transform: uppercase; letter-spacing: 1px; color: color-mix(in srgb, var(--roze) 45%, #fff); transition: color 1.2s; }
+    .schuin .artiest { font-size: 24px; font-weight: 700; color: rgba(255, 255, 255, 0.62); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .schuin .tijden { display: flex; align-items: center; gap: 22px; margin-top: 22px; font-size: 17px; font-weight: 700; color: rgba(255, 255, 255, 0.6); font-variant-numeric: tabular-nums; }
+    .schuin .balk { flex: 1; height: 8px; }
+
+    /* ---------- 11. golf (960 x 260): hoes steekt boven de getinte kaart uit, voortgang als geluidsgolf ---------- */
+    .golf .doos { position: absolute; left: 50px; top: 56px; width: 880px; height: 184px; border-radius: 26px;
+        background: linear-gradient(110deg, color-mix(in srgb, var(--paars) 22%, rgba(22, 18, 16, 0.92)), rgba(22, 18, 16, 0.92) 70%);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 40px rgba(0, 0, 0, 0.45); transition: background 1.2s; }
+    .golf .hoes { position: absolute; left: 76px; top: 20px; width: 196px; height: 196px; border-radius: 22px; z-index: 1; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), 0 14px 30px rgba(0, 0, 0, 0.55); }
+    .golf .info { position: absolute; left: 304px; top: 78px; right: 46px; z-index: 1; }
+    .golf .titel { font: 800 46px/1.1 'Baloo 2', sans-serif; color: #f4f1ec; }
+    .golf .artiest { font-size: 26px; font-weight: 700; color: var(--roze); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 1.2s; }
+    .golf .tijden { display: flex; align-items: center; gap: 20px; margin-top: 16px; font-size: 19px; font-weight: 700; color: rgba(255, 255, 255, 0.82); font-variant-numeric: tabular-nums; }
+    .golf .golfje { flex: 1; display: flex; align-items: center; justify-content: space-between; height: 40px; }
+    .golf .golfje i { width: 6px; border-radius: 3px; background: color-mix(in srgb, var(--roze) 35%, transparent); transition: background 0.3s; }
+    .golf .golfje i.vol { background: var(--roze); }
+    body.speelt .golf .golfje i.vol:nth-last-child(1 of .vol) { animation: tik 0.5s ease-in-out infinite alternate; }
+    @keyframes tik { to { transform: scaleY(1.35); } }
+
     /* melding als Spotify nog niet gekoppeld is (ook in OBS, zodat je weet dat er iets moet gebeuren) */
     .hint { position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); max-width: 720px; padding: 16px 20px; border-radius: 16px;
         background: var(--kaart); font-size: 16px; line-height: 1.45; box-shadow: 0 0 0 2px var(--paars); }
@@ -193,7 +219,7 @@
 <body data-stijl="kaart">
 <div id="podium">
     <div class="blok kaart"><div class="schuif" style="position:absolute;inset:0"><div class="gloed" data-hoes></div><div class="doos">
-        <div class="hoesvak"><div class="plaat draait"></div><div class="hoes" data-hoes></div></div>
+        <div class="hoesvak"><div class="hoes" data-hoes></div></div>
         <div class="info">
             <div class="boven"><span class="eq"><i></i><i></i><i></i><i></i></span>NU OP SPOTIFY<span class="hierna"><b>HIERNA</b><span data-volgende></span></span></div>
             <div class="titelvak"><span class="titel" data-titel></span></div>
@@ -280,12 +306,31 @@
         </div>
         <div class="lijn"></div>
     </div></div></div>
+
+    <div class="blok schuin"><div class="schuif" style="position:absolute;inset:0"><div class="doos">
+        <div class="hoes" data-hoes></div><div class="streep"></div>
+        <div class="info">
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
+        </div>
+    </div></div></div>
+
+    <div class="blok golf"><div class="schuif" style="position:absolute;inset:0">
+        <div class="doos"></div>
+        <div class="hoes" data-hoes></div>
+        <div class="info">
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="tijden"><span data-tijd>0:00</span><div class="golfje" id="golfje"></div><span data-lengte>0:00</span></div>
+        </div>
+    </div></div>
 </div>
 <div class="hint" id="hint" hidden></div>
 <script>
 (() => {
     const q = new URLSearchParams(location.search);
-    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], banner: [900, 170] };
+    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], banner: [900, 170], schuin: [960, 240], golf: [960, 260] };
     const DEMO = q.get('demo') === '1';
     // ?voorbeeld=1 (instelpagina): het echte nummer als er iets speelt, anders het voorbeeldnummer, en altijd in beeld
     const VOORBEELD = q.get('voorbeeld') === '1';
@@ -400,6 +445,7 @@
         if (!q.get('gekoppeld') && !q.get('fout')) hint.hidden = true;
         nu = d;
         zetKleur(d);
+        document.body.classList.toggle('beweeg', q.has('beweging') ? q.get('beweging') === '1' : Boolean(d.instellingen?.beweging));
         const volg = d.volgende && (q.has('volgende') ? q.get('volgende') !== '0' : (d.instellingen?.volgende ?? true));
         document.body.classList.toggle('geenvolgende', !volg);
         if (volg) alle('[data-volgende]').forEach(e => (e.textContent = d.volgende.titel + (d.volgende.artiest ? ' · ' + d.volgende.artiest : '')));
@@ -414,6 +460,7 @@
                 alle('[data-lengte]').forEach(e => (e.textContent = mmss(d.duur)));
                 lopendeTitel();
                 window.npHoes?.(d.hoes);
+                golfVorm(d.id);
             }, eerste ? 0 : 350);
         }
         document.body.classList.toggle('speelt', d.speelt);
@@ -422,6 +469,18 @@
         if (d.speelt) { clearTimeout(uitTimer); uitTimer = null; document.body.classList.add('aan'); }
         else if (!uitTimer) uitTimer = setTimeout(() => { uitTimer = null; document.body.classList.remove('aan'); }, 4000);
     }
+    // golf-stijl: 46 staafjes met een vaste, per nummer andere vorm; gevuld tot waar het nummer is
+    const golfje = document.getElementById('golfje'), STAAFJES = 46;
+    golfje.innerHTML = '<i></i>'.repeat(STAAFJES);
+    function golfVorm(id) {
+        let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+        golfje.querySelectorAll('i').forEach((st, i) => {
+            h = (h * 1103515245 + 12345) >>> 0;
+            const golf = 0.45 + 0.35 * Math.sin(i / 3.2 + (h % 7)) , ruis = (h % 1000) / 1000;
+            st.style.height = Math.round(10 + 30 * Math.min(1, golf * 0.7 + ruis * 0.45)) + 'px';
+        });
+    }
+    golfVorm('start');
     // voortgang tussen de metingen door lokaal laten doorlopen (en bij de cassette de spoeltjes)
     const spoelL = document.getElementById('spoelL'), spoelR = document.getElementById('spoelR');
     setInterval(() => {
@@ -429,6 +488,7 @@
         const pos = Math.min(nu.duur, nu.positie + (nu.speelt ? Date.now() - nu.op : 0)), p = pos / nu.duur;
         blok.style.setProperty('--p', p.toFixed(4));
         alle('[data-tijd]').forEach(e => (e.textContent = mmss(pos)));
+        if (STIJL === 'golf') { const n = Math.round(p * STAAFJES); golfje.querySelectorAll('i').forEach((st, i) => st.classList.toggle('vol', i < n)); }
         if (STIJL === 'cassette') {
             const r = p2 => (24 + 30 * p2) * 2;   // band loopt van de linker naar de rechter spoel
             spoelL.style.width = spoelL.style.height = r(1 - p) + 'px';
