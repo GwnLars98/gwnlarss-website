@@ -10,9 +10,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
-    /* Spotify "now playing" voor OBS in vijf stijlen (?stijl=kaart|pil|vinyl|cassette|3d, keuze op nowplaying-setup.html).
+    /* Spotify "now playing" voor OBS in vijf stijlen. Eén vaste link: de stijl en kant komen van de server (opslaan op
+       nowplaying-setup.html), ?stijl= in de link gaat daar alleen voor voorbeelden overheen.
        Elke stijl heeft een eigen basismaat en schaalt mee met de browserbron. Schuift in beeld zodra er muziek
-       speelt en weer weg bij pauze. ?plek=rechts lijnt rechts uit, ?demo=1 toont een voorbeeldnummer.
+       speelt en weer weg bij pauze. ?demo=1 toont een voorbeeldnummer, ?voorbeeld=1 het echte nummer (of het
+       voorbeeldnummer als er niets speelt) en blijft altijd in beeld.
        Data: /api/spotify/nu (utils/spotify.js), elke 3 seconden; de voortgang loopt tussendoor lokaal door. */
     :root { --paars: #9146ff; --roze: #ff3ea5; --kaart: rgba(18, 9, 38, 0.86); --p: 0; }
     * { box-sizing: border-box; }
@@ -176,27 +178,40 @@
 (() => {
     const q = new URLSearchParams(location.search);
     const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], cassette: [680, 430], '3d': [900, 320] };
-    const STIJL = STIJLEN[q.get('stijl')] ? q.get('stijl') : 'kaart';
-    document.body.dataset.stijl = STIJL;
-    if (q.get('plek') === 'rechts') document.body.classList.add('rechts');
     const DEMO = q.get('demo') === '1';
+    // ?voorbeeld=1 (instelpagina): het echte nummer als er iets speelt, anders het voorbeeldnummer, en altijd in beeld
+    const VOORBEELD = q.get('voorbeeld') === '1';
     // kopie op gwnlarss.nl voor andere streamers (?id= uit nowplaying-setup.html); het origineel staat in de bot-repo (public/nowplaying.html)
     const API_BASE = 'https://api.gwnlarss.nl', ID = q.get('id') || '';
     const KOPPEL = ID ? 'https://gwnlarss.nl/nowplaying-setup.html' : API_BASE + '/api/spotify/verbind';
-    window.npStijl = STIJL;
+    const VOORBEELDNUMMER = { geconfigureerd: true, gekoppeld: true, speelt: true, id: 'demo', titel: 'Een heel lang nummer met een titel die niet past', artiest: 'GwnLarss, Vrienden', hoes: '', duur: 213000, positie: 64000 };
 
-    // podium op de maat van de stijl, passend in de browserbron (rechts uitgelijnd met ?plek=rechts)
-    const podium = document.getElementById('podium'), [BW, BH] = STIJLEN[STIJL];
-    podium.style.width = BW + 'px'; podium.style.height = BH + 'px';
+    // Stijl en kant: vast uit de link (?stijl=, voor voorbeelden), anders de opgeslagen keuze van de server.
+    // Zo blijft de OBS-link altijd hetzelfde; na opslaan op de instelpagina laadt de overlay zichzelf opnieuw.
+    const podium = document.getElementById('podium');
+    let STIJL = null, PLEK = null, blok = null, BW = 0, BH = 0, stijlKlaar;
+    window.npStijlKlaar = new Promise(r => (stijlKlaar = r));
     function pas() {
+        if (!STIJL) return;
         const s = Math.min(innerWidth / BW, innerHeight / BH);
-        const x = document.body.classList.contains('rechts') ? innerWidth - BW * s : 0;
+        const x = PLEK === 'rechts' ? innerWidth - BW * s : 0;
         podium.style.transform = `translate(${x}px, ${(innerHeight - BH * s) / 2}px) scale(${s})`;
     }
-    addEventListener('resize', pas); pas();
+    addEventListener('resize', pas);
+    function startStijl(stijl, plek) {
+        STIJL = STIJLEN[stijl] ? stijl : 'kaart'; PLEK = plek === 'rechts' ? 'rechts' : 'links';
+        document.body.dataset.stijl = STIJL;
+        document.body.classList.toggle('rechts', PLEK === 'rechts');
+        [BW, BH] = STIJLEN[STIJL];
+        podium.style.width = BW + 'px'; podium.style.height = BH + 'px';
+        pas();
+        blok = document.querySelector(`.blok.${STIJL === '3d' ? 'drie' : STIJL}`);
+        stijlKlaar(STIJL);
+    }
+    const vast = STIJLEN[q.get('stijl')] ? q.get('stijl') : null;
+    if (vast || DEMO) startStijl(vast || 'kaart', q.get('plek'));
 
-    const blok = document.querySelector(`.blok.${STIJL === '3d' ? 'drie' : STIJL}`);
-    const alle = sel => blok.querySelectorAll(sel);
+    const alle = sel => (blok ? blok.querySelectorAll(sel) : []);
     const hint = document.getElementById('hint');
     const mmss = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     if (q.get('gekoppeld') === '1') { hint.hidden = false; hint.innerHTML = '✅ Spotify is gekoppeld! Zet een nummer aan, dan schuift de overlay in beeld. Deze melding verdwijnt vanzelf.'; setTimeout(() => (hint.hidden = true), 6000); }
@@ -215,6 +230,13 @@
     }
     let nu = null, vorigeId = null, uitTimer = null;
     function verwerk(d) {
+        // opgeslagen stijl/kant: de eerste keer toepassen, bij een wijziging opnieuw laden
+        const inst = d.instellingen;
+        if (!vast && inst) {
+            if (!STIJL) startStijl(inst.stijl, inst.plek);
+            else if (inst.stijl !== STIJL || inst.plek !== PLEK) { location.reload(); return; }
+        }
+        if (!STIJL) startStijl('kaart', 'links');
         if (!d.geconfigureerd && !DEMO) { hint.hidden = false; hint.textContent = 'Spotify is nog niet ingesteld op de server (SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET).'; return; }
         if (!d.gekoppeld && !DEMO) { if (!q.get('fout')) { hint.hidden = false; hint.innerHTML = 'Spotify is nog niet gekoppeld. <a href="' + KOPPEL + '">Koppel je Spotify</a>' + (ID ? '.' : ' (alleen met je beheer-login).'); } return; }
         if (!q.get('gekoppeld') && !q.get('fout')) hint.hidden = true;
@@ -240,7 +262,7 @@
     // voortgang tussen de metingen door lokaal laten doorlopen (en bij de cassette de spoeltjes)
     const spoelL = document.getElementById('spoelL'), spoelR = document.getElementById('spoelR');
     setInterval(() => {
-        if (!nu || !nu.duur) return;
+        if (!nu || !nu.duur || !blok) return;
         const pos = Math.min(nu.duur, nu.positie + (nu.speelt ? Date.now() - nu.op : 0)), p = pos / nu.duur;
         blok.style.setProperty('--p', p.toFixed(4));
         alle('[data-tijd]').forEach(e => (e.textContent = mmss(pos)));
@@ -251,9 +273,15 @@
         }
     }, 250);
 
+    let voorbeeldOp = 0;
     async function haal() {
-        if (DEMO) return verwerk({ geconfigureerd: true, gekoppeld: true, speelt: true, id: 'demo', titel: 'Een heel lang nummer met een titel die niet past', artiest: 'GwnLarss, Vrienden', hoes: '', duur: 213000, positie: 64000, op: Date.now() });
-        try { verwerk(await (await fetch(API_BASE + '/api/spotify/nu' + (ID ? '?id=' + encodeURIComponent(ID) : ''), { cache: 'no-store' })).json()); } catch { }
+        if (DEMO) return verwerk({ ...VOORBEELDNUMMER, op: Date.now() });
+        try {
+            const d = await (await fetch(API_BASE + '/api/spotify/nu' + (ID ? '?id=' + encodeURIComponent(ID) : ''), { cache: 'no-store' })).json();
+            // voorbeeld: niets aan het spelen of niet gekoppeld, dan het voorbeeldnummer (met een vaste starttijd zodat de balk doorloopt)
+            if (VOORBEELD && !(d.gekoppeld && d.speelt && d.id)) { voorbeeldOp ||= Date.now(); return verwerk({ ...VOORBEELDNUMMER, instellingen: d.instellingen, op: voorbeeldOp }); }
+            verwerk(d);
+        } catch { if (VOORBEELD) verwerk({ ...VOORBEELDNUMMER, op: voorbeeldOp ||= Date.now() }); }
     }
     haal(); setInterval(haal, 3000);
     document.fonts.ready.then(() => { lopendeTitel(); document.body.dataset.klaar = '1'; });
@@ -263,7 +291,7 @@
 <script type="module">
 // 3d-stijl: een glanzende plaat met de albumhoes als label, schuin naar je toe, draait mee met de muziek
 // en klapt om bij een nieuw nummer. Eigen klein canvas (320x320), rendert alleen als de overlay in beeld is.
-if (window.npStijl === '3d') {
+if (await window.npStijlKlaar === '3d') {
     const THREE = await import('three');
     const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
     const r = new THREE.WebGLRenderer({ canvas: document.getElementById('drie'), alpha: true, antialias: true });

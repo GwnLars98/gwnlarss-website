@@ -13,7 +13,8 @@
 <link rel="stylesheet" href="setup.css">
 <style>
     /* Nog niet openbaar: niet gelinkt vanaf tools.html en noindex. Koppelen loopt via api.gwnlarss.nl (utils/spotify.js),
-       daarna komt de streamer hier terug met zijn eigen id in de hash; die bewaren we in de browser. */
+       daarna komt de streamer hier terug met zijn eigen id in de hash; die bewaren we in de browser. Eén vaste OBS-link
+       (alleen de id); stijl en kant worden op de server opgeslagen en de overlay past zich daarna vanzelf aan. */
     .stijl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
     .stijl-kaart { font: inherit; text-align: left; display: grid; gap: 3px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--lijn); background: rgba(255, 255, 255, 0.03); color: var(--tekst); cursor: pointer; transition: transform 0.2s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .stijl-kaart:hover { transform: translateY(-2px); }
@@ -75,6 +76,9 @@
         <button type="button" class="grootte-knop" data-plek="rechts">Rechts</button>
     </div>
 
+    <button type="button" class="btn btn--primary" id="opslaan-btn" hidden>💾 Opslaan</button>
+    <p class="thema-hint" id="opslaan-hint" hidden>Je OBS-link blijft hetzelfde: na opslaan past je overlay zich binnen een paar seconden vanzelf aan.</p>
+
     <div class="result" id="result">
         <p class="result__titel" id="result-titel"></p>
         <p id="result-tekst"></p>
@@ -84,8 +88,9 @@
         </div>
         <ol class="steps" id="steps" hidden>
             <li>Open OBS en voeg een nieuwe <strong>Browser Source</strong> toe.</li>
-            <li>Plak het linkje hierboven als URL en zet de maat die onder het voorbeeld staat.</li>
+            <li>Plak het linkje hierboven als URL en zet de maat op <strong>900 x 430</strong> (elke stijl past daarin).</li>
             <li>Zet een nummer aan op Spotify, dan schuift hij in beeld.</li>
+            <li>Andere stijl? Kies hem hierboven en klik op Opslaan. De link in OBS hoef je niet te veranderen.</li>
         </ol>
     </div>
     <button type="button" class="btn btn--ghost" id="ontkoppel-btn" hidden>Spotify ontkoppelen</button>
@@ -111,24 +116,25 @@
     const toast = t => { toastEl.textContent = t; toastEl.classList.add('is-visible'); setTimeout(() => toastEl.classList.remove('is-visible'), 2500); };
 
     // eigen id na het koppelen (in de hash), bewaard in deze browser
-    let id = '', stijl = 'kaart', plek = 'links';
-    try { id = localStorage.getItem('np-id') || ''; stijl = localStorage.getItem('np-stijl') || 'kaart'; plek = localStorage.getItem('np-plek') || 'links'; } catch { }
+    let id = '', stijl = 'kaart', plek = 'links', opgeslagen = null;
+    try { id = localStorage.getItem('np-id') || ''; } catch { }
     const hashId = new URLSearchParams(location.hash.slice(1)).get('id');
     if (hashId) { id = hashId; try { localStorage.setItem('np-id', id); } catch { } }
     if (location.hash || location.search) history.replaceState(null, '', location.pathname);
-    if (!MATEN[stijl]) stijl = 'kaart';
-
-    const overlay = (demo) => new URL('nowplaying.html', location.href).href + '?' + new URLSearchParams({
-        ...(demo ? { demo: '1' } : { id }), stijl, ...(plek === 'rechts' ? { plek } : {}) });
+    const basis = new URL('nowplaying.html', location.href).href;
+    // de OBS-link: alleen de eigen id; het voorbeeld: het echte nummer als er iets speelt (of een voorbeeldnummer)
+    const obsLink = () => basis + '?' + new URLSearchParams({ id });
+    const voorbeeld = () => basis + '?' + new URLSearchParams({ ...(id ? { voorbeeld: '1', id } : { demo: '1' }), stijl, ...(plek === 'rechts' ? { plek } : {}) });
     function bijwerken() {
         document.querySelectorAll('.stijl-kaart').forEach(k => k.classList.toggle('is-actief', k.dataset.stijl === stijl));
         document.querySelectorAll('#plek-rij .grootte-knop').forEach(k => k.classList.toggle('is-actief', k.dataset.plek === plek));
         const [w, h] = MATEN[stijl];
         $('vv').style.setProperty('--vb', `${w} / ${h}`);
         $('maat-tekst').innerHTML = `OBS-maat: <strong>${w} x ${h}</strong> (groter of kleiner mag, hij schaalt mee)`;
-        const vb = overlay(true); if ($('vb').src !== vb) $('vb').src = vb;
-        if (id) $('link-output').value = overlay(false);
-        try { localStorage.setItem('np-stijl', stijl); localStorage.setItem('np-plek', plek); } catch { }
+        const vb = voorbeeld(); if ($('vb').src !== vb) $('vb').src = vb;
+        if (id) $('link-output').value = obsLink();
+        const anders = Boolean(opgeslagen) && (stijl !== opgeslagen.stijl || plek !== opgeslagen.plek);
+        $('opslaan-btn').hidden = !anders; $('opslaan-hint').hidden = !anders;
     }
     document.querySelectorAll('.stijl-kaart').forEach(k => k.addEventListener('click', () => { stijl = k.dataset.stijl; bijwerken(); }));
     document.querySelectorAll('#plek-rij .grootte-knop').forEach(k => k.addEventListener('click', () => { plek = k.dataset.plek; bijwerken(); }));
@@ -151,11 +157,23 @@
             $('koppel-tekst').textContent = 'Gekoppeld' + (d.naam ? ' als ' + d.naam : '');
             $('koppel-btn').textContent = 'Opnieuw koppelen'; $('koppel-btn').classList.replace('btn--spotify', 'btn--ghost');
             $('ontkoppel-btn').hidden = false;
-            toonResultaat(true, 'Je overlay-link', 'Plak deze link in OBS. Wissel je later van stijl? Kopieer dan de nieuwe link, je Spotify blijft gekoppeld.');
+            if (d.instellingen) { opgeslagen = { ...d.instellingen }; stijl = opgeslagen.stijl; plek = opgeslagen.plek; }
+            toonResultaat(true, 'Je overlay-link', 'Plak deze link één keer in OBS. Een andere stijl kiezen en opslaan kan daarna altijd, de link blijft hetzelfde.');
             bijwerken();
             if (q.get('gekoppeld') === '1') toast('✅ Spotify gekoppeld!');
         } catch { }
     }
+    $('opslaan-btn').addEventListener('click', async () => {
+        $('opslaan-btn').disabled = true;
+        try {
+            const r = await fetch(API + '/instellingen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, stijl, plek }) });
+            const d = await r.json();
+            if (!r.ok) throw new Error(d.fout || 'Opslaan mislukt');
+            opgeslagen = { ...d.instellingen }; bijwerken();
+            toast('✅ Opgeslagen! Je overlay past zich zo aan.');
+        } catch (err) { toast('❌ ' + err.message); }
+        $('opslaan-btn').disabled = false;
+    });
     $('kopieer-btn').addEventListener('click', async () => {
         try { await navigator.clipboard.writeText($('link-output').value); toast('🔗 Link gekopieerd!'); } catch { $('link-output').select(); }
     });
