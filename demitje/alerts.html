@@ -7,11 +7,11 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Lilita+One&family=Russo+One&family=Overpass:wght@800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Lilita+One&family=Russo+One&display=swap" rel="stylesheet">
 <style>
-    /* Alerts voor Demitje01 in dezelfde drie stijlen als zijn overlay (?stijl=speels|neon|weg):
+    /* Alerts voor Demitje01 in dezelfde drie stijlen als zijn overlay (?stijl=speels|neon|3d):
        speels = stuiterend kaartje met confetti, neon = oplichtende neonbuis met lichtstralen,
-       weg = een vrachtwagen rijdt de alert op zijn oplegger binnen en toetert.
+       3d = de naam als echte 3D-letters die van ver aan komen draaien, met een 3D-icoon en 3D-confetti.
        Live via api.gwnlarss.nl/api/streamer-alerts/demitje01/stream. 1920x1080, doorzichtig.
        ?voorbeeld=1 is voor de instelpagina (testknoppen via postMessage). */
     :root { --blauw: #1e6bff; --turq: #22e3d0; --diep: #062347; --grootte: 1; }
@@ -62,36 +62,19 @@
     @keyframes glitch { 0% { opacity: 0; transform: translateX(-30px) skewX(20deg); filter: hue-rotate(90deg); } 40% { opacity: 1; transform: translateX(18px) skewX(-12deg); }
         70% { transform: translateX(-6px); filter: none; } 100% { transform: none; opacity: 1; } }
 
-    /* ---------- snelweg: vrachtwagen met de alert op de oplegger ---------- */
-    .konvooi { position: absolute; left: 50%; top: 90px; display: flex; align-items: flex-end; transform-origin: 50% 0; }
-    .oplegger { position: relative; width: 1080px; padding: 26px 50px 40px; text-align: center; border-radius: 14px 14px 6px 6px;
-        background: linear-gradient(180deg, #ffffff, #e9eef5); color: #111; font-family: 'Overpass', sans-serif;
-        box-shadow: inset 0 -26px 0 #1e6bff, inset 0 -32px 0 #22e3d0, 0 18px 30px rgba(0, 0, 0, 0.45); }
-    .oplegger .kop { display: inline-block; padding: 6px 26px 2px; border-radius: 10px; background: #1d4fa3; color: #fff; font-weight: 900; font-size: 38px; letter-spacing: 3px;
-        box-shadow: inset 0 0 0 3px #1d4fa3, inset 0 0 0 6px #fff; }
-    .oplegger .naam { font-weight: 900; font-size: 104px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; letter-spacing: 2px; margin-top: 8px; }
-    .oplegger .regel { font-weight: 800; font-size: 30px; color: #34404f; margin-top: 2px; }
-    .koppeling { width: 34px; height: 18px; background: #2b2b2b; margin-bottom: 64px; }
-    .cabine { position: relative; width: 250px; height: 280px; border-radius: 26px 70px 10px 10px; background: linear-gradient(180deg, #22e3d0, #12b5a6);
-        box-shadow: inset -10px 0 0 rgba(0, 0, 0, 0.12), 0 18px 30px rgba(0, 0, 0, 0.45); }
-    .cabine::before { content: ''; position: absolute; right: 16px; top: 26px; width: 120px; height: 100px; border-radius: 10px 50px 8px 8px; background: linear-gradient(160deg, #a8e6ff, #2a6fa8); }
-    .cabine::after { content: ''; position: absolute; right: -8px; bottom: 26px; width: 26px; height: 46px; border-radius: 6px; background: #fff7b0; box-shadow: 0 0 30px 10px rgba(255, 247, 176, 0.6); }
-    .rooster { position: absolute; right: 14px; bottom: 80px; width: 70px; height: 70px; border-radius: 8px; background: repeating-linear-gradient(180deg, #0c6b62 0 6px, #0f8f83 6px 12px); }
-    .wiel { position: absolute; bottom: -42px; width: 84px; height: 84px; border-radius: 50%; background: radial-gradient(circle, #c9d1db 0 16px, #333 17px 22px, #151515 23px); }
-    .wiel::after { content: ''; position: absolute; left: 50%; top: 8px; width: 6px; height: 20px; margin-left: -3px; background: #555; border-radius: 3px; }
-    .rijdt .wiel { animation: rol 0.35s linear infinite; }
-    @keyframes rol { to { transform: rotate(360deg); } }
-    .konvooi.in { animation: rijIn 1.7s cubic-bezier(.15, .7, .25, 1) both; }
-    .konvooi.uit { animation: rijUit 1.3s cubic-bezier(.6, 0, .9, .5) both; }
-    @keyframes rijIn { from { transform: translateX(-3200px) scale(var(--grootte)); } to { transform: translateX(-50%) scale(var(--grootte)); } }
-    @keyframes rijUit { from { transform: translateX(-50%) scale(var(--grootte)); } to { transform: translateX(1400px) scale(var(--grootte)); } }
-    .konvooi.staat { transform: translateX(-50%) scale(var(--grootte)); }
-    .konvooi.staat .cabine { animation: schud 0.25s ease-in-out 3; }
-    @keyframes schud { 50% { transform: translateY(-3px); } }
-</style>
+    /* ---------- 3d: three.js tekent naam, kop, icoon en confetti; de regel (bericht) blijft gewone tekst ---------- */
+    #drie { position: absolute; inset: 0; width: 1920px; height: 1080px; display: none; }
+    .drie #drie { display: block; }
+    .regel3d { position: absolute; left: 50%; top: 600px; transform: translateX(-50%); max-width: 1200px; text-align: center; white-space: normal;
+        font: 800 38px 'Baloo 2', sans-serif; color: #fff; padding: 6px 30px; border-radius: 999px;
+        background: linear-gradient(90deg, rgba(30, 107, 255, 0.85), rgba(34, 227, 208, 0.85)); box-shadow: 0 0 0 4px #fff, 0 10px 24px rgba(0, 0, 0, 0.4);
+        opacity: 0; transition: opacity 0.4s, transform 0.4s; }
+    .regel3d.aan { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+</style></style>
 </head>
 <body>
 <div id="podium">
+    <canvas id="drie" width="1920" height="1080"></canvas>
     <canvas id="confetti" width="1920" height="1080"></canvas>
     <div id="toneel"></div>
 </div>
@@ -101,7 +84,7 @@
     const q = new URLSearchParams(location.search);
     const LOGIN = 'demitje01', API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
     const VOORBEELD = q.get('voorbeeld') === '1';
-    const STIJL = ['neon', 'weg'].includes(q.get('stijl')) ? q.get('stijl') : 'speels';
+    const STIJL = q.get('stijl') === 'neon' ? 'neon' : ['3d', 'weg'].includes(q.get('stijl')) ? 'drie' : 'speels';   // oude ?stijl=weg wordt 3d
     document.body.classList.add(STIJL);
 
     const podium = document.getElementById('podium');
@@ -117,7 +100,7 @@
     function tekst(e) {
         const x = e.extra || {};
         switch (e.soort) {
-            case 'follower': return ['NIEUWE VOLGER', 'Welkom in de cabine!'];
+            case 'follower': return ['NIEUWE VOLGER', 'Welkom bij de stream!'];
             case 'subscriber': return [x.tier > 1 ? 'NIEUWE SUB · TIER ' + x.tier : 'NIEUWE SUB', 'Bedankt voor je steun!'];
             case 'resub': return [getal(x.maanden) + ' MAANDEN SUB', x.bericht || 'Nog steeds aan boord!'];
             case 'gift': return [getal(x.aantal) + (x.aantal == 1 ? ' SUB' : ' SUBS') + ' CADEAU', 'Wat een held!'];
@@ -149,7 +132,7 @@
     // ---------- confetti / stralen ----------
     const cv = document.getElementById('confetti'), cx = cv.getContext('2d');
     const deeltjes = [];
-    const KLEUREN = { speels: ['#ffffff', '#22e3d0', '#1e6bff', '#ff4f8b', '#ffd84a'], neon: ['#5ff6ff', '#ffffff', '#1e6bff'], weg: ['#f6c400', '#ffffff', '#1d4fa3', '#22e3d0'] };
+    const KLEUREN = { speels: ['#ffffff', '#22e3d0', '#1e6bff', '#ff4f8b', '#ffd84a'], neon: ['#5ff6ff', '#ffffff', '#1e6bff'], drie: ['#ffffff', '#22e3d0', '#1e6bff'] };
     function strooi(n, x0, y0) {
         const k = KLEUREN[STIJL];
         for (let i = 0; i < n; i++) {
@@ -199,13 +182,9 @@
             };
             if (STIJL === 'speels') [523, 659, 784, 1047, 1319].forEach((f, i) => toon(f, i * 0.08, 0.35));
             else if (STIJL === 'neon') { const o = toon(180, 0, 0.7, 'sawtooth', 0.25); o.frequency.exponentialRampToValueAtTime(1400, nu + 0.5); [659, 988, 1319].forEach(f => toon(f, 0.45, 0.8, 'sine', 0.35)); }
-            else {   // toeter: twee keer een lage dubbeltoon
-                const filter = ac.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1400; filter.connect(uit);
-                for (const [s, l] of [[0, 0.32], [0.42, 0.6]]) for (const f of [233, 294]) {
-                    const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.value = f;
-                    g.gain.setValueAtTime(0, nu + s); g.gain.linearRampToValueAtTime(0.35, nu + s + 0.03); g.gain.setValueAtTime(0.35, nu + s + l - 0.05); g.gain.linearRampToValueAtTime(0, nu + s + l);
-                    o.connect(g); g.connect(filter); o.start(nu + s); o.stop(nu + s + l + 0.05);
-                }
+            else {   // 3d: aanzwellende zoef naar een klokkend akkoord
+                const o = toon(220, 0, 0.6, 'sine', 0.3); o.frequency.exponentialRampToValueAtTime(880, nu + 0.55);
+                [784, 988, 1175, 1568].forEach((f, i) => toon(f, 0.55 + i * 0.05, 1.2, 'sine', 0.3));
             }
         } catch { }
     }
@@ -229,17 +208,10 @@
         bezig = true;
         const e = wachtrij.shift(), [kop, regel] = tekst(e), n = niveau(e), duur = Math.max(4000, instellingen.duur ?? 7000);
         const aantal = Math.min(420, 90 * (1 + n * 0.8));
-        if (STIJL === 'weg') {
-            toneel.innerHTML = `<div class="konvooi in rijdt"><div class="oplegger"><div class="kop">${esc(kop)}</div><div class="naam">${esc(e.naam)}</div>${regel ? `<div class="regel">${esc(regel)}</div>` : ''}
-                <div class="wiel" style="left:60px"></div><div class="wiel" style="left:160px"></div><div class="wiel" style="right:90px"></div></div>
-                <div class="koppeling"></div><div class="cabine"><div class="rooster"></div><div class="wiel" style="left:40px"></div><div class="wiel" style="right:30px"></div></div></div>`;
-            const k = toneel.firstElementChild;
-            await wacht(1500);
-            k.classList.remove('in', 'rijdt'); k.classList.add('staat');
-            geluid(e.soort); strooi(aantal, W / 2, 200);
-            await wacht(duur - 2800);
-            k.classList.remove('staat'); k.classList.add('uit', 'rijdt');
-            await wacht(1300);
+        if (STIJL === 'drie' && window.drie3D) {
+            const regelEl = document.createElement('div'); regelEl.className = 'regel3d'; regelEl.textContent = regel; toneel.append(regelEl);
+            geluid(e.soort);
+            await window.drie3D.toon(e.soort, kop, e.naam, n, duur, () => { if (regel) regelEl.classList.add('aan'); }, () => regelEl.classList.remove('aan'));
         } else {
             toneel.innerHTML = `<div class="plek"><div class="kaart in"><div class="ikoon">${IKOON[e.soort] || STER}</div><div class="kop">${esc(kop)}</div>
                 <div class="naam">${letters(e.naam)}</div>${regel ? `<div class="regel">${esc(regel)}</div>` : ''}</div></div>`;
@@ -259,9 +231,9 @@
     function nieuw(e) { wachtrij.push(e); volgende(); }
 
     // testknoppen van de instelpagina (voorbeeld), zonder server
-    const TEST = { follower: ['TestVolger', {}], subscriber: ['TestSub', { tier: 1 }], resub: ['TestResub', { maanden: 12, bericht: 'Al een jaar mee op de weg!' }],
-        gift: ['TestGifter', { aantal: 5 }], cheer: ['TestBits', { bits: 1000, bericht: 'Gas erop!' }], raid: ['TestRaider', { kijkers: 42 }],
-        donatie: ['TestDonateur', { bedrag: 5, valuta: 'EUR', bericht: 'Voor de diesel!' }] };
+    const TEST = { follower: ['TestVolger', {}], subscriber: ['TestSub', { tier: 1 }], resub: ['TestResub', { maanden: 12, bericht: 'Al een jaar fan!' }],
+        gift: ['TestGifter', { aantal: 5 }], cheer: ['TestBits', { bits: 1000, bericht: 'Lets gooo!' }], raid: ['TestRaider', { kijkers: 42 }],
+        donatie: ['TestDonateur', { bedrag: 5, valuta: 'EUR', bericht: 'Voor de stream!' }] };
     addEventListener('message', m => {
         const d = m.data || {};
         if (d.test && TEST[d.test]) nieuw({ soort: d.test, naam: TEST[d.test][0], extra: { ...TEST[d.test][1], ...(d.extra || {}) } });
@@ -283,8 +255,123 @@
     }
     verbind();
     document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
+    window.drieKlaar = () => volgende();
     window.toonTest = s => nieuw({ soort: s, naam: TEST[s][0], extra: TEST[s][1] });   // voor screenshots
 })();
+</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module">
+// 3D-alerts: naam en kop als geëxtrudeerde letters (Lilita One), een 3D-icoon per soort en 3D-confetti.
+// Er wordt alleen gerenderd tijdens een alert, daarna staat de lus stil.
+if (document.body.classList.contains('drie')) {
+    try {
+        const THREE = await import('three');
+        const { FontLoader } = await import('three/addons/loaders/FontLoader.js');
+        const { TextGeometry } = await import('three/addons/geometries/TextGeometry.js');
+        const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
+        const r = new THREE.WebGLRenderer({ canvas: document.getElementById('drie'), alpha: true, antialias: true });
+        r.setPixelRatio(Math.min(1, devicePixelRatio)); r.setSize(1920, 1080, false);
+        r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+        const scene = new THREE.Scene();
+        scene.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+        const cam = new THREE.PerspectiveCamera(35, 1920 / 1080, 10, 8000); cam.position.set(0, 0, 1400);
+        const zon = new THREE.DirectionalLight(0xffffff, 1.5); zon.position.set(-500, 700, 900); scene.add(zon);
+        const glans = new THREE.PointLight(0x22e3d0, 6, 0, 0); scene.add(glans);
+        const font = await new FontLoader().loadAsync('lilita.typeface.json');
+
+        const voorWit = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.1, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1 });
+        const voorTurq = new THREE.MeshPhysicalMaterial({ color: 0x22e3d0, metalness: 0.2, roughness: 0.25, clearcoat: 1 });
+        const zijBlauw = new THREE.MeshStandardMaterial({ color: 0x1e6bff, metalness: 0.55, roughness: 0.3 });
+        const zijDiep = new THREE.MeshStandardMaterial({ color: 0x062347, metalness: 0.4, roughness: 0.4 });
+        function tekst(t, size, voor, zij) {
+            const g = new TextGeometry(t, { font, size, height: size * 0.3, depth: size * 0.3, curveSegments: 5, bevelEnabled: true, bevelThickness: size * 0.06, bevelSize: size * 0.035, bevelSegments: 3 });
+            g.computeBoundingBox(); g.center();
+            return new THREE.Mesh(g, [voor, zij]);
+        }
+        // iconen als vormen, geëxtrudeerd
+        function vorm(soort) {
+            const s = new THREE.Shape();
+            if (soort === 'follower') { for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 26 : 60; s[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr); } }
+            else if (soort === 'cheer') { s.moveTo(0, 62); s.lineTo(46, 12); s.lineTo(0, -62); s.lineTo(-46, 12); }
+            else if (soort === 'raid') { s.moveTo(-60, 16); s.lineTo(10, 16); s.lineTo(10, 46); s.lineTo(62, 0); s.lineTo(10, -46); s.lineTo(10, -16); s.lineTo(-60, -16); }
+            else if (soort === 'donatie') { s.absarc(0, 0, 56, 0, Math.PI * 2, false); }
+            else { s.moveTo(0, -50); s.bezierCurveTo(-30, -26, -62, -6, -62, 22); s.bezierCurveTo(-62, 46, -40, 58, -22, 58); s.bezierCurveTo(-10, 58, -2, 50, 0, 40);
+                   s.bezierCurveTo(2, 50, 10, 58, 22, 58); s.bezierCurveTo(40, 58, 62, 46, 62, 22); s.bezierCurveTo(62, -6, 30, -26, 0, -50); }
+            const g = new THREE.ExtrudeGeometry(s, { depth: 26, bevelEnabled: true, bevelThickness: 7, bevelSize: 5, bevelSegments: 4, curveSegments: 16 });
+            g.center();
+            const kleur = { follower: 0xffd84a, cheer: 0xb06bff, raid: 0x22e3d0, donatie: 0xffd84a }[soort] ?? 0xff4f8b;
+            return new THREE.Mesh(g, new THREE.MeshPhysicalMaterial({ color: kleur, metalness: 0.35, roughness: 0.2, clearcoat: 1 }));
+        }
+        // confetti: kleine plaatjes die tollen en vallen
+        const MAX = 500, conf = new THREE.InstancedMesh(new THREE.BoxGeometry(14, 8, 2), new THREE.MeshStandardMaterial({ metalness: 0.3, roughness: 0.4 }), MAX);
+        conf.instanceMatrix.setUsage(THREE.DynamicDrawUsage); conf.count = 0; conf.frustumCulled = false; scene.add(conf);
+        const KL = [0xffffff, 0x22e3d0, 0x1e6bff, 0xff4f8b, 0xffd84a].map(c => new THREE.Color(c));
+        let stukjes = [];
+        const hulp = new THREE.Object3D();
+        function strooi3d(n, y) {
+            for (let i = 0; i < n && stukjes.length < MAX; i++) {
+                const a = Math.random() * Math.PI * 2, v = 8 + Math.random() * 18;
+                stukjes.push({ p: new THREE.Vector3(0, y, 0), v: new THREE.Vector3(Math.cos(a) * v, Math.sin(a) * v * 0.8 + 10, (Math.random() - 0.5) * 20), r: new THREE.Euler(Math.random() * 6, Math.random() * 6, 0), vr: Math.random() * 0.3, k: KL[i % KL.length] });
+            }
+            stukjes.forEach((d, i) => conf.setColorAt(i, d.k));
+            if (conf.instanceColor) conf.instanceColor.needsUpdate = true;
+            start();
+        }
+
+        let groep = null, anim = null, loopt = false, vorige = 0;
+        const easeBack = x => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
+        function stap(nu) {
+            if (nu - vorige < 15) return;
+            const dt = Math.min(0.05, (nu - (vorige || nu)) / 1000); vorige = nu;
+            const t = nu / 1000;
+            glans.position.set(Math.sin(t * 1.3) * 900, 400, 600);
+            if (groep && anim) {
+                const a = (nu - anim.start) / 1000, eind = anim.duur / 1000;
+                if (a < 1.1) {   // van ver weg aan komen tollen
+                    const x = Math.min(1, a / 1.1), e = easeBack(x);
+                    groep.position.z = -4000 * (1 - e); groep.rotation.y = (1 - e) * -Math.PI * 2.2; groep.scale.setScalar(0.2 + 0.8 * Math.min(1, x * 1.4));
+                } else if (a < eind - 0.8) {
+                    groep.position.z = 0; groep.scale.setScalar(1);
+                    groep.rotation.y = Math.sin((a - 1.1) * 1.1) * 0.18; groep.rotation.x = Math.sin((a - 1.1) * 0.8) * 0.06;
+                    if (!anim.regelAan) { anim.regelAan = true; anim.bijAan(); }
+                } else {   // weg: achterover kantelen en kleiner worden
+                    if (!anim.regelUit) { anim.regelUit = true; anim.bijUit(); }
+                    const x = Math.min(1, (a - (eind - 0.8)) / 0.8), e = x * x;
+                    groep.rotation.x = -e * Math.PI * 0.6; groep.position.y = 70 + e * 600; groep.scale.setScalar(1 - e * 0.9);
+                }
+                if (groep.userData.icoon) groep.userData.icoon.rotation.y += dt * 2.4;
+                if (a >= eind) { scene.remove(groep); groep.traverse(o => o.geometry?.dispose()); groep = null; const k = anim.klaar; anim = null; k(); }
+            }
+            // confetti
+            for (const d of stukjes) { d.v.y -= 0.55; d.v.multiplyScalar(0.985); d.p.add(d.v); d.r.x += d.vr; d.r.y += d.vr * 0.7; }
+            stukjes = stukjes.filter(d => d.p.y > -700);
+            stukjes.forEach((d, i) => { hulp.position.copy(d.p); hulp.rotation.copy(d.r); hulp.updateMatrix(); conf.setMatrixAt(i, hulp.matrix); conf.setColorAt(i, d.k); });
+            conf.count = stukjes.length; conf.instanceMatrix.needsUpdate = true; if (conf.instanceColor) conf.instanceColor.needsUpdate = true;
+            r.render(scene, cam);
+            if (!groep && !stukjes.length) { r.setAnimationLoop(null); loopt = false; r.clear(); }
+        }
+        function start() { if (!loopt) { loopt = true; vorige = 0; r.setAnimationLoop(stap); } }
+
+        window.drie3D = {
+            toon(soort, kop, naam, niveau, duur, bijAan, bijUit) {
+                return new Promise(klaar => {
+                    groep = new THREE.Group(); groep.position.y = 70;
+                    const n = tekst(naam, 136, voorWit, zijBlauw);
+                    const breed = n.geometry.boundingBox.max.x - n.geometry.boundingBox.min.x;
+                    if (breed > 1500) n.scale.setScalar(1500 / breed);
+                    const k = tekst(kop, 58, voorTurq, zijDiep); k.position.y = 140;
+                    const ic = vorm(soort); ic.position.set(0, 255, 0); groep.userData.icoon = ic;
+                    groep.add(n, k, ic); scene.add(groep);
+                    anim = { start: performance.now(), duur, klaar, bijAan, bijUit };
+                    start();
+                    setTimeout(() => strooi3d(Math.min(MAX, 120 + niveau * 70), 70), 900);
+                    if (niveau >= 3) setTimeout(() => strooi3d(160, 70), 1800);
+                });
+            },
+        };
+        window.drieKlaar?.();
+    } catch (err) { console.warn('3D-alerts niet beschikbaar, terug naar het platte kaartje', err); document.body.classList.add('speels'); }
+}
 </script>
 </body>
 </html>

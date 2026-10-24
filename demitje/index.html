@@ -69,7 +69,7 @@
         <div class="stijlen" id="stijlen">
             <button class="stijl" data-stijl="speels"><b>Speels</b><span>Glinsters, stickers en een naam die golft</span></button>
             <button class="stijl" data-stijl="neon"><b>Neon</b><span>Gloeiende randen, racende lichtkometen en een haperende neonnaam</span></button>
-            <button class="stijl" data-stijl="weg"><b>Snelweg</b><span>Een vrachtwagen die rond je beeld rijdt, verkeersborden, je naam op een kenteken en een bord met hoelang je al onderweg bent</span></button>
+            <button class="stijl" data-stijl="3d"><b>3D</b><span>Je naam in echte 3D-letters die wiegen en salto's maken, zwevende bordjes en een metalen rand</span></button>
         </div>
         <label>Volgdoel <input type="number" id="doel" min="0" step="50" placeholder="bijv. 1200"></label>
         <label><input type="checkbox" id="dik"> Dikkere rand</label>
@@ -110,11 +110,11 @@
     <section class="stap">
         <h2>Wat zit erin</h2>
         <ol>
-            <li>Drie stijlen: speels, neon of snelweg (zelfde link, alleen ?stijl= verschilt)</li>
+            <li>Drie stijlen: speels, neon of 3D (zelfde link, alleen ?stijl= verschilt)</li>
             <li>Laatste sub links, laatste volger rechts, je naam in het midden</li>
             <li>Rechtsboven je Twitch-profielfoto of je eigen logo, met LIVE zodra je live bent</li>
             <li>Optioneel je volgdoel met balkje onder je foto</li>
-            <li>Alerts: speels kaartje met confetti, neonbuis met lichtstralen, of een vrachtwagen die je alert binnenrijdt en toetert. Hoe groter de gift of bits, hoe meer feest</li>
+            <li>Alerts: speels kaartje met confetti, neonbuis met lichtstralen, of 3D-letters die van ver aan komen tollen met een draaiend 3D-icoon en 3D-confetti. Hoe groter de gift of bits, hoe meer feest</li>
         </ol>
     </section>
 </main>
@@ -133,7 +133,7 @@
 
     let stijl = 'speels';
     const doel = document.getElementById('doel'), dik = document.getElementById('dik'), logo = document.getElementById('logo'), leeg = document.getElementById('leeg');
-    try { doel.value = localStorage.getItem('demitje-doel') || ''; dik.checked = localStorage.getItem('demitje-dik') === '1'; logo.value = localStorage.getItem('demitje-logo') || ''; leeg.checked = localStorage.getItem('demitje-leeg') === '1'; stijl = localStorage.getItem('demitje-stijl') || 'speels'; } catch { }
+    try { doel.value = localStorage.getItem('demitje-doel') || ''; dik.checked = localStorage.getItem('demitje-dik') === '1'; logo.value = localStorage.getItem('demitje-logo') || ''; leeg.checked = localStorage.getItem('demitje-leeg') === '1'; stijl = localStorage.getItem('demitje-stijl') || 'speels'; if (stijl === 'weg') stijl = '3d'; } catch { }
     function link(voorbeeld) {
         const p = new URLSearchParams();
         if (stijl !== 'speels') p.set('stijl', stijl);
