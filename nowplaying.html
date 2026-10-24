@@ -436,6 +436,24 @@
         else { document.body.style.removeProperty('--paars'); document.body.style.removeProperty('--roze'); }
         window.npLaatsteKleur = k ?? ['#9146ff', '#ff3ea5']; window.npKleur?.(window.npLaatsteKleur);
     }
+    // overvloeien: een kopie van de laag met de nieuwe hoes komt er doorzichtig bovenop en wordt in 1,2 s zichtbaar;
+    // daarna krijgt de laag zelf de nieuwe hoes en verdwijnt de kopie. De bewegende hoes loopt in de kopie gelijk mee.
+    const isAchter = h => h.matches('.waas, .gloed, .achter');
+    function vervaag(el, url) {
+        el.parentElement.querySelectorAll(':scope > [data-laag]').forEach(k => k.remove());   // vorige overgang nog bezig
+        const beeld = url ? `url("${url}")` : '';
+        const kopie = el.cloneNode(false);
+        kopie.dataset.laag = '1';
+        kopie.style.backgroundImage = beeld; kopie.style.opacity = '0';
+        el.after(kopie);
+        const doel = getComputedStyle(el).opacity;
+        const loop = el.getAnimations().find(a => a.animationName === 'kenburns');
+        if (loop) kopie.getAnimations().forEach(a => (a.currentTime = loop.currentTime));
+        const klaar = () => { el.style.backgroundImage = beeld; requestAnimationFrame(() => kopie.remove()); };
+        const img = new Image();
+        img.onload = img.onerror = () => kopie.animate([{ opacity: 0 }, { opacity: doel }], { duration: 1200, easing: 'ease-in-out', fill: 'forwards' }).finished.then(klaar);
+        if (url) img.src = url; else img.onload();
+    }
     let nu = null, vorigeId = null, uitTimer = null;
     function verwerk(d) {
         // opgeslagen stijl/kant: de eerste keer toepassen, bij een wijziging opnieuw laden
@@ -458,9 +476,13 @@
         if (d.id && d.id !== vorigeId) {
             const eerste = vorigeId === null;
             vorigeId = d.id;
-            if (!eerste) alle('[data-hoes]').forEach(h => { h.classList.remove('wissel'); void h.offsetWidth; h.classList.add('wissel'); });
+            // achtergrondlagen (wazige hoes, gloed, banner-achtergrond) vloeien over naar de nieuwe hoes; alleen de hoes zelf draait om
+            const hoezen = [...alle('[data-hoes]:not([data-laag])')], achter = hoezen.filter(isAchter), voor = hoezen.filter(h => !isAchter(h));
+            if (eerste) achter.forEach(h => (h.style.backgroundImage = d.hoes ? `url("${d.hoes}")` : ''));
+            else achter.forEach(h => vervaag(h, d.hoes));
+            if (!eerste) voor.forEach(h => { h.classList.remove('wissel'); void h.offsetWidth; h.classList.add('wissel'); });
             setTimeout(() => {   // halverwege de draai van de hoes het nieuwe plaatje en de tekst
-                alle('[data-hoes]').forEach(h => (h.style.backgroundImage = d.hoes ? `url("${d.hoes}")` : ''));
+                voor.forEach(h => (h.style.backgroundImage = d.hoes ? `url("${d.hoes}")` : ''));
                 alle('[data-titel]').forEach(e => (e.textContent = d.titel || ''));
                 alle('[data-artiest]').forEach(e => (e.textContent = d.artiest || ''));
                 alle('[data-lengte]').forEach(e => (e.textContent = mmss(d.duur)));
