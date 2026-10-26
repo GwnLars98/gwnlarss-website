@@ -172,15 +172,31 @@
     .transparant .artiest { font-size: 20px; font-weight: 700; color: var(--roze); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 1.2s; }
     .transparant .balk { margin-top: 12px; width: 360px; height: 4px; background: rgba(255, 255, 255, 0.25); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
 
-    /* ---------- 10. schuin (960 x 240): hoes links schuin afgesneden met een gekleurde streep, titel groot in hoofdletters ---------- */
-    .schuin .doos { position: absolute; left: 20px; top: 20px; width: 920px; height: 200px; border-radius: 20px; overflow: hidden; background: rgba(10, 8, 16, 0.94); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5); }
-    .schuin .hoes { position: absolute; left: 0; top: 0; width: 340px; height: 200px; clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); }
-    .schuin .streep { position: absolute; left: 315px; top: -6px; width: 7px; height: 212px; transform: skewX(-11.6deg); background: linear-gradient(180deg, var(--paars), var(--roze)); box-shadow: 0 0 16px var(--roze); }
-    .schuin .info { position: absolute; left: 372px; top: 30px; right: 44px; }
-    .schuin .titel { font: 800 54px/1.1 'Baloo 2', sans-serif; text-transform: uppercase; letter-spacing: 1px; color: color-mix(in srgb, var(--roze) 45%, #fff); transition: color 1.2s; }
-    .schuin .artiest { font-size: 24px; font-weight: 700; color: rgba(255, 255, 255, 0.62); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .schuin .tijden { display: flex; align-items: center; gap: 22px; margin-top: 22px; font-size: 17px; font-weight: 700; color: rgba(255, 255, 255, 0.6); font-variant-numeric: tabular-nums; }
-    .schuin .balk { flex: 1; height: 8px; }
+    /* ---------- 10. schuin (960 x 240) ---------- */
+    /* retro poster: de kaart staat een tikje scheef, de hoes is een sticker met omgekrulde hoek die er de andere kant op
+       overheen plakt, titel met een verschoven schaduw in de hoeskleur, artiest op een labeltje, strepen in de hoeskleuren */
+    .schuin .doos { position: absolute; left: 110px; top: 34px; width: 820px; height: 176px; border-radius: 18px; background: rgba(12, 9, 20, 0.94);
+        transform: rotate(-2deg); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5); }
+    .schuin .tape { position: absolute; right: -30px; top: 18px; width: 230px; height: 26px; transform: rotate(32deg); opacity: 0.9;
+        background: repeating-linear-gradient(135deg, var(--roze) 0 14px, var(--paars) 14px 28px); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
+    .schuin .sticker { position: absolute; left: 22px; top: 16px; width: 208px; height: 208px; padding: 9px; background: #fbf8f2; border-radius: 10px; transform: rotate(5deg); z-index: 2;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+        clip-path: polygon(0 0, 100% 0, 100% 84%, 84% 100%, 0 100%); }
+    .schuin .sticker .hoes { width: 100%; height: 100%; border-radius: 4px; }
+    /* omgekrulde hoek: de achterkant van de sticker */
+    .schuin .krul { position: absolute; left: 22px; top: 16px; width: 208px; height: 208px; transform: rotate(5deg); z-index: 3; pointer-events: none; }
+    .schuin .krul::after { content: ''; position: absolute; right: 0; bottom: 0; width: 34px; height: 34px; border-radius: 0 0 6px 0;
+        background: linear-gradient(135deg, #d9d3c8 0 50%, transparent 50%); box-shadow: -3px -3px 6px rgba(0, 0, 0, 0.25); }
+    .schuin .info { position: absolute; left: 150px; top: 18px; right: 70px; }
+    .schuin .titel { font: 800 54px/1.12 'Baloo 2', sans-serif; text-transform: uppercase; letter-spacing: 1px; color: #fff; text-shadow: 4px 4px 0 var(--roze); transition: text-shadow 1.2s; }
+    .schuin .titelvak { padding: 0 8px 6px 0; }
+    .schuin .label { display: inline-block; max-width: 100%; margin-top: 4px; padding: 3px 14px; border-radius: 6px; transform: rotate(-1.5deg);
+        background: var(--paars); color: #fff; font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 1.2s; }
+    .schuin .tijden { display: flex; align-items: center; gap: 16px; margin-top: 14px; font-size: 16px; font-weight: 800; color: rgba(255, 255, 255, 0.7); font-variant-numeric: tabular-nums; }
+    .schuin .balk { flex: 1; height: 10px; border-radius: 3px; }
+    .schuin .vul { border-radius: 3px; background: repeating-linear-gradient(135deg, var(--roze) 0 8px, color-mix(in srgb, var(--roze) 70%, #fff) 8px 16px); background-size: 22.6px 22.6px; animation: paal 0.8s linear infinite; animation-play-state: paused; }
+    body.speelt .schuin .vul { animation-play-state: running; }
+    @keyframes paal { to { background-position: 22.6px 0; } }
 
     /* ---------- 12. volledig scherm (1920 x 1080): wazige hoes over het hele beeld, grote hoes links, grote tekst rechts ---------- */
     .volledig .vlak { position: absolute; inset: 0; overflow: hidden; background: #08060f; }
@@ -300,15 +316,18 @@
         </div>
     </div></div>
 
-    <div class="blok schuin"><div class="schuif" style="position:absolute;inset:0"><div class="doos">
-        <div class="waas" data-hoes></div>
-        <div class="hoes" data-hoes></div><div class="streep"></div>
-        <div class="info">
-            <div class="titelvak"><span class="titel" data-titel></span></div>
-            <div class="artiest" data-artiest></div>
-            <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
+    <div class="blok schuin"><div class="schuif" style="position:absolute;inset:0">
+        <div class="doos">
+            <div class="waas" data-hoes></div>
+            <div class="tape"></div>
+            <div class="info">
+                <div class="titelvak"><span class="titel" data-titel></span></div>
+                <div class="label" data-artiest></div>
+                <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
+            </div>
         </div>
-    </div></div></div>
+        <div class="sticker"><div class="hoes" data-hoes></div></div><div class="krul"></div>
+    </div></div>
 
     <div class="blok volledig"><div class="schuif" style="position:absolute;inset:0"><div class="vlak">
         <div class="achter" data-hoes></div>
