@@ -69,7 +69,6 @@
     <div class="stijl-grid" id="stijl-grid">
         <button type="button" class="stijl-kaart is-actief" data-stijl="kaart"><b>Kaart</b><span>Hoes, titel en voortgang</span></button>
         <button type="button" class="stijl-kaart" data-stijl="pil"><b>Pil</b><span>Klein en strak, voor in een hoek</span></button>
-        <button type="button" class="stijl-kaart" data-stijl="vinyl"><b>Vinyl</b><span>Draaitafel met toonarm die meeloopt</span></button>
         <button type="button" class="stijl-kaart" data-stijl="3d"><b>3D</b><span>Platenhoes met plaat die eruit steekt</span></button>
         <button type="button" class="stijl-kaart" data-stijl="aurora"><b>Aurora</b><span>Bewegend noorderlicht in de kleuren van de hoes</span></button>
         <button type="button" class="stijl-kaart" data-stijl="split"><b>Split</b><span>Strak blok en titel in hoofdletters</span></button>
@@ -87,7 +86,7 @@
     </div>
     <div class="kleur-custom" id="eigen-kleuren" hidden>Kies je kleuren: <input type="color" id="k1"> <input type="color" id="k2"></div>
     <p class="thema-label">Extra</p>
-    <label class="schakel"><input type="checkbox" id="volgende-check"> Laat zien wat er hierna komt <small>(bij kaart, vinyl, 3D en volledig scherm)</small></label>
+    <label class="schakel"><input type="checkbox" id="volgende-check"> Laat zien wat er hierna komt <small>(bij kaart, 3D en volledig scherm)</small></label>
     <label class="schakel"><input type="checkbox" id="waas-check"> Wazige hoes als achtergrond <small>(de albumhoes wazig in de kaart)</small></label>
     <label class="schakel"><input type="checkbox" id="beweging-check"> Bewegende hoes <small>(de hoes zoomt en schuift rustig)</small></label>
 
@@ -130,7 +129,7 @@
 <script>
 (() => {
     const API = 'https://api.gwnlarss.nl/api/spotify';
-    const MATEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], volledig: [1920, 1080], polaroid: [760, 300] };
+    const MATEN = { kaart: [800, 220], pil: [640, 110], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], volledig: [1920, 1080], polaroid: [760, 300] };
     const $ = id => document.getElementById(id);
     const q = new URLSearchParams(location.search);
     const toastEl = $('toast');
