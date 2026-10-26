@@ -75,7 +75,6 @@
         <button type="button" class="stijl-kaart" data-stijl="split"><b>Split</b><span>Strak blok en titel in hoofdletters</span></button>
         <button type="button" class="stijl-kaart" data-stijl="transparant"><b>Transparant</b><span>Geen kader, alleen hoes en tekst</span></button>
         <button type="button" class="stijl-kaart" data-stijl="schuin"><b>Schuin</b><span>Schuin afgesneden hoes, grote titel</span></button>
-        <button type="button" class="stijl-kaart" data-stijl="golf"><b>Golf</b><span>Hoes steekt uit, voortgang als geluidsgolf</span></button>
         <button type="button" class="stijl-kaart" data-stijl="polaroid"><b>Polaroid</b><span>Scheve polaroid met handschrift</span></button>
         <button type="button" class="stijl-kaart" data-stijl="volledig"><b>Volledig scherm</b><span>Het hele beeld, voor een muziekscène</span></button>
     </div>
@@ -131,7 +130,7 @@
 <script>
 (() => {
     const API = 'https://api.gwnlarss.nl/api/spotify';
-    const MATEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080], polaroid: [760, 300] };
+    const MATEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], volledig: [1920, 1080], polaroid: [760, 300] };
     const $ = id => document.getElementById(id);
     const q = new URLSearchParams(location.search);
     const toastEl = $('toast');
