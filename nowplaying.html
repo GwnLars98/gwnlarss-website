@@ -8,9 +8,9 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&family=Tilt+Neon&family=Caveat:wght@600;700&family=Doto:wght@800&display=swap" rel="stylesheet">
 <style>
-    /* Spotify "now playing" voor OBS in tien stijlen (waarvan één volledig scherm). Eén vaste link: de stijl en kant komen van de server (opslaan op
+    /* Spotify "now playing" voor OBS in veertien stijlen (waarvan één volledig scherm). Eén vaste link: de stijl en kant komen van de server (opslaan op
        nowplaying-setup.html), ?stijl= in de link gaat daar alleen voor voorbeelden overheen.
        Elke stijl heeft een eigen basismaat en schaalt mee met de browserbron. Schuift in beeld zodra er muziek
        speelt en weer weg bij pauze. ?demo=1 toont een voorbeeldnummer, ?voorbeeld=1 het echte nummer (of het
@@ -40,7 +40,8 @@
     body[data-stijl="kaart"] .blok.kaart, body[data-stijl="pil"] .blok.pil, body[data-stijl="vinyl"] .blok.vinyl,
     body[data-stijl="3d"] .blok.drie, body[data-stijl="aurora"] .blok.aurora,
     body[data-stijl="split"] .blok.split, body[data-stijl="transparant"] .blok.transparant,
-    body[data-stijl="schuin"] .blok.schuin, body[data-stijl="golf"] .blok.golf, body[data-stijl="volledig"] .blok.volledig { display: block; }
+    body[data-stijl="schuin"] .blok.schuin, body[data-stijl="golf"] .blok.golf, body[data-stijl="volledig"] .blok.volledig,
+    body[data-stijl="neon"] .blok.neon, body[data-stijl="polaroid"] .blok.polaroid, body[data-stijl="radio"] .blok.radio, body[data-stijl="equalizer"] .blok.equalizer { display: block; }
     /* in- en uitschuiven */
     .schuif { transform: translateX(-120%); opacity: 0; transition: transform 0.75s cubic-bezier(.2, 1.2, .3, 1), opacity 0.5s; }
     body.rechts .schuif { transform: translateX(120%); }
@@ -216,6 +217,68 @@
     .volledig .hierna { margin-top: 40px; font-size: 26px; color: rgba(255, 255, 255, 0.72); }
     .volledig .hierna b { font-size: 22px; letter-spacing: 3px; }
 
+    /* ---------- 13. neon (900 x 220): neonbord, titel als gloeiende buis in de kleuren van de hoes ---------- */
+    .neon .bord { position: absolute; left: 20px; top: 20px; width: 860px; height: 180px; border-radius: 28px; background: rgba(8, 5, 16, 0.86);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--paars) 80%, #fff), 0 0 18px var(--paars), inset 0 0 22px color-mix(in srgb, var(--paars) 45%, transparent); transition: box-shadow 1.2s; }
+    .neon .hoes { position: absolute; left: 22px; top: 22px; width: 136px; height: 136px; border-radius: 16px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 22px var(--roze); }
+    .neon .info { position: absolute; left: 190px; top: 22px; right: 30px; }
+    .neon .titel { font: 400 58px/1.15 'Tilt Neon', sans-serif; color: #fff; letter-spacing: 1px;
+        text-shadow: 0 0 3px #fff, 0 0 9px var(--roze), 0 0 18px var(--roze); transition: text-shadow 1.2s; }
+    .neon .titel .uit { opacity: 0.25; text-shadow: none; }
+    /* ruimte rond de titel zodat de gloed niet tegen de rand van het tekstvak wordt afgekapt */
+    .neon .titelvak { padding: 26px 26px; margin: -26px -26px; }
+    .neon .artiest { padding: 10px 14px; margin: -10px -14px; }
+    .neon .artiest { font: 400 30px 'Tilt Neon', sans-serif; color: color-mix(in srgb, var(--paars) 40%, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        text-shadow: 0 0 6px var(--paars), 0 0 12px var(--paars); transition: color 1.2s, text-shadow 1.2s; }
+    .neon .balk { margin-top: 14px; height: 4px; background: rgba(255, 255, 255, 0.12); }
+    .neon .vul { box-shadow: 0 0 10px var(--roze), 0 0 20px var(--roze); }
+
+    /* ---------- 14. polaroid (760 x 300): hoes als scheve polaroid met plakband, titel in handschrift ---------- */
+    .polaroid .foto { position: absolute; left: 34px; top: 28px; width: 210px; height: 244px; padding: 12px 12px 0; background: #f7f4ee; transform: rotate(-5deg);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45), 0 2px 4px rgba(0, 0, 0, 0.3); }
+    .polaroid .foto .hoes { width: 186px; height: 186px; }
+    .polaroid .foto::after { content: ''; position: absolute; left: 70px; top: -14px; width: 80px; height: 28px; background: rgba(255, 245, 210, 0.75); transform: rotate(4deg);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
+    .polaroid .krabbel { position: absolute; left: 8px; right: 8px; bottom: 6px; font: 700 22px 'Caveat', cursive; color: #2b2b33; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .polaroid .info { position: absolute; left: 280px; top: 70px; right: 20px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 0, 0, 0.45); }
+    .polaroid .titel { font: 700 62px/1.05 'Caveat', cursive; color: #fff; }
+    .polaroid .artiest { font: 700 34px 'Caveat', cursive; color: color-mix(in srgb, var(--roze) 60%, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 1.2s; }
+    .polaroid .streep { margin-top: 10px; width: 300px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.25); transform: rotate(-1deg); overflow: hidden; }
+    .polaroid .streep .vul { background: color-mix(in srgb, var(--roze) 70%, #fff); }
+
+    /* ---------- 15. radio (900 x 170): autoradio met LED-puntjesdisplay waar de titel doorheen loopt ---------- */
+    .radio .kast { position: absolute; left: 20px; top: 15px; width: 860px; height: 140px; border-radius: 16px;
+        background: linear-gradient(180deg, #2d2b33, #18171c); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 6px rgba(0, 0, 0, 0.6), 0 14px 30px rgba(0, 0, 0, 0.5); }
+    .radio .hoes { position: absolute; left: 18px; top: 18px; width: 104px; height: 104px; border-radius: 8px; box-shadow: 0 0 0 3px #0c0b0e; }
+    .radio .knop { position: absolute; right: 22px; top: 32px; width: 76px; height: 76px; border-radius: 50%;
+        background: repeating-conic-gradient(#5d5a66 0 4deg, #403e48 4deg 8deg); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 0 0 8px #2a2930; }
+    .radio .knop::after { content: ''; position: absolute; left: 50%; top: 12px; width: 4px; height: 16px; margin-left: -2px; border-radius: 2px; background: #ddd; }
+    .radio .scherm { position: absolute; left: 140px; top: 18px; right: 118px; height: 104px; border-radius: 8px; overflow: hidden; padding: 10px 16px;
+        background: #07060b; box-shadow: inset 0 0 0 2px #000, inset 0 0 24px rgba(0, 0, 0, 0.9);
+        background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1.5px); background-size: 5px 5px; }
+    .radio .led { font: 800 40px/1.2 'Doto', monospace; color: color-mix(in srgb, var(--roze) 75%, #fff); white-space: nowrap; text-shadow: 0 0 6px var(--roze), 0 0 14px var(--roze); transition: color 1.2s, text-shadow 1.2s; }
+    .radio .looptekst { display: inline-block; padding-left: 100%; animation: loopt var(--looptijd, 14s) linear infinite; }
+    @keyframes loopt { to { transform: translateX(-100%); } }
+    body:not(.speelt) .radio .looptekst { animation-play-state: paused; }
+    .radio .blokjes { position: absolute; left: 16px; right: 16px; bottom: 12px; display: flex; gap: 4px; }
+    .radio .blokjes i { flex: 1; height: 8px; border-radius: 2px; background: rgba(255, 255, 255, 0.08); }
+    .radio .blokjes i.vol { background: var(--paars); box-shadow: 0 0 8px var(--paars); }
+
+    /* ---------- 16. equalizer (900 x 220): brede balken in de hoeskleuren achter de titel ---------- */
+    .equalizer .doos { position: absolute; left: 20px; top: 20px; width: 860px; height: 180px; border-radius: 22px; overflow: hidden; isolation: isolate;
+        background: rgba(10, 7, 18, 0.9); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5); }
+    .equalizer .balken { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; display: flex; align-items: flex-end; gap: 6px; padding: 0 10px; z-index: -1; opacity: 0.55; }
+    .equalizer .balken i { flex: 1; height: 20%; border-radius: 6px 6px 0 0; background: linear-gradient(0deg, var(--paars), var(--roze)); transform-origin: bottom;
+        animation: eqbalk var(--d) ease-in-out infinite alternate; animation-delay: var(--v); animation-play-state: paused; }
+    body.speelt .equalizer .balken i { animation-play-state: running; }
+    @keyframes eqbalk { 0% { height: 12%; } 50% { height: var(--h); } 100% { height: 30%; } }
+    .equalizer .hoes { position: absolute; left: 22px; top: 22px; width: 136px; height: 136px; border-radius: 14px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); }
+    .equalizer .info { position: absolute; left: 186px; top: 30px; right: 30px; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); }
+    .equalizer .titel { font: 800 46px/1.15 'Baloo 2', sans-serif; }
+    .equalizer .artiest { font-size: 22px; font-weight: 700; color: rgba(255, 255, 255, 0.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .equalizer .tijden { display: flex; align-items: center; gap: 14px; margin-top: 12px; font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.75); font-variant-numeric: tabular-nums; }
+    .equalizer .balk { flex: 1; height: 5px; }
+
     /* melding als Spotify nog niet gekoppeld is (ook in OBS, zodat je weet dat er iets moet gebeuren) */
     .hint { position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); max-width: 720px; padding: 16px 20px; border-radius: 16px;
         background: var(--kaart); font-size: 16px; line-height: 1.45; box-shadow: 0 0 0 2px var(--paars); }
@@ -334,12 +397,50 @@
             <div class="hierna"><b>HIERNA</b><span data-volgende></span></div>
         </div>
     </div></div></div>
+
+    <div class="blok neon"><div class="schuif" style="position:absolute;inset:0"><div class="bord">
+        <div class="hoes" data-hoes></div>
+        <div class="info">
+            <div class="titelvak"><span class="titel" data-titel data-neon></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="balk"><div class="vul"></div></div>
+        </div>
+    </div></div></div>
+
+    <div class="blok polaroid"><div class="schuif" style="position:absolute;inset:0">
+        <div class="foto"><div class="hoes" data-hoes></div><div class="krabbel" data-artiest></div></div>
+        <div class="info">
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="streep"><div class="vul"></div></div>
+        </div>
+    </div></div>
+
+    <div class="blok radio"><div class="schuif" style="position:absolute;inset:0"><div class="kast">
+        <div class="hoes" data-hoes></div>
+        <div class="scherm">
+            <div class="led"><span class="looptekst" id="looptekst"></span></div>
+            <div class="blokjes" id="blokjes"></div>
+        </div>
+        <div class="knop draait"></div>
+    </div></div></div>
+
+    <div class="blok equalizer"><div class="schuif" style="position:absolute;inset:0"><div class="doos">
+        <div class="waas" data-hoes></div>
+        <div class="balken" id="balken"></div>
+        <div class="hoes" data-hoes></div>
+        <div class="info">
+            <div class="titelvak"><span class="titel" data-titel></span></div>
+            <div class="artiest" data-artiest></div>
+            <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
+        </div>
+    </div></div></div>
 </div>
 <div class="hint" id="hint" hidden></div>
 <script>
 (() => {
     const q = new URLSearchParams(location.search);
-    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080] };
+    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080], neon: [900, 220], polaroid: [760, 300], radio: [900, 170], equalizer: [900, 220] };
     const DEMO = q.get('demo') === '1';
     // ?voorbeeld=1 (instelpagina): het echte nummer als er iets speelt, anders het voorbeeldnummer, en altijd in beeld
     const VOORBEELD = q.get('voorbeeld') === '1';
@@ -496,7 +597,7 @@
                 alle('[data-lengte]').forEach(e => (e.textContent = mmss(d.duur)));
                 lopendeTitel();
                 window.npLaatsteHoes = d.hoes; window.npHoes?.(d.hoes);   // de 3D-scène pakt deze op als hij later klaar is
-                golfVorm(d.id);
+                golfVorm(d.id); radioTekst(d); neonTitel(); lopendeTitel();
             }, eerste ? 0 : 350);
         }
         document.body.classList.toggle('speelt', d.speelt);
@@ -517,12 +618,33 @@
         });
     }
     golfVorm('start');
+    // radio: 30 LED-blokjes voor de voortgang; equalizer: 44 balken met elk een eigen tempo
+    const blokjes = document.getElementById('blokjes'); blokjes.innerHTML = '<i></i>'.repeat(30);
+    const balken = document.getElementById('balken');
+    balken.innerHTML = Array.from({ length: 44 }, (_, i) => `<i style="--d:${(0.35 + Math.random() * 0.5).toFixed(2)}s;--v:-${(Math.random()).toFixed(2)}s;--h:${Math.round(45 + 50 * Math.abs(Math.sin(i / 5)) * (0.6 + Math.random() * 0.4))}%"></i>`).join('');
+    function radioTekst(d) {
+        const t = document.getElementById('looptekst');
+        t.textContent = '♪ ' + (d.titel || '') + (d.artiest ? '  ·  ' + d.artiest : '') + '   ';
+        t.style.setProperty('--looptijd', Math.max(8, t.textContent.length * 0.32) + 's');
+    }
+    // neon: de titel als losse letters, zodat er af en toe één kan haperen
+    function neonTitel() {
+        document.querySelectorAll('[data-neon]').forEach(el => { el.innerHTML = [...el.textContent].map(c => `<span>${c === ' ' ? '&nbsp;' : c.replace(/[&<>]/g, x => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[x]))}</span>`).join(''); });
+    }
+    setInterval(() => {
+        if (STIJL !== 'neon' || Math.random() < 0.4) return;
+        const letters = document.querySelectorAll('[data-neon] span'); if (!letters.length) return;
+        const l = letters[Math.floor(Math.random() * letters.length)];
+        l.classList.add('uit'); setTimeout(() => l.classList.remove('uit'), 90);
+        setTimeout(() => { l.classList.add('uit'); setTimeout(() => l.classList.remove('uit'), 130); }, 220);
+    }, 2600);
     // voortgang tussen de metingen door lokaal laten doorlopen (en bij vinyl schuift de naald mee naar binnen)
     setInterval(() => {
         if (!nu || !nu.duur || !blok) return;
         const pos = Math.min(nu.duur, nu.positie + (nu.speelt ? Date.now() - nu.op : 0)), p = pos / nu.duur;
         blok.style.setProperty('--p', p.toFixed(4));
         alle('[data-tijd]').forEach(e => (e.textContent = mmss(pos)));
+        if (STIJL === 'radio') { const n = Math.round(p * 30); blokjes.querySelectorAll('i').forEach((b, i) => b.classList.toggle('vol', i < n)); }
         if (STIJL === 'golf') { const n = Math.round(p * STAAFJES); golfje.querySelectorAll('i').forEach((st, i) => st.classList.toggle('vol', i < n)); }
         if (STIJL === 'vinyl') blok.style.setProperty('--arm', (11 + p * 15).toFixed(2) + 'deg');
     }, 250);
