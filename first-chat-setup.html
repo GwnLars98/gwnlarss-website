@@ -39,7 +39,7 @@
     </div>
 
     <p class="thema-label">Uiterlijk van het toastje</p>
-    <p class="thema-hint">Kies gewoon een thema, dat werkt al voordat je op Activeer klikt. Wil je later van thema wisselen? Kies een andere kaart en klik op Opslaan, het linkje hieronder blijft dan hetzelfde, je hoeft 'm niet opnieuw in OBS te plakken. Bij elke keer opslaan sturen we ook meteen een testbericht naar de overlay, zodat je meteen ziet hoe het eruitziet.</p>
+    <p class="thema-hint">Kies gewoon een thema, dat werkt al voordat je op Activeer klikt. Wil je later van thema wisselen? Kies een andere kaart en klik op Opslaan, het linkje hieronder blijft dan hetzelfde, je hoeft 'm niet opnieuw in OBS te plakken. Bij elke keer opslaan sturen we ook meteen een testbericht naar de overlay, zodat je meteen ziet hoe het eruitziet. Ben je live, dan slaan we dat testbericht over, zodat je kijkers het niet zien.</p>
     <div class="thema-grid" id="thema-grid">
         <button type="button" class="thema-kaart is-actief" data-thema="msn">
             <span class="thema-kaart__preview thema-kaart__preview--msn">
@@ -269,7 +269,7 @@
             });
             const data = await res.json();
             if (!data.ok) { toast(`❌ ${data.fout || 'Opslaan mislukt.'}`); return; }
-            toast('💾 Opgeslagen! Check de overlay, er komt een testbericht aan.');
+            toast(data.test === false ? '💾 Opgeslagen! Je bent live, dus er komt geen testbericht op je stream.' : '💾 Opgeslagen! Check de overlay, er komt een testbericht aan.');
             opslaanBtn.hidden = true;
         } catch {
             toast('❌ Netwerkfout, probeer het nog eens.');
