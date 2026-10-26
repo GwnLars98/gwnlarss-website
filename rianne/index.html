@@ -49,7 +49,8 @@
     /* geen sleutel: alleen kijken, uitleg bovenin */
     .slot { display: none; margin: 16px 0 0; padding: 16px 18px; border-radius: 18px; background: var(--vlak); box-shadow: inset 0 0 0 1px var(--lijn); }
     .geen-sleutel .slot { display: block; }
-    .geen-sleutel .tests, .geen-sleutel [data-tab]:not([data-tab="obs"]) .beheer { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }
+    /* zonder koppeling: stijlen kiezen en testen werkt alleen in het voorbeeld; opslaan en uploaden pas na het koppelen */
+    .geen-sleutel :is(.soorten, .rij, .geluid label, .geluid [data-wis], [data-tab="meer"] .veld) { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }
     .slot p { margin: 0 0 10px; color: var(--dim); line-height: 1.5; }
     .veld { display: flex; gap: 8px; }
     .veld input, .link input { flex: 1; min-width: 0; font: inherit; color: var(--tekst); background: var(--vlak2); border: 1px solid var(--lijn); border-radius: 12px; padding: 10px 14px; }
@@ -138,7 +139,7 @@
     </div>
 
     <div class="slot">
-        <p><b style="color:#fff">Nog niet ingelogd.</b> Koppel je Twitch (knop rechtsboven): daarna kom je hier terug en kun je alles instellen en testen. Heb je van Lars een beheersleutel gekregen? Plak hem hier.</p>
+        <p><b style="color:#fff">Nog niet gekoppeld.</b> Je kunt hierboven al alles testen en stijlen uitproberen, maar alleen in het voorbeeld. Koppel je Twitch (knop rechtsboven) om je keuzes op te slaan en de tests ook in OBS te zien. Heb je van Lars een beheersleutel gekregen? Plak hem hier.</p>
         <div class="veld"><input id="sleutelInvoer" type="password" placeholder="Beheersleutel"><button class="knop" id="sleutelOpslaan">Opslaan</button></div>
     </div>
 
@@ -210,6 +211,9 @@
     const SOORTEN = { follower: '💜 Volgers', subscriber: '👑 Subs', resub: '🔁 Resubs', gift: '🎁 Gifted subs', cheer: '💎 Bits', raid: '🚨 Raids', donatie: '💸 Donaties' };
     const TESTS = [['Alerts'], ['follower', 'Volger'], ['subscriber', 'Sub'], ['resub', 'Resub'], ['gift', '5 gifts', { aantal: 5 }], ['gift', '50 gifts', { aantal: 50 }],
         ['cheer', '100 bits', { bits: 100 }], ['cheer', '10.000 bits', { bits: 10000 }], ['raid', 'Raid'], ['donatie', 'Donatie']];
+    // zelfde testnamen als de server (streamerAlerts.js), voor testen zonder koppeling
+    const TESTNAAM = { follower: 'TestVolger', subscriber: 'TestSub', resub: 'TestResub', gift: 'TestGifter', cheer: 'TestBits', raid: 'TestRaider', donatie: 'TestDonateur' };
+    const TESTEXTRA = { subscriber: { tier: 1 }, resub: { maanden: 12, bericht: 'Al een jaar fan!' }, gift: { aantal: 5, tier: 1 }, cheer: { bits: 1000, bericht: 'Insane mace dunk!' }, raid: { kijkers: 42 }, donatie: { bedrag: 5, valuta: 'EUR', bericht: 'Voor de stream!' } };
     const melding = tekst => { const m = $('melding'); m.textContent = tekst; m.classList.add('aan'); clearTimeout(melding.t); melding.t = setTimeout(() => m.classList.remove('aan'), 2600); };
 
     // tabbladen
@@ -286,7 +290,14 @@
         }
     });
 
+    // zonder koppeling: alleen het voorbeeld laten zien (de frames luisteren ook naar deze pagina)
+    const naarVoorbeeld = bericht => { for (const f of ['frame', 'statsFrame']) $(f).contentWindow?.postMessage(bericht, location.origin); };
     async function bewaar(extra = {}) {
+        if (!sleutel) {
+            naarVoorbeeld({ soort: '_instellingen', instellingen: { volume: Number($('volume').value), ...extra } });
+            if (extra.statsPlek) document.querySelectorAll('#plekken [data-plek]').forEach(b => b.classList.toggle('aan', b.dataset.plek === extra.statsPlek));
+            return melding('👀 Alleen in het voorbeeld: koppel je Twitch om dit op te slaan');
+        }
         const aan = Object.fromEntries([...document.querySelectorAll('[data-soort]')].map(c => [c.dataset.soort, c.checked]));
         const d = await post('instellingen', { aan, grootte: Number($('grootte').value), volume: Number($('volume').value), duur: Number($('duur').value), statsGrootte: Number($('statsGrootte').value), ...extra }).catch(() => null);
         if (d?.ok) { toon(d); melding('💾 Opgeslagen, staat meteen in OBS'); } else melding('❌ Opslaan mislukt');
@@ -316,6 +327,11 @@
     $('tests').innerHTML = TESTS.map(([s, naam], i) => naam ? `<button class="knop" data-test="${i}">${naam}</button>` : `<span class="groep">${s}</span>`).join('') + '<span id="verbondenTekst"></span>';
     async function testAlert(soort, extra) {
         speelTestGeluid(soort);   // meteen, binnen de klik (anders blokkeert de browser het geluid)
+        if (!sleutel) {   // zonder koppeling: alleen in het voorbeeld
+            naarVoorbeeld({ id: Date.now(), soort, naam: TESTNAAM[soort], extra: { ...TESTEXTRA[soort], ...extra, test: true } });
+            $('verbondenTekst').textContent = 'Alleen in het voorbeeld. Na het koppelen komt de test ook in OBS.';
+            return;
+        }
         const d = await post('test', { soort, extra }).catch(() => null);
         if (d?.ok) $('verbondenTekst').textContent = `De test staat ook in OBS (${d.kijkers} overlay${d.kijkers === 1 ? '' : 's'} verbonden, inclusief dit voorbeeld)`;
         else melding('❌ Testen mislukt');

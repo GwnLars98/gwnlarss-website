@@ -201,20 +201,23 @@
     }
     const haal = () => fetch(API + '/stats', { cache: 'no-store' }).then(r => r.json()).then(s => s && toonStats(s)).catch(() => { });
     pasInstellingenToe(); tekenAlles(); startWissel();
-    fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => pasInstellingenToe(d?.instellingen)).catch(() => { });
+    fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => { laatsteInst = { ...d?.instellingen, ...laatsteInst }; pasInstellingenToe(laatsteInst); }).catch(() => { });
     haal(); setInterval(haal, 60000);
 
+    let laatsteInst = {};
+    function verwerk(e) {
+        if (e?.soort === '_instellingen') { laatsteInst = { ...laatsteInst, ...e.instellingen }; return pasInstellingenToe(laatsteInst); }   // stijl, plek of grootte gewijzigd op de instelpagina
+        const k = SLEUTEL[e?.soort];
+        if (!k) return;   // raids en onbekende soorten staan niet in de stats
+        stand[k] = { naam: e.naam, badge: badgeVoor({ soort: e.soort, ...e.extra }) };
+        nieuwe(k);
+        if (!e.extra?.test) setTimeout(haal, 3000);   // echte alert: daarna gelijk trekken met de server
+    }
+    // in de studio zonder koppeling: tests en stijlkeuze rechtstreeks van de pagina (alleen in het voorbeeld)
+    if (zoek.has('voorbeeld')) addEventListener('message', m => { if (m.origin === location.origin && m.data?.soort) verwerk(m.data); });
     function verbind() {
         const bron = new EventSource(API + '/stream?bron=' + (zoek.has('voorbeeld') ? 'voorbeeld' : 'stats'));   // bron: voor de status op api.gwnlarss.nl
-        bron.onmessage = m => {
-            let e; try { e = JSON.parse(m.data); } catch { return; }
-            if (e?.soort === '_instellingen') return pasInstellingenToe(e.instellingen);   // stijl, plek of grootte gewijzigd op de instelpagina
-            const k = SLEUTEL[e?.soort];
-            if (!k) return;   // raids en onbekende soorten staan niet in de stats
-            stand[k] = { naam: e.naam, badge: badgeVoor({ soort: e.soort, ...e.extra }) };
-            nieuwe(k);
-            if (!e.extra?.test) setTimeout(haal, 3000);   // echte alert: daarna gelijk trekken met de server
-        };
+        bron.onmessage = m => { let e; try { e = JSON.parse(m.data); } catch { return; } verwerk(e); };
         bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
     }
     verbind();

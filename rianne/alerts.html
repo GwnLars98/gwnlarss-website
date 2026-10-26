@@ -507,16 +507,16 @@
         setTimeout(() => { bezig = false; volgende(); }, duur + 900);
     }
 
+    function verwerk(d) {
+        // instellingen gewijzigd op de instelpagina (stijl, volume, geluiden): meteen overnemen
+        if (d.soort === '_instellingen') { instellingen = { ...instellingen, ...d.instellingen }; if (d.geluiden) geluiden = d.geluiden; pasGrootteToe(); return; }
+        wachtrij.push(d); volgende();
+    }
+    // in de studio zonder koppeling: tests en stijlkeuze rechtstreeks van de pagina (alleen in het voorbeeld, niet in OBS)
+    if (VOORBEELD) addEventListener('message', m => { if (m.origin === location.origin && m.data?.soort) verwerk(m.data); });
     function verbind() {
         const bron = new EventSource(API + '/stream?bron=' + (VOORBEELD ? 'voorbeeld' : 'alerts'));   // bron: voor de status op api.gwnlarss.nl
-        bron.onmessage = m => {
-            try {
-                const d = JSON.parse(m.data);
-                // instellingen gewijzigd op de instelpagina (stijl, volume, geluiden): meteen overnemen
-                if (d.soort === '_instellingen') { instellingen = d.instellingen ?? instellingen; geluiden = d.geluiden ?? {}; pasGrootteToe(); return; }
-                wachtrij.push(d); volgende();
-            } catch { /* onleesbaar bericht */ }
-        };
+        bron.onmessage = m => { try { verwerk(JSON.parse(m.data)); } catch { /* onleesbaar bericht */ } };
         bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
     }
     verbind();
