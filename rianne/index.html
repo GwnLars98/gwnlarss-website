@@ -213,7 +213,7 @@
         ['cheer', '100 bits', { bits: 100 }], ['cheer', '10.000 bits', { bits: 10000 }], ['raid', 'Raid'], ['donatie', 'Donatie']];
     // zelfde testnamen als de server (streamerAlerts.js), voor testen zonder koppeling
     const TESTNAAM = { follower: 'TestVolger', subscriber: 'TestSub', resub: 'TestResub', gift: 'TestGifter', cheer: 'TestBits', raid: 'TestRaider', donatie: 'TestDonateur' };
-    const TESTEXTRA = { subscriber: { tier: 1 }, resub: { maanden: 12, bericht: 'Al een jaar fan!' }, gift: { aantal: 5, tier: 1 }, cheer: { bits: 1000, bericht: 'Insane mace dunk!' }, raid: { kijkers: 42 }, donatie: { bedrag: 5, valuta: 'EUR', bericht: 'Voor de stream!' } };
+    const TESTEXTRA = { subscriber: { tier: 1 }, resub: { maanden: 12, bericht: 'Al een jaar fan!' }, gift: { aantal: 5, tier: 1 }, cheer: { bits: 1000, bericht: 'Hier, niet boos worden!' }, raid: { kijkers: 42 }, donatie: { bedrag: 5, valuta: 'EUR', bericht: 'Voor de stream!' } };
     const melding = tekst => { const m = $('melding'); m.textContent = tekst; m.classList.add('aan'); clearTimeout(melding.t); melding.t = setTimeout(() => m.classList.remove('aan'), 2600); };
 
     // tabbladen

@@ -38,12 +38,13 @@
     .glitter .kern { stroke: #9ff7ff; stroke-width: 7; }
     .glitter .lijntje { stroke: rgba(255, 255, 255, 0.9); stroke-width: 2; }
     .glitter.aan rect { animation: trek 0.9s cubic-bezier(.6, 0, .3, 1) forwards; }
-    .glitter.weg rect { stroke-dashoffset: 0; animation: trek 0.55s cubic-bezier(.6, 0, .4, 1) reverse forwards; }
+    .glitter.weg rect { stroke-dashoffset: 0; animation: trekWeg 0.55s cubic-bezier(.6, 0, .4, 1) forwards; }
+    @keyframes trekWeg { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 100; } }
     @keyframes trek { to { stroke-dashoffset: 0; } }
     .glitter .binnen { position: absolute; inset: 6px; border-radius: 40px; overflow: hidden; opacity: 0;
         background: radial-gradient(ellipse at 100% 100%, rgba(255, 92, 200, 0.35), transparent 55%), linear-gradient(160deg, #1b2356 0%, #141039 60%, #22124a 100%); }
     .glitter.aan .binnen { animation: in 0.5s 0.45s ease-out forwards; }
-    .glitter.weg .binnen { opacity: 1; animation: in 0.35s ease-in reverse forwards; }
+    .glitter.weg .binnen { opacity: 1; animation: uit 0.35s ease-in forwards; }
     @keyframes in { from { opacity: 0; } to { opacity: 1; } }
     .glitter .foto { position: absolute; left: 40px; top: 34px; width: 170px; height: 170px; border-radius: 50%; background: center / cover;
         box-shadow: 0 0 0 5px #aef8ff, 0 0 26px rgba(53, 216, 255, 0.8); transform: scale(0); }
@@ -76,7 +77,8 @@
     .lint.onder { bottom: -26px; transform-origin: right; rotate: -1.2deg; }
     .rage.aan .lint { animation: plak 0.32s 0.32s cubic-bezier(.3, 1.3, .5, 1) forwards; }
     .rage.aan .lint.onder { animation-delay: 0.45s; }
-    .rage.weg .lint { transform: scaleX(1); animation: plak 0.3s ease-in reverse forwards; }
+    .rage.weg .lint { transform: scaleX(1); animation: plakWeg 0.3s ease-in forwards; }
+    @keyframes plakWeg { from { transform: scaleX(1); } to { transform: scaleX(0); } }
     @keyframes plak { from { transform: scaleX(0); } to { transform: scaleX(1); } }
     .lint .loop { display: flex; width: max-content; white-space: nowrap; font: 34px/54px 'Luckiest Guy', sans-serif; color: var(--navy); letter-spacing: 0.06em; }
     .rage.aan .lint .loop { animation: lintLoop 9s linear infinite; }
@@ -123,7 +125,7 @@
     #led .strip { transition: opacity 1.4s; }
     #led .strip.roze { opacity: 0; }
     #led.aan rect { animation: trek 1.2s cubic-bezier(.6, 0, .3, 1) 0.15s forwards; }
-    #led.weg rect { stroke-dashoffset: 0; animation: trek 0.6s ease-in reverse forwards; }
+    #led.weg rect { stroke-dashoffset: 0; animation: trekWeg 0.6s ease-in forwards; }
     .midden { position: absolute; left: 0; right: 0; top: 150px; display: flex; flex-direction: column; align-items: center; text-align: center; color: #fff; }
     .ring { position: relative; width: 270px; height: 270px; transform: scale(0); }
     #led.aan .ring { animation: plop 0.8s 0.5s cubic-bezier(.2, 1.5, .4, 1) forwards; }
@@ -388,7 +390,12 @@
         const naHoek = (px === kx || py === ky) ? [px, py] : [kx + (px - kx) * 0.6, ky + (py - ky) * 0.6];
         return opPodium(naHoek[0] + (Math.random() - 0.5) * 10, naHoek[1] + (Math.random() - 0.5) * 10);
     }
-    function speel(el, klasse = 'aan') { el.classList.remove('aan', 'weg'); void el.offsetWidth; el.classList.add(klasse); }
+    // aan = binnenkomen, weg = vertrekken; na het vertrekken altijd helemaal verbergen (ook als een animatie niet afspeelt)
+    function speel(el, klasse = 'aan') {
+        clearTimeout(el.verberg); el.classList.remove('aan', 'weg'); void el.offsetWidth; el.classList.add(klasse);
+        if (klasse === 'weg') el.verberg = setTimeout(() => el.classList.remove('weg'), 900);
+    }
+    const ruimOp = () => { for (const id of ['glitter', 'rage', 'led']) { clearTimeout($(id).verberg); $(id).classList.remove('aan', 'weg'); } };
 
     // ---------- glitter ----------
     function toonGlitter(e, o, duur) {
@@ -475,7 +482,6 @@
             }, 800 + Math.random() * duur * 0.6);
         }
         setTimeout(() => { clearInterval(wissel); speel(a, 'weg'); }, duur);
-        setTimeout(() => { a.classList.remove('weg'); }, duur + 800);
     }
 
     let instellingen = { stijl: 'glitter', volume: 0.7, duur: 7000 }, geluiden = {};   // geluiden: soort -> versie van haar eigen geluid
@@ -497,6 +503,7 @@
         if (bezig || !wachtrij.length) return;
         bezig = true;
         const e = wachtrij.shift(), o = opbouw(e), duur = instellingen.duur ?? 7000, stijl = instellingen.stijl ?? 'glitter';
+        ruimOp();   // restjes van een vorige alert (bijv. na een stijlwissel) weg
         if (o.niveau >= 0) window.vuurwerk(o.niveau, duur, ['subscriber', 'resub', 'gift'].includes(e.soort));
         geluid(e.soort);
         ({ glitter: toonGlitter, ragebait: toonRage, led: toonLed }[stijl] ?? toonGlitter)(e, o, duur);
