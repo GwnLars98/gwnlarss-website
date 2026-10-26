@@ -80,6 +80,7 @@
         <button type="button" class="stijl-kaart" data-stijl="polaroid"><b>Polaroid</b><span>Scheve polaroid met handschrift</span></button>
         <button type="button" class="stijl-kaart" data-stijl="radio"><b>Radio</b><span>LED-display waar de titel doorloopt</span></button>
         <button type="button" class="stijl-kaart" data-stijl="equalizer"><b>Equalizer</b><span>Dansende balken achter de titel</span></button>
+        <button type="button" class="stijl-kaart" data-stijl="minecraft"><b>Minecraft</b><span>Advancement-toast met XP-balk</span></button>
         <button type="button" class="stijl-kaart" data-stijl="volledig"><b>Volledig scherm</b><span>Het hele beeld, voor een muziekscène</span></button>
     </div>
 
@@ -134,7 +135,7 @@
 <script>
 (() => {
     const API = 'https://api.gwnlarss.nl/api/spotify';
-    const MATEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080], neon: [900, 220], polaroid: [760, 300], radio: [900, 170], equalizer: [900, 220] };
+    const MATEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080], neon: [900, 220], polaroid: [760, 300], radio: [900, 170], equalizer: [900, 220], minecraft: [720, 220] };
     const $ = id => document.getElementById(id);
     const q = new URLSearchParams(location.search);
     const toastEl = $('toast');

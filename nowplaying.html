@@ -8,9 +8,9 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&family=Tilt+Neon&family=Caveat:wght@600;700&family=Doto:wght@800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@500;600;700&family=Tilt+Neon&family=Caveat:wght@600;700&family=Doto:wght@800&family=VT323&display=swap" rel="stylesheet">
 <style>
-    /* Spotify "now playing" voor OBS in veertien stijlen (waarvan één volledig scherm). Eén vaste link: de stijl en kant komen van de server (opslaan op
+    /* Spotify "now playing" voor OBS in vijftien stijlen (waarvan één volledig scherm). Eén vaste link: de stijl en kant komen van de server (opslaan op
        nowplaying-setup.html), ?stijl= in de link gaat daar alleen voor voorbeelden overheen.
        Elke stijl heeft een eigen basismaat en schaalt mee met de browserbron. Schuift in beeld zodra er muziek
        speelt en weer weg bij pauze. ?demo=1 toont een voorbeeldnummer, ?voorbeeld=1 het echte nummer (of het
@@ -41,7 +41,8 @@
     body[data-stijl="3d"] .blok.drie, body[data-stijl="aurora"] .blok.aurora,
     body[data-stijl="split"] .blok.split, body[data-stijl="transparant"] .blok.transparant,
     body[data-stijl="schuin"] .blok.schuin, body[data-stijl="golf"] .blok.golf, body[data-stijl="volledig"] .blok.volledig,
-    body[data-stijl="neon"] .blok.neon, body[data-stijl="polaroid"] .blok.polaroid, body[data-stijl="radio"] .blok.radio, body[data-stijl="equalizer"] .blok.equalizer { display: block; }
+    body[data-stijl="neon"] .blok.neon, body[data-stijl="polaroid"] .blok.polaroid, body[data-stijl="radio"] .blok.radio, body[data-stijl="equalizer"] .blok.equalizer,
+    body[data-stijl="minecraft"] .blok.minecraft { display: block; }
     /* in- en uitschuiven */
     .schuif { transform: translateX(-120%); opacity: 0; transition: transform 0.75s cubic-bezier(.2, 1.2, .3, 1), opacity 0.5s; }
     body.rechts .schuif { transform: translateX(120%); }
@@ -279,6 +280,24 @@
     .equalizer .tijden { display: flex; align-items: center; gap: 14px; margin-top: 12px; font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.75); font-variant-numeric: tabular-nums; }
     .equalizer .balk { flex: 1; height: 5px; }
 
+    /* ---------- 17. minecraft (720 x 220): de advancement-toast uit de game (zelfde 9-slice als alerts-minecraft.html),
+       albumhoes als pixelig icoon, voortgang als groene XP-balk ---------- */
+    .minecraft { --s: 4; image-rendering: pixelated; }
+    .minecraft .toast { position: absolute; left: 40px; top: 24px; width: calc(160px * var(--s)); height: calc(32px * var(--s));
+        border-style: solid; border-width: calc(4px * var(--s)); border-image: url("https://api.gwnlarss.nl/minecraft-ui/toast_advancement.png") 4 fill / calc(4px * var(--s)) stretch; }
+    .minecraft .icoon { position: absolute; left: calc(4px * var(--s)); top: calc(4px * var(--s)); width: calc(16px * var(--s)); height: calc(16px * var(--s));
+        background: center / cover no-repeat; image-rendering: pixelated; }
+    .minecraft .regel1, .minecraft .regel2 { position: absolute; left: calc(26px * var(--s)); right: calc(2px * var(--s)); font: 400 calc(10px * var(--s))/1 'VT323', monospace; white-space: nowrap; overflow: hidden; }
+    .minecraft .regel1 { top: calc(3px * var(--s)); color: #ffff55; text-shadow: calc(1px * var(--s)) calc(1px * var(--s)) 0 #3f3f15; }
+    .minecraft .regel2 { top: calc(14px * var(--s)); color: #fff; text-shadow: calc(1px * var(--s)) calc(1px * var(--s)) 0 #3f3f3f; }
+    .minecraft .regel2 .titel { padding-right: 20px; }
+    .minecraft .xp { position: absolute; left: 40px; top: calc(24px + 32px * 4 + 40px); width: calc(160px * var(--s)); height: 20px; background: #000; box-shadow: 0 0 0 4px #1d1d1d; }
+    .minecraft .xp::before { content: ''; position: absolute; inset: 4px; background: #303030; }
+    .minecraft .xp .vul { position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc(var(--p) * (100% - 8px)); border-radius: 0; background: linear-gradient(180deg, #a7ff52, #80ff20 45%, #3fb800); box-shadow: none; }
+    .minecraft .xp i { position: absolute; top: 0; bottom: 0; width: 4px; background: #000; z-index: 1; }
+    .minecraft .niveau { position: absolute; left: 40px; width: calc(160px * var(--s)); top: calc(24px + 32px * 4 + 8px); text-align: center; font: 400 32px/1 'VT323', monospace; color: #80ff20;
+        text-shadow: 3px 0 0 #000, -3px 0 0 #000, 0 3px 0 #000, 0 -3px 0 #000; z-index: 2; pointer-events: none; }
+
     /* melding als Spotify nog niet gekoppeld is (ook in OBS, zodat je weet dat er iets moet gebeuren) */
     .hint { position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); max-width: 720px; padding: 16px 20px; border-radius: 16px;
         background: var(--kaart); font-size: 16px; line-height: 1.45; box-shadow: 0 0 0 2px var(--paars); }
@@ -435,12 +454,22 @@
             <div class="tijden"><span data-tijd>0:00</span><div class="balk"><div class="vul"></div></div><span data-lengte>0:00</span></div>
         </div>
     </div></div></div>
+
+    <div class="blok minecraft"><div class="schuif" style="position:absolute;inset:0">
+        <div class="toast">
+            <div class="icoon hoes" data-hoes></div>
+            <div class="regel1">Muziek gevonden!</div>
+            <div class="regel2 titelvak"><span class="titel" data-titel></span></div>
+        </div>
+        <div class="niveau" id="mcNiveau">0</div>
+        <div class="xp" id="mcXp"><div class="vul"></div></div>
+    </div></div>
 </div>
 <div class="hint" id="hint" hidden></div>
 <script>
 (() => {
     const q = new URLSearchParams(location.search);
-    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080], neon: [900, 220], polaroid: [760, 300], radio: [900, 170], equalizer: [900, 220] };
+    const STIJLEN = { kaart: [800, 220], pil: [640, 110], vinyl: [900, 300], '3d': [900, 320], aurora: [820, 200], split: [760, 140], transparant: [760, 160], schuin: [960, 240], golf: [960, 260], volledig: [1920, 1080], neon: [900, 220], polaroid: [760, 300], radio: [900, 170], equalizer: [900, 220], minecraft: [720, 220] };
     const DEMO = q.get('demo') === '1';
     // ?voorbeeld=1 (instelpagina): het echte nummer als er iets speelt, anders het voorbeeldnummer, en altijd in beeld
     const VOORBEELD = q.get('voorbeeld') === '1';
@@ -618,6 +647,7 @@
         });
     }
     golfVorm('start');
+    document.getElementById('mcXp').insertAdjacentHTML('beforeend', Array.from({ length: 17 }, (_, i) => `<i style="left:calc(${(i + 1) / 18 * 100}% - 2px)"></i>`).join(''));
     // radio: 30 LED-blokjes voor de voortgang; equalizer: 44 balken met elk een eigen tempo
     const blokjes = document.getElementById('blokjes'); blokjes.innerHTML = '<i></i>'.repeat(30);
     const balken = document.getElementById('balken');
@@ -644,6 +674,7 @@
         const pos = Math.min(nu.duur, nu.positie + (nu.speelt ? Date.now() - nu.op : 0)), p = pos / nu.duur;
         blok.style.setProperty('--p', p.toFixed(4));
         alle('[data-tijd]').forEach(e => (e.textContent = mmss(pos)));
+        if (STIJL === 'minecraft') document.getElementById('mcNiveau').textContent = Math.floor(pos / 60000);
         if (STIJL === 'radio') { const n = Math.round(p * 30); blokjes.querySelectorAll('i').forEach((b, i) => b.classList.toggle('vol', i < n)); }
         if (STIJL === 'golf') { const n = Math.round(p * STAAFJES); golfje.querySelectorAll('i').forEach((st, i) => st.classList.toggle('vol', i < n)); }
         if (STIJL === 'vinyl') blok.style.setProperty('--arm', (11 + p * 15).toFixed(2) + 'deg');
