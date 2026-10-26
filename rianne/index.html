@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio · Riannnneee</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="https://static-cdn.jtvnw.net/jtv_user_pictures/3b4b994a-cdcb-4051-bd11-cec756938f42-profile_image-300x300.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Luckiest+Guy&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    /* Studio voor Rianne (gwnlarss.nl/rianne): bovenin één groot live voorbeeld met alerts en stats samen en de
+       testknoppen eronder, daaronder tabbladen voor alerts, stats, geluid, OBS-links en de rest. Alles wordt op
+       de server bewaard en staat meteen in OBS (zelfde links). Beheer met een sleutel die je na het koppelen
+       krijgt (of van Lars); die wordt alleen in deze browser bewaard. Data: api.gwnlarss.nl/api/streamer-alerts. */
+    :root { --bg: #0b0d29; --vlak: #151843; --vlak2: #1d2156; --lijn: rgba(159, 247, 255, 0.16); --tekst: #fff; --dim: #aab4dc;
+        --cyaan: #7ff3ff; --blauw: #35d8ff; --roze: #ff5cc8; --lila: #b58cff; --navy: #10133a; --groen: #4fd18b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--tekst); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh;
+        background: radial-gradient(ellipse 60% 40% at 90% 0%, rgba(255, 92, 200, 0.22), transparent), radial-gradient(ellipse 50% 40% at 0% 10%, rgba(53, 216, 255, 0.18), transparent), var(--bg); }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 18px 70px; }
+    /* bovenbalk */
+    .balk { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 22px 0 18px; }
+    .balk img { width: 58px; height: 58px; border-radius: 50%; box-shadow: 0 0 0 3px #9ff7ff, 0 0 22px rgba(53, 216, 255, 0.7); }
+    .balk h1 { margin: 0; font: 700 1.9rem/1 'Fredoka', sans-serif; }
+    .balk h1 small { display: block; font: 500 0.85rem 'Inter', sans-serif; color: var(--dim); margin-top: 4px; }
+    .balk .rechts { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 99px; font-weight: 600; font-size: 0.9rem; background: var(--vlak); box-shadow: inset 0 0 0 1px var(--lijn); }
+    .chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); }
+    .chip.ok { color: var(--groen); } .chip.ok i { background: var(--groen); box-shadow: 0 0 8px var(--groen); }
+    .chip.nee { color: #ff9bd9; } .chip.nee i { background: #ff9bd9; }
+    .knop { display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; font: inherit; font-weight: 700; padding: 10px 16px; border-radius: 12px; text-decoration: none;
+        background: linear-gradient(135deg, var(--cyaan), var(--roze)); color: var(--navy); }
+    .knop.twitch { background: #9146ff; color: #fff; }
+    .knop.zacht { background: var(--vlak2); color: var(--tekst); box-shadow: inset 0 0 0 1px var(--lijn); }
+    .knop.zacht.aan { box-shadow: inset 0 0 0 2px var(--cyaan), 0 0 14px rgba(127, 243, 255, 0.3); }
+    /* studio: groot voorbeeld met alerts over de stats heen */
+    .studio { position: relative; border-radius: 26px; padding: 10px; background: linear-gradient(135deg, rgba(127, 243, 255, 0.7), rgba(255, 92, 200, 0.7)); box-shadow: 0 0 40px rgba(53, 216, 255, 0.25); }
+    .scherm { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: #000; }
+    .scherm iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; background: transparent; }
+    .scherm .label { position: absolute; left: 14px; top: 12px; z-index: 3; font: 600 0.75rem 'Inter', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 10px; border-radius: 99px; background: rgba(11, 13, 41, 0.7); color: var(--cyaan); }
+    .tests { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 4px 4px; align-items: center; }
+    .tests .knop { padding: 7px 12px; font-size: 0.85rem; border-radius: 99px; background: rgba(11, 13, 41, 0.75); color: #fff; box-shadow: none; }
+    .tests .knop:hover { background: var(--navy); }
+    .tests .groep { font: 700 0.72rem 'Inter', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy); margin: 0 4px 0 8px; }
+    .tests .groep:first-child { margin-left: 4px; }
+    #verbondenTekst { flex-basis: 100%; font-size: 0.8rem; color: var(--navy); font-weight: 600; padding-left: 6px; }
+    /* geen sleutel: alleen kijken, uitleg bovenin */
+    .slot { display: none; margin: 16px 0 0; padding: 16px 18px; border-radius: 18px; background: var(--vlak); box-shadow: inset 0 0 0 1px var(--lijn); }
+    .geen-sleutel .slot { display: block; }
+    .geen-sleutel .tests, .geen-sleutel [data-tab]:not([data-tab="obs"]) .beheer { opacity: 0.45; pointer-events: none; filter: grayscale(0.4); }
+    .slot p { margin: 0 0 10px; color: var(--dim); line-height: 1.5; }
+    .veld { display: flex; gap: 8px; }
+    .veld input, .link input { flex: 1; min-width: 0; font: inherit; color: var(--tekst); background: var(--vlak2); border: 1px solid var(--lijn); border-radius: 12px; padding: 10px 14px; }
+    /* tabbladen */
+    .tabs { display: flex; gap: 6px; margin: 26px 0 0; overflow-x: auto; padding-bottom: 2px; }
+    .tabs button { flex-shrink: 0; border: 0; cursor: pointer; font: 600 1rem 'Fredoka', sans-serif; padding: 11px 18px; border-radius: 14px 14px 0 0; background: transparent; color: var(--dim); }
+    .tabs button.aan { background: var(--vlak); color: #fff; box-shadow: inset 0 3px 0 var(--cyaan); }
+    .paneel { display: none; background: var(--vlak); border-radius: 0 18px 18px 18px; padding: 22px; }
+    .paneel.aan { display: block; }
+    .paneel h3 { font: 700 1.15rem 'Fredoka', sans-serif; margin: 0 0 4px; }
+    .paneel h3 + p, .uitleg { color: var(--dim); margin: 0 0 14px; line-height: 1.5; font-size: 0.93rem; }
+    .paneel hr { border: 0; border-top: 1px solid var(--lijn); margin: 22px 0; }
+    /* stijlkeuze: grote kaarten met een levend plaatje */
+    .keuzes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .keuze { position: relative; cursor: pointer; border-radius: 18px; padding: 10px 10px 14px; background: var(--vlak2); box-shadow: inset 0 0 0 1px var(--lijn); transition: transform 0.2s, box-shadow 0.2s; }
+    .keuze:hover { transform: translateY(-3px); }
+    .keuze input { position: absolute; opacity: 0; }
+    .keuze:has(input:checked) { box-shadow: inset 0 0 0 2px var(--cyaan), 0 0 22px rgba(127, 243, 255, 0.25); }
+    .keuze:has(input:checked) .plaat::after { content: '✓'; position: absolute; right: 8px; top: 8px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--cyaan); color: var(--navy); font-weight: 800; }
+    .keuze b { display: block; font: 700 1.05rem 'Fredoka', sans-serif; margin: 10px 4px 2px; }
+    .keuze small { display: block; color: var(--dim); line-height: 1.4; margin: 0 4px; font-size: 0.84rem; }
+    .plaat { position: relative; height: 104px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; }
+    .p-glitter { background: linear-gradient(160deg, #1b2356, #141039 60%, #3a1660); }
+    .p-glitter span { padding: 12px 26px; border-radius: 16px; font: 700 1.2rem 'Fredoka', sans-serif; box-shadow: 0 0 0 3px #9ff7ff, 0 0 16px rgba(53, 216, 255, 0.8); text-shadow: 0 0 10px rgba(53, 216, 255, 0.8); }
+    .p-ragebait { background: repeating-linear-gradient(-45deg, #7ff3ff 0 10px, #c9fbff 10px 20px); }
+    .p-ragebait span { padding: 8px 20px 4px; border-radius: 12px; transform: rotate(-3deg); background: #ff3fae; box-shadow: 0 0 0 4px var(--navy), 6px 6px 0 4px var(--navy); font: 1.4rem 'Luckiest Guy', sans-serif; text-shadow: 2px 2px 0 var(--navy), -2px -2px 0 var(--navy), 2px -2px 0 var(--navy), -2px 2px 0 var(--navy); }
+    .p-led { background: radial-gradient(ellipse at 15% 20%, rgba(53, 216, 255, 0.6), transparent 55%), radial-gradient(ellipse at 90% 90%, rgba(255, 92, 200, 0.7), transparent 55%), #0c0e2c; box-shadow: inset 0 0 0 3px #ffb3e8, inset 0 0 14px rgba(255, 92, 200, 0.7); }
+    .p-led span { font: 700 1.8rem 'Fredoka', sans-serif; text-shadow: 0 0 10px #7ff3ff, 0 0 24px #35d8ff, 0 0 40px #ff5cc8; }
+    .p-kaartjes { background: linear-gradient(160deg, #0d2433, #2a1440); place-items: end start; padding: 10px; }
+    .p-kaartjes span { display: grid; gap: 4px; }
+    .p-kaartjes i { display: block; width: 110px; height: 18px; border-radius: 6px; background: rgba(27, 35, 86, 0.95); box-shadow: inset 3px 0 0 var(--cyaan); }
+    .p-kaartjes i:nth-child(2) { box-shadow: inset 3px 0 0 var(--roze), 0 0 0 1px var(--roze); }
+    .p-wissel { background: linear-gradient(160deg, #0d2433, #2a1440); }
+    .p-wissel span { padding: 10px 18px 6px; border-radius: 14px; transform: rotate(-2deg); background: #ff3fae; box-shadow: 0 0 0 3px var(--navy), 5px 5px 0 3px var(--navy); font: 1.1rem 'Luckiest Guy', sans-serif; animation: klap 3s ease-in-out infinite; }
+    @keyframes klap { 0%, 80% { transform: rotate(-2deg) rotateX(0); } 90% { transform: rotate(-2deg) rotateX(90deg); } }
+    .p-strip { background: linear-gradient(160deg, #0d2433, #2a1440); place-items: end stretch; }
+    .p-strip span { display: block; height: 22px; background: #0e1030; border-top: 3px solid; border-image: linear-gradient(90deg, var(--cyaan), var(--roze), var(--lila)) 1; overflow: hidden; white-space: nowrap; font-size: 0.7rem; line-height: 19px; color: #9ff7ff; }
+    .p-strip span em { display: inline-block; font-style: normal; animation: loop 8s linear infinite; }
+    @keyframes loop { from { transform: translateX(40%); } to { transform: translateX(-60%); } }
+    /* rest */
+    .rij { display: grid; grid-template-columns: 150px 1fr 64px; gap: 12px; align-items: center; margin: 10px 0; }
+    .rij input[type=range] { accent-color: var(--blauw); }
+    .soorten { display: flex; flex-wrap: wrap; gap: 8px; }
+    .soorten label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 99px; background: var(--vlak2); box-shadow: inset 0 0 0 1px var(--lijn); cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+    .soorten label:has(input:checked) { box-shadow: inset 0 0 0 2px var(--cyaan); }
+    .soorten input { accent-color: var(--blauw); }
+    .plekken { display: grid; grid-template-columns: repeat(2, 64px); gap: 6px; padding: 8px; border-radius: 12px; background: #0b0d29; box-shadow: inset 0 0 0 1px var(--lijn); width: max-content; }
+    .plekken button { height: 38px; border: 0; border-radius: 8px; cursor: pointer; background: var(--vlak2); color: var(--dim); font: 600 0.75rem 'Inter', sans-serif; }
+    .plekken button.aan { background: linear-gradient(135deg, var(--cyaan), var(--roze)); color: var(--navy); }
+    .naast { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+    .naast > div { flex: 1 1 260px; }
+    .link { display: flex; gap: 8px; margin-bottom: 6px; }
+    .obs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .obs > div { padding: 16px; border-radius: 16px; background: var(--vlak2); box-shadow: inset 0 0 0 1px var(--lijn); }
+    .obs h4 { margin: 0 0 4px; font: 700 1.05rem 'Fredoka', sans-serif; }
+    .obs p { margin: 0 0 10px; color: var(--dim); font-size: 0.88rem; line-height: 1.5; }
+    .geluiden { display: grid; gap: 8px; }
+    .geluid { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: var(--vlak2); box-shadow: inset 0 0 0 1px var(--lijn); }
+    .geluid b { min-width: 130px; }
+    .geluid span { flex: 1; min-width: 140px; color: var(--dim); font-size: 0.86rem; }
+    .geluid span.eigen { color: var(--groen); }
+    .geluid .knop { padding: 7px 12px; font-size: 0.85rem; }
+    .geluid input[type=file] { display: none; }
+    .melding { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 20px; border-radius: 14px; background: var(--vlak2); box-shadow: 0 0 0 1px var(--lijn), 0 10px 30px rgba(0, 0, 0, 0.4); font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9; }
+    .melding.aan { opacity: 1; }
+    footer { text-align: center; color: var(--dim); font-size: 0.82rem; margin-top: 36px; }
+    footer a { color: var(--cyaan); }
+    @media (max-width: 760px) { .keuzes, .obs { grid-template-columns: 1fr; } .rij { grid-template-columns: 1fr 56px; } .rij span:first-child { grid-column: 1 / -1; } .balk .rechts { margin-left: 0; } }
+</style>
+</head>
+<body class="geen-sleutel">
+<div class="wrap">
+    <div class="balk">
+        <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/3b4b994a-cdcb-4051-bd11-cec756938f42-profile_image-300x300.png" alt="">
+        <h1>Rianne's studio ✨<small>Alerts en stream stats voor Riannnneee, met je eigen emotes</small></h1>
+        <div class="rechts"><span class="chip" id="koppelStatus"><i></i>Laden...</span><a class="knop twitch" href="https://api.gwnlarss.nl/api/streamer-alerts/verbind">Koppel met Twitch</a></div>
+    </div>
+
+    <div class="studio">
+        <div class="scherm" id="scherm">
+            <span class="label">Live voorbeeld</span>
+            <iframe id="statsFrame" src="stats.html?voorbeeld" title="Voorbeeld van de stream stats"></iframe>
+            <iframe id="frame" src="alerts.html?voorbeeld&kaal" title="Voorbeeld van de alerts" allow="autoplay"></iframe>
+        </div>
+        <div class="tests" id="tests"></div>
+    </div>
+
+    <div class="slot">
+        <p><b style="color:#fff">Nog niet ingelogd.</b> Koppel je Twitch (knop rechtsboven): daarna kom je hier terug en kun je alles instellen en testen. Heb je van Lars een beheersleutel gekregen? Plak hem hier.</p>
+        <div class="veld"><input id="sleutelInvoer" type="password" placeholder="Beheersleutel"><button class="knop" id="sleutelOpslaan">Opslaan</button></div>
+    </div>
+
+    <div class="tabs" id="tabs">
+        <button class="aan" data-naar="alerts">✨ Alerts</button><button data-naar="stats">📊 Stats</button><button data-naar="geluid">🔊 Geluid</button><button data-naar="obs">🎥 In OBS zetten</button><button data-naar="meer">⚙️ Meer</button>
+    </div>
+
+    <section class="paneel aan" data-tab="alerts"><div class="beheer">
+        <h3>Hoe zien je alerts eruit?</h3><p>Kies een stijl: hij staat meteen in OBS en in het voorbeeld hierboven. Klik daarna op een testknop.</p>
+        <div class="keuzes" id="stijlen">
+            <label class="keuze"><input type="radio" name="stijl" value="glitter"><div class="plaat p-glitter"><span>✦ Naam ✦</span></div><b>Glitterlijst</b><small>De lichtblauwe lijst van je camera tekent zich als kaart, met glinsters langs de rand en emotes die eruit dwarrelen.</small></label>
+            <label class="keuze"><input type="radio" name="stijl" value="ragebait"><div class="plaat p-ragebait"><span>NAAM!</span></div><b>Ragebait</b><small>Roze sticker met waarschuwingslint, het scherm schudt en je emotes worden als stickers rondom geplakt.</small></label>
+            <label class="keuze"><input type="radio" name="stijl" value="led"><div class="plaat p-led"><span>Naam</span></div><b>LED-kamer</b><small>Volledig scherm: een ledstrip rond je beeld, je naam floept letter voor letter aan en emotes stijgen op als bellen.</small></label>
+        </div>
+        <hr>
+        <h3>Welke alerts?</h3><p>Uitgezette alerts komen niet in beeld (testen kan wel).</p>
+        <div class="soorten" id="soorten"></div>
+        <hr>
+        <div class="rij"><span>Grootte</span><input type="range" id="grootte" min="0.5" max="1.5" step="0.05"><span id="grootteTekst"></span></div>
+        <div class="rij"><span>Hoe lang in beeld</span><input type="range" id="duur" min="3000" max="15000" step="500"><span id="duurTekst"></span></div>
+    </div></section>
+
+    <section class="paneel" data-tab="stats"><div class="beheer">
+        <h3>Je stream stats</h3><p>Laatste volger, sub (ook gifted), donatie en bits. Kies hoe ze in beeld staan; het voorbeeld hierboven past zich meteen aan.</p>
+        <div class="keuzes" id="statsStijlen">
+            <label class="keuze"><input type="radio" name="statsStijl" value="kaartjes"><div class="plaat p-kaartjes"><span><i></i><i></i><i></i><i></i></span></div><b>Kaartjes</b><small>Een stapeltje glazen kaartjes met je foto erboven, in een hoek. Een nieuwe naam licht roze op.</small></label>
+            <label class="keuze"><input type="radio" name="statsStijl" value="wissel"><div class="plaat p-wissel"><span>LAATSTE SUB</span></div><b>Wisselsticker</b><small>Eén roze sticker die steeds omklapt naar de volgende stat. Klein, valt op zonder veel plek.</small></label>
+            <label class="keuze"><input type="radio" name="statsStijl" value="strip"><div class="plaat p-strip"><span><em>💜 Laatste volger ✦ 👑 Laatste sub ✦ 💎 Laatste bits</em></span></div><b>LED-strip</b><small>Dunne ledstrip over de hele breedte met een lopende band. Nieuwe namen flitsen in het midden.</small></label>
+        </div>
+        <hr>
+        <div class="naast">
+            <div><h3>Plek</h3><p class="uitleg">In welke hoek? De LED-strip gaat boven- of onderin.</p>
+                <div class="plekken" id="plekken"><button data-plek="lb">Linksboven</button><button data-plek="rb">Rechtsboven</button><button data-plek="lo">Linksonder</button><button data-plek="ro">Rechtsonder</button></div></div>
+            <div><h3>Grootte</h3><p class="uitleg">Voor de kaartjes en de sticker.</p>
+                <div class="rij" style="grid-template-columns: 1fr 60px"><input type="range" id="statsGrootte" min="0.6" max="1.4" step="0.05"><span id="statsGrootteTekst"></span></div></div>
+        </div>
+    </div></section>
+
+    <section class="paneel" data-tab="geluid"><div class="beheer">
+        <h3>Geluid</h3><p>Elke stijl heeft zijn eigen klank. Liever je eigen geluid? Kies per alert een bestand (mp3, wav of ogg, max 8 MB).</p>
+        <div class="rij"><span>Volume</span><input type="range" id="volume" min="0" max="1" step="0.05"><span id="volumeTekst"></span></div>
+        <div class="geluiden" id="geluiden"></div>
+    </div></section>
+
+    <section class="paneel" data-tab="obs">
+        <h3>In OBS zetten</h3><p>Twee keer een <b>Browserbron</b>, allebei 1920 × 1080. Je keuzes hierboven komen vanzelf mee, je hoeft de links nooit te veranderen.</p>
+        <div class="obs">
+            <div><h4>1. Alerts</h4><p>Bovenaan in je scène, boven alles. Vink "Audio regelen via OBS" aan als je geen geluid hoort.</p>
+                <div class="link"><input id="obsLink" readonly value="https://gwnlarss.nl/rianne/alerts.html"><button class="knop zacht" id="kopieer">Kopieer</button></div>
+                <button class="knop zacht" id="zuinigKnop" style="margin-top:6px">🐢 Zuinige stand (mindere pc)</button></div>
+            <div><h4>2. Stream stats</h4><p>Onder de alerts-bron, zodat alerts (ook volledig scherm) eroverheen komen.</p>
+                <div class="link"><input id="statsLink" readonly value="https://gwnlarss.nl/rianne/stats.html"><button class="knop zacht" id="kopieerStats">Kopieer</button></div></div>
+        </div>
+    </section>
+
+    <section class="paneel" data-tab="meer"><div class="beheer">
+        <h3>Donaties via StreamElements</h3><p>Optioneel. Plak je JWT-token uit StreamElements (Account, Channels, Show secrets). Status: <b id="seStatus">uit</b></p>
+        <div class="veld"><input id="seJwt" type="password" placeholder="JWT-token (leeg = donaties uit)" autocomplete="off"><button class="knop zacht" id="seOpslaan">Opslaan</button></div>
+    </div></section>
+
+    <footer>Gemaakt door <a href="https://gwnlarss.nl" target="_blank" rel="noopener">GwnLarss</a></footer>
+</div>
+<div class="melding" id="melding"></div>
+
+<script src="geluid.js"></script>
+<script>
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/riannnneee';
+    const $ = id => document.getElementById(id);
+    const SOORTEN = { follower: '💜 Volgers', subscriber: '👑 Subs', resub: '🔁 Resubs', gift: '🎁 Gifted subs', cheer: '💎 Bits', raid: '🚨 Raids', donatie: '💸 Donaties' };
+    const TESTS = [['Alerts'], ['follower', 'Volger'], ['subscriber', 'Sub'], ['resub', 'Resub'], ['gift', '5 gifts', { aantal: 5 }], ['gift', '50 gifts', { aantal: 50 }],
+        ['cheer', '100 bits', { bits: 100 }], ['cheer', '10.000 bits', { bits: 10000 }], ['raid', 'Raid'], ['donatie', 'Donatie']];
+    const melding = tekst => { const m = $('melding'); m.textContent = tekst; m.classList.add('aan'); clearTimeout(melding.t); melding.t = setTimeout(() => m.classList.remove('aan'), 2600); };
+
+    // tabbladen
+    $('tabs').addEventListener('click', e => {
+        const b = e.target.closest('[data-naar]'); if (!b) return;
+        document.querySelectorAll('#tabs button').forEach(k => k.classList.toggle('aan', k === b));
+        document.querySelectorAll('.paneel').forEach(p => p.classList.toggle('aan', p.dataset.tab === b.dataset.naar));
+    });
+
+    // sleutel: uit de link na het koppelen (#sleutel=...), anders uit deze browser
+    const hash = new URLSearchParams(location.hash.slice(1));
+    if (hash.get('sleutel')) { try { localStorage.setItem('rianne-sleutel', hash.get('sleutel')); } catch {} history.replaceState(null, '', location.pathname + location.search); }
+    let sleutel = (() => { try { return localStorage.getItem('rianne-sleutel'); } catch { return null; } })();
+    if (new URLSearchParams(location.search).has('verbonden')) melding('✅ Je Twitch is gekoppeld!');
+    const post = (pad, body) => fetch(`${API}/${pad}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, ...body }) }).then(r => r.json());
+
+    function toon(d) {
+        $('koppelStatus').className = `chip ${d.gekoppeld ? 'ok' : 'nee'}`;
+        $('koppelStatus').innerHTML = `<i></i>${d.gekoppeld ? `Gekoppeld als ${d.naam}` : 'Twitch nog niet gekoppeld'}`;
+        const i = d.instellingen;
+        document.querySelectorAll('[name=stijl]').forEach(r => { r.checked = r.value === (i.stijl ?? 'glitter'); });
+        document.querySelectorAll('[name=statsStijl]').forEach(r => { r.checked = r.value === (i.statsStijl ?? 'kaartjes'); });
+        document.querySelectorAll('#plekken [data-plek]').forEach(b => b.classList.toggle('aan', b.dataset.plek === (i.statsPlek ?? 'lo')));
+        $('soorten').innerHTML = Object.entries(SOORTEN).map(([s, naam]) => `<label><input type="checkbox" data-soort="${s}" ${i.aan[s] ? 'checked' : ''}>${naam}</label>`).join('');
+        $('grootte').value = i.grootte ?? 1; $('grootteTekst').textContent = Math.round((i.grootte ?? 1) * 100) + '%';
+        $('statsGrootte').value = i.statsGrootte ?? 1; $('statsGrootteTekst').textContent = Math.round((i.statsGrootte ?? 1) * 100) + '%';
+        $('volume').value = i.volume; $('volumeTekst').textContent = Math.round(i.volume * 100) + '%';
+        $('duur').value = i.duur; $('duurTekst').textContent = (i.duur / 1000).toLocaleString('nl-NL') + ' s';
+        tekenGeluiden(d.geluiden ?? {});
+        $('seStatus').textContent = { uit: 'uit', ok: '✅ verbonden', fout: '❌ token geweigerd', bezig: 'verbinden...' }[d.streamElements] ?? d.streamElements;
+    }
+    async function laad() {
+        if (sleutel) {
+            const d = await post('controleer', {}).catch(() => null);
+            if (d?.ok) { document.body.classList.remove('geen-sleutel'); return toon(d); }
+            sleutel = null; try { localStorage.removeItem('rianne-sleutel'); } catch {}
+        }
+        document.body.classList.add('geen-sleutel');
+        const d = await fetch(API, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+        if (d?.instellingen) toon(d);
+    }
+
+    // Geluid bij een test: de pagina speelt het zelf af, want alleen de pagina heeft de klik (een browser
+    // laat het voorbeeldkader zonder eigen klik geen geluid maken). Zelfde klank als de overlay (geluid.js).
+    let huidigeGeluiden = {};
+    const gekozenStijl = () => document.querySelector('[name=stijl]:checked')?.value ?? 'glitter';
+    const klank = (soort, volume) => window.rianneGeluid(gekozenStijl(), soort, volume);
+    function speelTestGeluid(soort) {
+        const volume = Number($('volume').value);
+        if (huidigeGeluiden[soort]) { const a = new Audio(`${API}/geluid/${soort}?v=${huidigeGeluiden[soort]}`); a.volume = volume; return a.play().catch(() => klank(soort, volume)); }
+        klank(soort, volume);
+    }
+    function tekenGeluiden(g) {
+        huidigeGeluiden = g;
+        $('geluiden').innerHTML = Object.entries(SOORTEN).map(([s, naam]) => `
+            <div class="geluid"><b>${naam}</b><span class="${g[s] ? 'eigen' : ''}">${g[s] ? '🎵 Eigen geluid' : 'Klank van je stijl'}</span>
+            <button class="knop zacht" data-luister="${s}">▶ Luister</button>
+            <label class="knop zacht">📁 Eigen bestand<input type="file" accept="audio/mpeg,audio/wav,audio/ogg,audio/webm,.mp3,.wav,.ogg" data-upload="${s}"></label>
+            ${g[s] ? `<button class="knop zacht" data-wis="${s}">✕ Weg</button>` : ''}</div>`).join('');
+    }
+    $('geluiden').addEventListener('change', async e => {
+        const inp = e.target.closest('[data-upload]'); if (!inp?.files[0]) return;
+        const f = inp.files[0], type = f.type || ({ mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg' }[f.name.split('.').pop().toLowerCase()] ?? '');
+        melding('⏳ Uploaden...');
+        const d = await fetch(`${API}/geluid/${inp.dataset.upload}`, { method: 'POST', headers: { 'Content-Type': type, 'X-Sleutel': sleutel }, body: f }).then(r => r.json()).catch(() => null);
+        if (d?.ok) { tekenGeluiden(d.geluiden ?? {}); melding('🎵 Geluid opgeslagen, binnen 30 seconden actief in OBS'); } else melding('❌ ' + (d?.fout ?? 'Uploaden mislukt'));
+    });
+    $('geluiden').addEventListener('click', async e => {
+        const l = e.target.closest('[data-luister]'), w = e.target.closest('[data-wis]');
+        if (l) speelTestGeluid(l.dataset.luister);
+        if (w) {
+            const d = await fetch(`${API}/geluid/${w.dataset.wis}`, { method: 'DELETE', headers: { 'X-Sleutel': sleutel } }).then(r => r.json()).catch(() => null);
+            if (d?.ok) { tekenGeluiden(d.geluiden ?? {}); melding('🗑️ Eigen geluid weg, de klank van je stijl speelt weer'); }
+        }
+    });
+
+    async function bewaar(extra = {}) {
+        const aan = Object.fromEntries([...document.querySelectorAll('[data-soort]')].map(c => [c.dataset.soort, c.checked]));
+        const d = await post('instellingen', { aan, grootte: Number($('grootte').value), volume: Number($('volume').value), duur: Number($('duur').value), statsGrootte: Number($('statsGrootte').value), ...extra }).catch(() => null);
+        if (d?.ok) { toon(d); melding('💾 Opgeslagen, staat meteen in OBS'); } else melding('❌ Opslaan mislukt');
+    }
+    $('soorten').addEventListener('change', () => bewaar());
+    $('stijlen').addEventListener('change', e => { if (e.target.name === 'stijl') { bewaar({ stijl: e.target.value }); setTimeout(() => testAlert('subscriber'), 600); } });   // meteen even laten zien
+    $('statsStijlen').addEventListener('change', e => { if (e.target.name === 'statsStijl') bewaar({ statsStijl: e.target.value }); });
+    $('plekken').addEventListener('click', e => { const b = e.target.closest('[data-plek]'); if (b) bewaar({ statsPlek: b.dataset.plek }); });
+    for (const [id, tekst] of [['grootte', v => Math.round(v * 100) + '%'], ['statsGrootte', v => Math.round(v * 100) + '%'], ['volume', v => Math.round(v * 100) + '%'], ['duur', v => (v / 1000).toLocaleString('nl-NL') + ' s']]) {
+        $(id).addEventListener('input', e => $(id + 'Tekst').textContent = tekst(e.target.value));
+        $(id).addEventListener('change', () => bewaar());
+    }
+    $('seOpslaan').addEventListener('click', async () => { await bewaar({ seJwt: $('seJwt').value }); $('seJwt').value = ''; setTimeout(laad, 3000); });
+    $('sleutelOpslaan').addEventListener('click', () => { sleutel = $('sleutelInvoer').value.trim(); try { localStorage.setItem('rianne-sleutel', sleutel); } catch {} laad(); });
+    let zuinig = false;
+    $('zuinigKnop').addEventListener('click', () => {
+        zuinig = !zuinig;
+        $('zuinigKnop').classList.toggle('aan', zuinig);
+        $('zuinigKnop').textContent = zuinig ? '✅ Zuinige stand staat in de link' : '🐢 Zuinige stand (mindere pc)';
+        $('obsLink').value = 'https://gwnlarss.nl/rianne/alerts.html' + (zuinig ? '?zuinig' : '');
+        melding(zuinig ? '🐢 Half zoveel glinsters, emotes en vuurwerk: kopieer de link opnieuw naar OBS' : 'Gewone link weer terug');
+    });
+    $('kopieer').addEventListener('click', () => { navigator.clipboard?.writeText($('obsLink').value); melding('📋 Alerts-link gekopieerd'); });
+    $('kopieerStats').addEventListener('click', () => { navigator.clipboard?.writeText($('statsLink').value); melding('📋 Stats-link gekopieerd'); });
+
+    // testknoppen onder het voorbeeld
+    $('tests').innerHTML = TESTS.map(([s, naam], i) => naam ? `<button class="knop" data-test="${i}">${naam}</button>` : `<span class="groep">${s}</span>`).join('') + '<span id="verbondenTekst"></span>';
+    async function testAlert(soort, extra) {
+        speelTestGeluid(soort);   // meteen, binnen de klik (anders blokkeert de browser het geluid)
+        const d = await post('test', { soort, extra }).catch(() => null);
+        if (d?.ok) $('verbondenTekst').textContent = `De test staat ook in OBS (${d.kijkers} overlay${d.kijkers === 1 ? '' : 's'} verbonden, inclusief dit voorbeeld)`;
+        else melding('❌ Testen mislukt');
+    }
+    $('tests').addEventListener('click', e => { const b = e.target.closest('[data-test]'); if (b) { const [soort, , extra] = TESTS[b.dataset.test]; testAlert(soort, extra); } });
+
+    // voorbeeld: beide overlays op schaal in het scherm
+    const schaal = () => { const s = $('scherm').clientWidth / 1920; for (const f of ['frame', 'statsFrame']) $(f).style.transform = `scale(${s})`; };
+    addEventListener('resize', schaal); schaal();
+    laad();
+</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Stream stats · Riannnneee</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+    /* Stream stats voor Rianne (Riannnneee) als OBS-browserbron (1920x1080, transparant). Laatste volger, sub
+       (ook gifted), donatie en bits, live mee met haar alerts. Drie stijlen, gekozen op gwnlarss.nl/rianne
+       (zelfde OBS-link, ook plek en grootte worden daar opgeslagen):
+       - kaartjes: een stapeltje glazen kaartjes met haar foto erboven, in een hoek naar keuze
+       - wissel: één roze sticker die steeds omklapt naar de volgende stat
+       - strip: een dunne ledstrip over de hele breedte met een lopende band van haar stats
+       ?voorbeeld toont een kamer-achtergrond erachter, ?stijl= overschrijft de stijl (voor de instelpagina). */
+    :root { --cyaan: #7ff3ff; --blauw: #35d8ff; --roze: #ff5cc8; --lila: #b58cff; --navy: #10133a; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Fredoka', system-ui, sans-serif; color: #fff; }
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; }
+    body.voorbeeld #podium { background: radial-gradient(ellipse at 85% 60%, rgba(255, 92, 200, 0.45), transparent 45%), radial-gradient(ellipse at 20% 30%, rgba(53, 216, 255, 0.35), transparent 50%), linear-gradient(160deg, #0d2433, #101a3a 55%, #2a1440); }
+    .stijl { display: none; position: absolute; }
+    body[data-stijl="kaartjes"] #kaartjes, body[data-stijl="wissel"] #wissel, body[data-stijl="strip"] #strip { display: block; }
+    /* plek: lb/rb/lo/ro (links/rechts, boven/onder); groeit vanuit die hoek */
+    #kaartjes, #wissel { --rand: 40px; transform: scale(var(--schaal, 1)); }
+    body[data-plek="lb"] :is(#kaartjes, #wissel) { left: var(--rand); top: var(--rand); transform-origin: 0 0; }
+    body[data-plek="rb"] :is(#kaartjes, #wissel) { right: var(--rand); top: var(--rand); transform-origin: 100% 0; }
+    body[data-plek="lo"] :is(#kaartjes, #wissel) { left: var(--rand); bottom: var(--rand); transform-origin: 0 100%; }
+    body[data-plek="ro"] :is(#kaartjes, #wissel) { right: var(--rand); bottom: var(--rand); transform-origin: 100% 100%; }
+    .vonk { position: absolute; font-size: 18px; line-height: 1; pointer-events: none; color: var(--cyaan); text-shadow: 0 0 8px rgba(127, 243, 255, 0.9); animation: vonk 1.1s ease-out forwards; z-index: 5; }
+    .vonk.roze { color: #ff8ad8; text-shadow: 0 0 8px rgba(255, 92, 200, 0.9); }
+    @keyframes vonk { 0% { transform: translate(0, 0) scale(0); opacity: 1; } 40% { transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.6)) scale(1.2) rotate(45deg); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(0) rotate(90deg); opacity: 0; } }
+    .badge { font-size: 0.62em; font-weight: 700; color: #2a0b22; background: #ff8ad8; padding: 1px 8px 0; border-radius: 99px; margin-left: 8px; vertical-align: 0.15em; white-space: nowrap; }
+    .badge:empty { display: none; }
+
+    /* ---------- kaartjes ---------- */
+    #kaartjes { width: 340px; }
+    .kop { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding-left: 4px; }
+    .kop .foto { width: 54px; height: 54px; border-radius: 50%; background: center / cover; box-shadow: 0 0 0 3px #9ff7ff, 0 0 16px rgba(53, 216, 255, 0.8); flex-shrink: 0; }
+    .kop b { font-size: 24px; font-weight: 700; text-shadow: 0 0 12px rgba(53, 216, 255, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5); }
+    .kop .live { display: none; margin-left: 4px; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 99px; background: #ff3fae; }
+    body.live .kop .live { display: inline-block; }
+    .kaart { position: relative; display: flex; align-items: center; gap: 12px; height: 62px; padding: 0 16px 0 12px; margin-top: 8px; border-radius: 18px;
+        background: linear-gradient(100deg, rgba(27, 35, 86, 0.92), rgba(20, 16, 57, 0.92)); box-shadow: inset 4px 0 0 var(--cyaan), 0 0 0 1px rgba(159, 247, 255, 0.25), 0 8px 22px rgba(8, 6, 30, 0.35);
+        transition: box-shadow 0.4s; }
+    body[data-plek^="r"] .kaart { flex-direction: row-reverse; text-align: right; padding: 0 12px 0 16px; box-shadow: inset -4px 0 0 var(--cyaan), 0 0 0 1px rgba(159, 247, 255, 0.25), 0 8px 22px rgba(8, 6, 30, 0.35); }
+    body[data-plek^="r"] .kop { flex-direction: row-reverse; }
+    .kaart .ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; background: rgba(127, 243, 255, 0.12); flex-shrink: 0; }
+    .kaart .wat { min-width: 0; flex: 1; }
+    .kaart .label { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #9ff7ff; }
+    .kaart .naam { font-size: 23px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kaart.leeg .naam { color: rgba(255, 255, 255, 0.4); font-weight: 500; font-size: 19px; }
+    .kaart.nieuw { animation: wip 0.7s cubic-bezier(.2, 1.6, .4, 1); box-shadow: inset 4px 0 0 var(--roze), 0 0 0 2px var(--roze), 0 0 26px rgba(255, 92, 200, 0.6); }
+    body[data-plek^="r"] .kaart.nieuw { animation-name: wipR; box-shadow: inset -4px 0 0 var(--roze), 0 0 0 2px var(--roze), 0 0 26px rgba(255, 92, 200, 0.6); }
+    @keyframes wip { 0% { transform: translateX(-30px); opacity: 0; } }
+    @keyframes wipR { 0% { transform: translateX(30px); opacity: 0; } }
+
+    /* ---------- wissel: één sticker die omklapt ---------- */
+    #wissel { perspective: 900px; }
+    .sticker { position: relative; display: flex; align-items: center; gap: 16px; width: 470px; height: 100px; padding: 0 22px 0 14px; box-sizing: border-box; border-radius: 26px; transform: rotate(-2deg);
+        background: radial-gradient(rgba(255, 255, 255, 0.2) 2.5px, transparent 3px) 0 0 / 18px 18px, linear-gradient(140deg, #ff6fd2, #ff3fae 60%, #e0369c);
+        box-shadow: 0 0 0 5px var(--navy), 10px 10px 0 5px var(--navy); }
+    .sticker .foto { width: 76px; height: 76px; border-radius: 18px; background: center / cover; box-shadow: 0 0 0 5px #fff; transform: rotate(-6deg); flex-shrink: 0; }
+    .sticker .live { position: absolute; left: 22px; bottom: -10px; display: none; font: 15px/1 'Luckiest Guy', sans-serif; padding: 5px 8px 2px; border-radius: 8px; background: var(--cyaan); color: var(--navy); box-shadow: 0 0 0 3px var(--navy); }
+    body.live .sticker .live { display: block; }
+    .omklap { flex: 1; min-width: 0; transform-origin: 50% 50%; }
+    .omklap.klap { animation: klap 0.6s ease-in-out; }
+    @keyframes klap { 0% { transform: rotateX(0); } 45% { transform: rotateX(90deg); opacity: 0.2; } 55% { transform: rotateX(-90deg); opacity: 0.2; } 100% { transform: rotateX(0); } }
+    .omklap .label { display: inline-block; font: 17px/1.3 'Luckiest Guy', sans-serif; letter-spacing: 0.05em; color: var(--cyaan); background: var(--navy); padding: 3px 10px 0; border-radius: 8px; }
+    .omklap .naam { font: 40px/1.1 'Luckiest Guy', sans-serif; text-transform: uppercase; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 6px 4px 2px;
+        text-shadow: 3px 0 0 var(--navy), -3px 0 0 var(--navy), 0 3px 0 var(--navy), 0 -3px 0 var(--navy), 2px 2px 0 var(--navy), -2px -2px 0 var(--navy), 2px -2px 0 var(--navy), -2px 2px 0 var(--navy), 5px 5px 0 var(--navy); }
+    .omklap .naam .badge { font-family: 'Fredoka', sans-serif; text-shadow: none; text-transform: none; }
+    .stippen { position: absolute; right: 16px; top: 10px; display: flex; gap: 5px; }
+    .stippen i { width: 9px; height: 9px; border-radius: 50%; background: rgba(16, 19, 58, 0.35); }
+    .stippen i.aan { background: var(--navy); }
+    .sticker.schud { animation: schud 0.5s linear; }
+    @keyframes schud { 15% { transform: rotate(-5deg) scale(1.06); } 35% { transform: rotate(2deg) scale(1.06); } 55% { transform: rotate(-4deg); } 75% { transform: rotate(0deg); } 100% { transform: rotate(-2deg); } }
+
+    /* ---------- strip: ledstrip met lopende band (onderin, of bovenin bij een plek boven) ---------- */
+    #strip { left: 0; right: 0; bottom: 0; height: 54px; background: linear-gradient(180deg, rgba(14, 16, 48, 0.9), rgba(20, 14, 52, 0.9)); overflow: hidden; }
+    body[data-plek$="b"] #strip { top: 0; bottom: auto; }
+    #strip::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; z-index: 2; background: linear-gradient(90deg, var(--cyaan), var(--roze), var(--lila), var(--cyaan)) 0 0 / 50% 100%; animation: led 6s linear infinite; box-shadow: 0 0 14px rgba(127, 243, 255, 0.8); }
+    body[data-plek$="b"] #strip::before { top: auto; bottom: 0; }
+    @keyframes led { to { background-position: 100% 0; } }
+    .band { position: absolute; top: 0; height: 100%; display: flex; align-items: center; white-space: nowrap; will-change: transform; animation: band 40s linear infinite; transition: opacity 0.3s; }
+    @keyframes band { to { transform: translateX(-50%); } }
+    .band span { font-size: 24px; font-weight: 600; padding: 0 26px; }
+    .band span b { font-weight: 700; color: #fff; }
+    .band span em { font-style: normal; color: #9ff7ff; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; font-size: 17px; margin-right: 8px; }
+    .band .ster { color: #ff8ad8; padding: 0 4px; }
+    .flits { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 27px; font-weight: 700; opacity: 0; pointer-events: none;
+        background: linear-gradient(90deg, rgba(255, 63, 174, 0), rgba(255, 63, 174, 0.95) 20%, rgba(181, 140, 255, 0.95) 80%, rgba(181, 140, 255, 0)); }
+    .flits em { font-style: normal; font-size: 17px; letter-spacing: 0.12em; text-transform: uppercase; }
+    #strip.toon .flits { animation: flits 4.5s ease forwards; }
+    #strip.toon .band { opacity: 0.15; }
+    @keyframes flits { 0% { opacity: 0; transform: translateY(100%); } 8%, 90% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+</style>
+</head>
+<body data-stijl="kaartjes" data-plek="lo">
+<div id="podium">
+    <div class="stijl" id="kaartjes">
+        <div class="kop"><div class="foto"></div><b>Riannnneee</b><span class="live">LIVE</span></div>
+        <div id="kaartLijst"></div>
+    </div>
+    <div class="stijl" id="wissel">
+        <div class="sticker" id="sticker"><div class="foto"></div><div class="omklap" id="omklap"><div class="label"></div><div class="naam"></div></div><div class="stippen" id="stippen"></div><div class="live">LIVE</div></div>
+    </div>
+    <div class="stijl" id="strip"><div class="band" id="band"></div><div class="flits" id="flits"></div></div>
+</div>
+<script>
+    const LOGIN = 'riannnneee';
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
+    const AVATAR = 'https://static-cdn.jtvnw.net/jtv_user_pictures/3b4b994a-cdcb-4051-bd11-cec756938f42-profile_image-300x300.png';
+    const zoek = new URLSearchParams(location.search);
+    if (zoek.has('voorbeeld')) document.body.classList.add('voorbeeld');
+    const $ = id => document.getElementById(id);
+    document.querySelectorAll('.foto').forEach(f => { f.style.backgroundImage = `url('${AVATAR}')`; });
+    const getal = n => Number(n ?? 0).toLocaleString('nl-NL');
+    const geld = (b, v) => { try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: v || 'EUR' }).format(b ?? 0); } catch { return `${b} ${v ?? ''}`; } };
+    const veilig = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+    function pasPodiumAan() {
+        const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+        $('podium').style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pasPodiumAan); pasPodiumAan();
+
+    // de vier stats; altijd dezelfde vier, gifted subs tellen als "laatste sub" (met ×aantal)
+    const STATS = [['volger', '💜', 'Laatste volger'], ['sub', '👑', 'Laatste sub'], ['donatie', '💸', 'Laatste donatie'], ['bits', '💎', 'Laatste bits']];
+    const stand = Object.fromEntries(STATS.map(([k]) => [k, { naam: '', badge: '' }]));
+    const badgeVoor = e => ({ subscriber: (e.tier ?? 1) > 1 ? `Tier ${e.tier}` : '', resub: `${e.maanden ?? 1} mnd`, gift: `×${getal(e.aantal ?? 1)}`, cheer: getal(e.bits), donatie: geld(e.bedrag, e.valuta) })[e.soort] ?? '';
+    const SLEUTEL = { follower: 'volger', subscriber: 'sub', resub: 'sub', gift: 'sub', donatie: 'donatie', cheer: 'bits' };
+    const naamHtml = s => s.naam ? `${veilig(s.naam)}<span class="badge">${veilig(s.badge)}</span>` : 'Nog niemand';
+
+    // glinsters die uit een element springen (in podium-maten)
+    function vonken(doel, n = 8) {
+        const r = doel.getBoundingClientRect(), p = $('podium').getBoundingClientRect(), sc = p.width / 1920;
+        for (let i = 0; i < n; i++) {
+            const v = document.createElement('span'); v.className = 'vonk' + (i % 2 ? ' roze' : ''); v.textContent = '✦';
+            v.style.left = ((r.left - p.left) / sc + Math.random() * r.width / sc) + 'px'; v.style.top = ((r.top - p.top) / sc + Math.random() * r.height / sc) + 'px';
+            v.style.setProperty('--dx', (Math.random() - 0.5) * 80 + 'px'); v.style.setProperty('--dy', -10 - Math.random() * 40 + 'px');
+            v.style.animationDelay = i * 0.06 + 's'; $('podium').appendChild(v); setTimeout(() => v.remove(), 1800);
+        }
+    }
+
+    // ---------- kaartjes ----------
+    function tekenKaartjes(nieuw) {
+        $('kaartLijst').innerHTML = STATS.map(([k, ico, label]) => `<div class="kaart ${stand[k].naam ? '' : 'leeg'} ${k === nieuw ? 'nieuw' : ''}" id="k-${k}"><div class="ico">${ico}</div><div class="wat"><div class="label">${label}</div><div class="naam">${naamHtml(stand[k])}</div></div></div>`).join('');
+        if (nieuw) { if (document.body.dataset.stijl === 'kaartjes') vonken($('k-' + nieuw)); setTimeout(() => $('k-' + nieuw)?.classList.remove('nieuw'), 5000); }
+    }
+    // ---------- wissel: elke 6 seconden de volgende stat (lege overslaan, tenzij alles leeg is) ----------
+    let wisselNr = 0, wisselTimer = null;
+    function toonWissel(k, klap = true) {
+        const [, ico, label] = STATS.find(s => s[0] === k), o = $('omklap');
+        const vul = () => { o.querySelector('.label').textContent = `${ico} ${label}`; o.querySelector('.naam').innerHTML = naamHtml(stand[k]); };
+        $('stippen').innerHTML = STATS.map(s => `<i class="${s[0] === k ? 'aan' : ''}"></i>`).join('');
+        if (!klap) return vul();
+        o.classList.remove('klap'); void o.offsetWidth; o.classList.add('klap'); setTimeout(vul, 270);
+    }
+    function volgendeWissel() {
+        const gevuld = STATS.filter(([k]) => stand[k].naam), lijst = gevuld.length ? gevuld : STATS;
+        wisselNr = (wisselNr + 1) % lijst.length; toonWissel(lijst[wisselNr][0]);
+    }
+    function startWissel() { clearInterval(wisselTimer); wisselTimer = setInterval(volgendeWissel, 6000); }
+    // ---------- strip ----------
+    function tekenBand() {
+        const stuk = STATS.map(([k, ico, label]) => `<span>${ico} <em>${label}</em><b>${naamHtml(stand[k])}</b></span><span class="ster">✦</span>`).join('');
+        $('band').innerHTML = stuk + stuk + stuk + stuk;   // twee keer twee: naadloos rondlopen
+    }
+
+    function tekenAlles(nieuw) {
+        tekenKaartjes(nieuw); tekenBand();
+        if (!nieuw) toonWissel(STATS[wisselNr % 4][0], false);
+    }
+    function nieuwe(k) {
+        tekenAlles(k);
+        // wissel: meteen naar de nieuwe stat, met een schudje en glinsters
+        wisselNr = STATS.findIndex(s => s[0] === k); toonWissel(k); startWissel();
+        const st = $('sticker'); st.classList.remove('schud'); void st.offsetWidth; st.classList.add('schud');
+        if (document.body.dataset.stijl === 'wissel') setTimeout(() => vonken(st, 10), 300);
+        // strip: flitsbalk met de nieuwe naam
+        const [, ico, label] = STATS.find(s => s[0] === k);
+        $('flits').innerHTML = `${ico} <em>${label.replace('Laatste', 'Nieuwe')}</em> ${naamHtml(stand[k])}`;
+        const s = $('strip'); s.classList.remove('toon'); void s.offsetWidth; s.classList.add('toon'); clearTimeout(nieuwe.t); nieuwe.t = setTimeout(() => s.classList.remove('toon'), 4600);
+    }
+
+    function pasInstellingenToe(i) {
+        document.body.dataset.stijl = zoek.get('stijl') || i?.statsStijl || 'kaartjes';
+        document.body.dataset.plek = zoek.get('plek') || i?.statsPlek || 'lo';
+        document.documentElement.style.setProperty('--schaal', Number(zoek.get('grootte')) || i?.statsGrootte || 1);
+    }
+    function toonStats(s) {
+        const L = s.laatste ?? {};
+        stand.volger = { naam: L.follower?.naam ?? '', badge: '' };
+        const sub = ['subscriber', 'resub', 'gift'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
+        stand.sub = { naam: sub?.naam ?? '', badge: sub ? badgeVoor(sub) : '' };
+        stand.donatie = { naam: L.donatie?.naam ?? '', badge: L.donatie ? badgeVoor({ soort: 'donatie', ...L.donatie }) : '' };
+        stand.bits = { naam: L.cheer?.naam ?? '', badge: L.cheer ? badgeVoor({ soort: 'cheer', ...L.cheer }) : '' };
+        document.body.classList.toggle('live', Boolean(s.live));
+        tekenAlles();
+    }
+    const haal = () => fetch(API + '/stats', { cache: 'no-store' }).then(r => r.json()).then(s => s && toonStats(s)).catch(() => { });
+    pasInstellingenToe(); tekenAlles(); startWissel();
+    fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => pasInstellingenToe(d?.instellingen)).catch(() => { });
+    haal(); setInterval(haal, 60000);
+
+    function verbind() {
+        const bron = new EventSource(API + '/stream?bron=' + (zoek.has('voorbeeld') ? 'voorbeeld' : 'stats'));   // bron: voor de status op api.gwnlarss.nl
+        bron.onmessage = m => {
+            let e; try { e = JSON.parse(m.data); } catch { return; }
+            if (e?.soort === '_instellingen') return pasInstellingenToe(e.instellingen);   // stijl, plek of grootte gewijzigd op de instelpagina
+            const k = SLEUTEL[e?.soort];
+            if (!k) return;   // raids en onbekende soorten staan niet in de stats
+            stand[k] = { naam: e.naam, badge: badgeVoor({ soort: e.soort, ...e.extra }) };
+            nieuwe(k);
+            if (!e.extra?.test) setTimeout(haal, 3000);   // echte alert: daarna gelijk trekken met de server
+        };
+        bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
+    }
+    verbind();
+    // lokaal testen: window.testStat('cheer', 'Naam', { bits: 500 })
+    window.testStat = (soort, naam, extra = {}) => { const k = SLEUTEL[soort]; stand[k] = { naam, badge: badgeVoor({ soort, ...extra }) }; nieuwe(k); };
+    document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
+</script>
+</body>
+</html>

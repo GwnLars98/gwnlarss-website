@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Alerts · Riannnneee</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<script src="geluid.js"></script>
+<style>
+    /* Alerts-overlay voor Rianne (Riannnneee) als OBS-browserbron (1920x1080, transparant). Drie stijlen,
+       gekozen op gwnlarss.nl/rianne (zelfde OBS-link):
+       - glitter: de lichtblauwe afgeronde lijst van haar camera met glinsters, als kaart bovenin
+       - ragebait: chaos-sticker met waarschuwingslint, het beeld schudt en haar emotes worden erop geplakt
+       - led: volledig scherm in het roze/paars/blauwe ledlicht van haar kamer, de naam floept letter voor letter aan
+       Gegevens komen live van api.gwnlarss.nl/api/streamer-alerts/riannnneee/stream. */
+    :root { --cyaan: #7ff3ff; --blauw: #35d8ff; --roze: #ff5cc8; --lila: #b58cff; --navy: #10133a; --wit: #ffffff; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Fredoka', system-ui, sans-serif; }
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; }
+    /* in de instelpagina een kamer-achtergrond, zodat je ziet hoe het over haar beeld valt */
+    body.voorbeeld #podium { background: radial-gradient(ellipse at 85% 60%, rgba(255, 92, 200, 0.45), transparent 45%), radial-gradient(ellipse at 20% 30%, rgba(53, 216, 255, 0.35), transparent 50%), linear-gradient(160deg, #0d2433, #101a3a 55%, #2a1440); }
+    body.voorbeeld #podium::before { content: ''; position: absolute; inset: 24px; border-radius: 70px; box-shadow: 0 0 0 6px #9ff6ff, 0 0 30px #35d8ff, inset 0 0 30px rgba(53, 216, 255, 0.5); }
+
+    /* grootte (instelpagina): kaarten schalen vanuit het midden bovenaan; glinsters en emotes rekenen mee */
+    #alles { position: absolute; inset: 0; transform: scale(var(--grootte, 1)); transform-origin: 50% 40px; }
+    #emotes { position: absolute; inset: 0; pointer-events: none; }
+    #emotes img { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+    canvas { position: absolute; inset: 0; width: 1920px; height: 1080px; pointer-events: none; }
+
+    /* ---------- glitter: haar cameralijst als kaart ---------- */
+    .glitter { position: absolute; left: 50%; top: 80px; width: 900px; height: 250px; margin-left: -450px; visibility: hidden; }
+    .glitter.aan, .glitter.weg { visibility: visible; }
+    .glitter svg { position: absolute; inset: -20px; width: 940px; height: 290px; overflow: visible; }
+    .glitter rect { fill: none; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; }
+    .glitter .gloed1 { stroke: rgba(53, 216, 255, 0.12); stroke-width: 34; }
+    .glitter .gloed2 { stroke: rgba(127, 243, 255, 0.28); stroke-width: 18; }
+    .glitter .kern { stroke: #9ff7ff; stroke-width: 7; }
+    .glitter .lijntje { stroke: rgba(255, 255, 255, 0.9); stroke-width: 2; }
+    .glitter.aan rect { animation: trek 0.9s cubic-bezier(.6, 0, .3, 1) forwards; }
+    .glitter.weg rect { stroke-dashoffset: 0; animation: trek 0.55s cubic-bezier(.6, 0, .4, 1) reverse forwards; }
+    @keyframes trek { to { stroke-dashoffset: 0; } }
+    .glitter .binnen { position: absolute; inset: 6px; border-radius: 40px; overflow: hidden; opacity: 0;
+        background: radial-gradient(ellipse at 100% 100%, rgba(255, 92, 200, 0.35), transparent 55%), linear-gradient(160deg, #1b2356 0%, #141039 60%, #22124a 100%); }
+    .glitter.aan .binnen { animation: in 0.5s 0.45s ease-out forwards; }
+    .glitter.weg .binnen { opacity: 1; animation: in 0.35s ease-in reverse forwards; }
+    @keyframes in { from { opacity: 0; } to { opacity: 1; } }
+    .glitter .foto { position: absolute; left: 40px; top: 34px; width: 170px; height: 170px; border-radius: 50%; background: center / cover;
+        box-shadow: 0 0 0 5px #aef8ff, 0 0 26px rgba(53, 216, 255, 0.8); transform: scale(0); }
+    .glitter.aan .foto { animation: plop 0.6s 0.6s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+    @keyframes plop { to { transform: scale(1); } }
+    .glitter .tekst { position: absolute; left: 250px; right: 40px; top: 36px; color: var(--wit); }
+    .glitter .soort { display: inline-block; font-weight: 700; font-size: 26px; letter-spacing: 0.16em; text-transform: uppercase; padding-bottom: 6px;
+        background: linear-gradient(90deg, #9ff7ff, rgba(159, 247, 255, 0)) bottom left / 100% 2px no-repeat; min-width: 300px; }
+    .glitter .naam { font-weight: 700; font-size: 84px; line-height: 1.05; margin-top: -6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 12px 30px 14px; margin-left: -30px; margin-right: -30px; margin-bottom: -14px;
+        text-shadow: 0 0 18px rgba(53, 216, 255, 0.75), 0 4px 0 rgba(16, 19, 58, 0.6); }
+    .glitter .extra { font-weight: 500; font-size: 30px; color: #cfe0ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .glitter .tekst > * { opacity: 0; transform: translateX(-24px); }
+    .glitter.aan .tekst > * { animation: schuifIn 0.5s cubic-bezier(.2, 1.3, .4, 1) forwards; }
+    .glitter.aan .soort { animation-delay: 0.7s; } .glitter.aan .naam { animation-delay: 0.8s; } .glitter.aan .extra { animation-delay: 0.92s; }
+    @keyframes schuifIn { to { opacity: 1; transform: none; } }
+
+    /* ---------- ragebait: sticker met waarschuwingslint die het beeld in knalt ---------- */
+    .rage { position: absolute; left: 50%; top: 70px; width: 940px; height: 290px; margin-left: -470px; visibility: hidden; transform: rotate(-2.5deg); }
+    .rage.aan, .rage.weg { visibility: visible; }
+    .rage .vel { position: absolute; inset: 0; border-radius: 30px; overflow: hidden; transform: scale(0);
+        background: radial-gradient(rgba(255, 255, 255, 0.22) 3px, transparent 3.5px) 0 0 / 22px 22px, linear-gradient(140deg, #ff6fd2, #ff3fae 60%, #e0369c);
+        box-shadow: 0 0 0 7px var(--navy), 16px 16px 0 7px var(--navy); }
+    .rage.aan .vel { animation: knal 0.42s cubic-bezier(.3, 1.5, .5, 1) forwards; }
+    .rage.weg .vel { transform: scale(1); animation: wegKnal 0.5s cubic-bezier(.5, -0.4, .8, .4) forwards; }
+    @keyframes knal { 0% { transform: scale(2.6) rotate(8deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes wegKnal { to { transform: translateY(-80px) scale(0.3) rotate(-14deg); opacity: 0; } }
+    .lint { position: absolute; left: -60px; right: -60px; height: 54px; overflow: hidden; border: 5px solid var(--navy); z-index: 2; transform: scaleX(0);
+        background: repeating-linear-gradient(-45deg, var(--cyaan) 0 26px, #c9fbff 26px 52px); }
+    .lint.boven { top: -30px; transform-origin: left; rotate: 1.6deg; }
+    .lint.onder { bottom: -26px; transform-origin: right; rotate: -1.2deg; }
+    .rage.aan .lint { animation: plak 0.32s 0.32s cubic-bezier(.3, 1.3, .5, 1) forwards; }
+    .rage.aan .lint.onder { animation-delay: 0.45s; }
+    .rage.weg .lint { transform: scaleX(1); animation: plak 0.3s ease-in reverse forwards; }
+    @keyframes plak { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .lint .loop { display: flex; width: max-content; white-space: nowrap; font: 34px/54px 'Luckiest Guy', sans-serif; color: var(--navy); letter-spacing: 0.06em; }
+    .rage.aan .lint .loop { animation: lintLoop 9s linear infinite; }
+    .lint.onder .loop { animation-direction: reverse !important; }
+    @keyframes lintLoop { to { transform: translateX(-50%); } }
+    .rage .foto { position: absolute; left: 38px; top: 52px; width: 186px; height: 186px; border-radius: 26px; background: center / cover; z-index: 1;
+        box-shadow: 0 0 0 8px #fff, 10px 10px 0 8px var(--navy); transform: rotate(-9deg) scale(0); }
+    .rage.aan .foto { animation: sticker 0.4s 0.55s cubic-bezier(.3, 1.6, .5, 1) forwards; }
+    @keyframes sticker { from { transform: rotate(-30deg) scale(2.2); } to { transform: rotate(-9deg) scale(1); } }
+    .rage .tekst { position: absolute; left: 270px; right: 36px; top: 46px; }
+    .rage .soort { display: inline-block; padding: 4px 16px 0; border-radius: 10px; background: var(--navy); color: var(--cyaan); font: 30px/1.3 'Luckiest Guy', sans-serif; letter-spacing: 0.06em;
+        transform: rotate(1.5deg); opacity: 0; }
+    .rage .naam { font: 100px/1.02 'Luckiest Guy', sans-serif; text-transform: uppercase; color: #fff; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 12px 10px 0;
+        text-shadow: 4px 0 0 var(--navy), -4px 0 0 var(--navy), 0 4px 0 var(--navy), 0 -4px 0 var(--navy), 3px 3px 0 var(--navy), -3px -3px 0 var(--navy), 3px -3px 0 var(--navy), -3px 3px 0 var(--navy), 9px 9px 0 var(--navy);
+        opacity: 0; }
+    .rage .extra { font-weight: 700; font-size: 30px; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; }
+    .rage.aan .soort { animation: stempel 0.35s 0.62s cubic-bezier(.3, 1.6, .5, 1) forwards; }
+    .rage.aan .naam { animation: stempel 0.38s 0.72s cubic-bezier(.3, 1.6, .5, 1) forwards; }
+    .rage.aan .extra { animation: stempel 0.35s 0.9s cubic-bezier(.3, 1.6, .5, 1) forwards; }
+    @keyframes stempel { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; } }
+    .rage.aan .soort { animation-name: stempelSchuin; }
+    @keyframes stempelSchuin { from { opacity: 0; transform: rotate(1.5deg) scale(1.8); } to { opacity: 1; transform: rotate(1.5deg); } }
+    #flits { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+    .schud { animation: schud 0.45s linear; }
+    @keyframes schud { 10% { translate: -14px 8px; } 25% { translate: 12px -10px; } 40% { translate: -9px -6px; } 55% { translate: 8px 7px; } 70% { translate: -5px 3px; } 85% { translate: 3px -2px; } }
+    .stickerEmote { filter: drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff) drop-shadow(0 -4px 0 #fff) drop-shadow(6px 7px 0 rgba(16, 19, 58, 0.7)); }
+
+    /* ---------- led: volledig scherm, haar kamer in ledlicht ---------- */
+    #led { position: absolute; inset: 0; visibility: hidden; }
+    #led.aan, #led.weg { visibility: visible; }
+    .sluier { position: absolute; inset: 0; background: rgba(9, 10, 34, 0.74); opacity: 0; }
+    .vlek { position: absolute; width: 1300px; height: 1300px; border-radius: 50%; opacity: 0; will-change: transform; }
+    .vlek.v1 { left: -420px; top: -360px; background: radial-gradient(closest-side, rgba(53, 216, 255, 0.42), rgba(53, 216, 255, 0)); }
+    .vlek.v2 { right: -460px; bottom: -480px; background: radial-gradient(closest-side, rgba(255, 92, 200, 0.5), rgba(255, 92, 200, 0)); }
+    .vlek.v3 { left: 560px; top: 520px; width: 900px; height: 900px; background: radial-gradient(closest-side, rgba(181, 140, 255, 0.32), rgba(181, 140, 255, 0)); }
+    #led.aan .sluier, #led.aan .vlek { animation: in 0.6s ease-out forwards; }
+    #led.aan .v1 { animation: in 0.6s ease-out forwards, dwaal1 9s ease-in-out infinite alternate; }
+    #led.aan .v2 { animation: in 0.6s ease-out forwards, dwaal2 11s ease-in-out infinite alternate; }
+    #led.aan .v3 { animation: in 0.6s ease-out forwards, dwaal1 7s ease-in-out infinite alternate-reverse; }
+    @keyframes dwaal1 { to { transform: translate(260px, 140px) scale(1.15); } }
+    @keyframes dwaal2 { to { transform: translate(-300px, -120px) scale(1.2); } }
+    #led svg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+    #led rect { fill: none; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; }
+    #led .strip { transition: opacity 1.4s; }
+    #led .strip.roze { opacity: 0; }
+    #led.aan rect { animation: trek 1.2s cubic-bezier(.6, 0, .3, 1) 0.15s forwards; }
+    #led.weg rect { stroke-dashoffset: 0; animation: trek 0.6s ease-in reverse forwards; }
+    .midden { position: absolute; left: 0; right: 0; top: 150px; display: flex; flex-direction: column; align-items: center; text-align: center; color: #fff; }
+    .ring { position: relative; width: 270px; height: 270px; transform: scale(0); }
+    #led.aan .ring { animation: plop 0.8s 0.5s cubic-bezier(.2, 1.5, .4, 1) forwards; }
+    #led.weg .ring { transform: scale(1); animation: krimp 0.5s ease-in forwards; }
+    @keyframes krimp { to { transform: scale(0); opacity: 0; } }
+    .ring::before { content: ''; position: absolute; inset: -12px; border-radius: 50%; background: conic-gradient(var(--cyaan), var(--roze), var(--lila), var(--cyaan)); animation: draai 4s linear infinite; }
+    .ring::after { content: ''; position: absolute; inset: -34px; border-radius: 50%; background: radial-gradient(closest-side, rgba(127, 243, 255, 0.5), rgba(255, 92, 200, 0.25) 70%, transparent); z-index: -1; }
+    @keyframes draai { to { transform: rotate(1turn); } }
+    .ring .foto { position: absolute; inset: 0; border-radius: 50%; background: center / cover; box-shadow: 0 0 0 6px #0c0e2c; }
+    .led-soort { display: flex; align-items: center; gap: 22px; margin-top: 44px; font-weight: 700; font-size: 38px; letter-spacing: 0.22em; text-transform: uppercase; color: #dffcff; opacity: 0; }
+    .led-soort::before, .led-soort::after { content: ''; width: 90px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--cyaan)); }
+    .led-soort::after { background: linear-gradient(90deg, var(--roze), transparent); }
+    #led.aan .led-soort { animation: in 0.5s 0.9s forwards; }
+    .led-naam { font-weight: 700; font-size: 170px; line-height: 1.1; margin-top: 4px; white-space: nowrap; max-width: 1760px; }
+    .led-naam span { display: inline-block; color: rgba(255, 255, 255, 0.1); }
+    #led.aan .led-naam span { animation: floep 0.7s calc(1.05s + var(--i) * 0.07s) both; }
+    @keyframes floep {
+        0%, 20%, 36% { color: rgba(255, 255, 255, 0.1); text-shadow: none; }
+        12%, 28%, 100% { color: #fff; text-shadow: 0 0 14px rgba(127, 243, 255, 0.95), 0 0 40px rgba(53, 216, 255, 0.8), 0 0 90px rgba(255, 92, 200, 0.6); }
+    }
+    .led-extra { font-weight: 600; font-size: 46px; color: #ffd1f1; margin-top: 6px; opacity: 0; text-shadow: 0 0 20px rgba(255, 92, 200, 0.6); max-width: 1600px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 10px 40px 24px; }
+    #led.aan .led-extra { animation: in 0.6s 1.6s forwards; }
+    #led.weg .sluier, #led.weg .vlek, #led.weg .midden { animation: uit 0.7s ease-in forwards; }
+    @keyframes uit { from { opacity: 1; } to { opacity: 0; } }
+    #led.weg .vlek { opacity: 1; }
+
+    /* bericht van de kijker (resub, bits, donatie) */
+    .bericht { position: absolute; left: 50%; top: 395px; transform: translateX(-50%); max-width: 820px; padding: 14px 26px; border-radius: 20px; background: rgba(20, 16, 57, 0.92);
+        color: #fff; font-size: 30px; font-weight: 600; text-align: center; box-shadow: 0 0 0 3px rgba(127, 243, 255, 0.7), 0 14px 40px rgba(10, 5, 30, 0.45); opacity: 0; transition: opacity 0.4s; }
+    .bericht.aan { opacity: 1; }
+    .bericht.led { top: 880px; }
+</style>
+</head>
+<body>
+<div id="podium">
+<div id="led">
+    <div class="sluier"></div><div class="vlek v1"></div><div class="vlek v2"></div><div class="vlek v3"></div>
+    <svg viewBox="0 0 1920 1080">
+        <g class="strip cyaan"><rect x="34" y="34" width="1852" height="1012" rx="80" pathLength="100" stroke="rgba(53,216,255,0.1)" stroke-width="46"/><rect x="34" y="34" width="1852" height="1012" rx="80" pathLength="100" stroke="rgba(127,243,255,0.25)" stroke-width="22"/><rect x="34" y="34" width="1852" height="1012" rx="80" pathLength="100" stroke="#a6f8ff" stroke-width="8"/></g>
+        <g class="strip roze"><rect x="34" y="34" width="1852" height="1012" rx="80" pathLength="100" stroke="rgba(255,92,200,0.12)" stroke-width="46"/><rect x="34" y="34" width="1852" height="1012" rx="80" pathLength="100" stroke="rgba(255,120,214,0.3)" stroke-width="22"/><rect x="34" y="34" width="1852" height="1012" rx="80" pathLength="100" stroke="#ffb3e8" stroke-width="8"/></g>
+    </svg>
+    <div class="midden">
+        <div class="ring"><div class="foto"></div></div>
+        <div class="led-soort" id="l-soort"></div>
+        <div class="led-naam" id="l-naam"></div>
+        <div class="led-extra" id="l-extra"></div>
+    </div>
+</div>
+<div id="alles">
+    <div class="glitter" id="glitter">
+        <svg viewBox="-20 -20 940 290"><rect class="gloed1" x="3" y="3" width="894" height="244" rx="46" pathLength="100"/><rect class="gloed2" x="3" y="3" width="894" height="244" rx="46" pathLength="100"/><rect class="kern" x="3" y="3" width="894" height="244" rx="46" pathLength="100"/><rect class="lijntje" x="3" y="3" width="894" height="244" rx="46" pathLength="100"/></svg>
+        <div class="binnen"><div class="foto"></div><div class="tekst"><div class="soort" id="g-soort"></div><div class="naam" id="g-naam"></div><div class="extra" id="g-extra"></div></div></div>
+    </div>
+    <div class="rage" id="rage">
+        <div class="lint boven"><div class="loop"></div></div>
+        <div class="vel"><div class="tekst"><div class="soort" id="r-soort"></div><div class="naam" id="r-naam"></div><div class="extra" id="r-extra"></div></div></div>
+        <div class="foto"></div>
+        <div class="lint onder"><div class="loop"></div></div>
+    </div>
+    <div class="bericht" id="bericht"></div>
+</div>
+<div id="emotes"></div>
+<canvas id="glim" width="1920" height="1080"></canvas>
+<canvas id="vuurwerk" width="1920" height="1080"></canvas>
+<div id="flits"></div>
+</div>
+
+<script>
+    const LOGIN = 'riannnneee';
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
+    const AVATAR = 'https://static-cdn.jtvnw.net/jtv_user_pictures/3b4b994a-cdcb-4051-bd11-cec756938f42-profile_image-300x300.png';
+    const zoek = new URLSearchParams(location.search);
+    const VOORBEELD = zoek.has('voorbeeld');   // in de instelpagina: met achtergrond, zonder eigen geluid
+    if (VOORBEELD && !zoek.has('kaal')) document.body.classList.add('voorbeeld');   // ?kaal: zonder achtergrond (over het stats-voorbeeld heen)
+    // zuinige stand (?zuinig): de helft van de glinsters, emotes en vonken
+    const ZUINIG = zoek.has('zuinig') && zoek.get('zuinig') !== '0';
+    window.zuinig = () => ZUINIG;
+    const $ = id => document.getElementById(id);
+    document.querySelectorAll('.foto').forEach(f => { f.style.backgroundImage = `url('${AVATAR}')`; });
+    for (const l of document.querySelectorAll('.lint .loop')) l.textContent = '⚠ RAGEBAIT ALERT ⚠ NIET BOOS WORDEN ⚠ RAGEBAIT ALERT ⚠ NIET BOOS WORDEN '.repeat(4);
+
+    // podium passend in elk venster (in OBS op 1920x1080 precies 1 op 1)
+    function pasPodiumAan() {
+        const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+        $('podium').style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pasPodiumAan); pasPodiumAan();
+</script>
+
+<script>
+    // Glinsters (window.glim): vierpuntige sterretjes in haar kleuren die oplichten en weer doven.
+    // Eén canvas, vooraf getekende sterretjes, en de lus loopt alleen zolang er iets te zien is.
+    window.glim = (() => {
+        const c = $('glim').getContext('2d');
+        const ster = kleur => {
+            const d = document.createElement('canvas'); d.width = d.height = 64; const x = d.getContext('2d');
+            const g = x.createRadialGradient(32, 32, 0, 32, 32, 30); g.addColorStop(0, kleur + 'aa'); g.addColorStop(1, kleur + '00');
+            x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+            x.beginPath(); x.moveTo(32, 2); x.quadraticCurveTo(35, 29, 62, 32); x.quadraticCurveTo(35, 35, 32, 62); x.quadraticCurveTo(29, 35, 2, 32); x.quadraticCurveTo(29, 29, 32, 2);
+            x.fillStyle = kleur; x.fill();
+            x.beginPath(); x.arc(32, 32, 4, 0, Math.PI * 2); x.fillStyle = '#fff'; x.fill();
+            return d;
+        };
+        const STERREN = ['#ffffff', '#9ff7ff', '#ff8ad8', '#c9a2ff', '#9ff7ff'].map(ster);
+        let deeltjes = [], bronnen = [], loopt = false, vorige = 0;
+        function voeg(x, y, o = {}) {
+            deeltjes.push({ x, y, vx: o.vx ?? 0, vy: o.vy ?? 0, val: o.val ?? 0, maat: o.maat ?? 18 + Math.random() * 26, leeft: 0, max: o.max ?? 0.7 + Math.random() * 0.9,
+                spr: STERREN[Math.floor(Math.random() * STERREN.length)], draai: Math.random() * 0.6 - 0.3 });
+            starten();
+        }
+        // bron: maakt per seconde `tempo` glinsters op plek(), tot `tot` (performance.now-tijd)
+        function bron(plek, tempo, duur) { bronnen.push({ plek, tempo: tempo * (ZUINIG ? 0.5 : 1), tot: performance.now() + duur, rest: 0 }); starten(); }
+        function knal(x, y, n, kracht = 420) {
+            for (let i = 0; i < n * (ZUINIG ? 0.5 : 1); i++) { const a = Math.random() * Math.PI * 2, k = kracht * (0.3 + Math.random() * 0.7); voeg(x, y, { vx: Math.cos(a) * k, vy: Math.sin(a) * k, val: 260, max: 0.6 + Math.random() * 0.7 }); }
+        }
+        function starten() { if (!loopt) { loopt = true; vorige = performance.now(); requestAnimationFrame(stap); } }
+        function stap(nu) {
+            const dt = Math.min(0.05, (nu - vorige) / 1000); vorige = nu;
+            bronnen = bronnen.filter(b => {
+                b.rest += b.tempo * dt;
+                while (b.rest >= 1) { b.rest--; const [x, y] = b.plek(); voeg(x, y); }
+                return nu < b.tot;
+            });
+            c.clearRect(0, 0, 1920, 1080);
+            deeltjes = deeltjes.filter(d => {
+                d.leeft += dt; const f = d.leeft / d.max;
+                if (f >= 1) return false;
+                d.vx *= 1 - 2.2 * dt; d.vy = d.vy * (1 - 2.2 * dt) + d.val * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+                const s = d.maat * Math.sin(Math.PI * f) * (0.85 + 0.15 * Math.sin(d.leeft * 30));
+                c.globalAlpha = Math.min(1, Math.sin(Math.PI * f) * 1.3);
+                c.setTransform(Math.cos(d.draai * d.leeft), Math.sin(d.draai * d.leeft), -Math.sin(d.draai * d.leeft), Math.cos(d.draai * d.leeft), d.x, d.y);
+                c.drawImage(d.spr, -s / 2, -s / 2, s, s);
+                return true;
+            });
+            c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+            if (deeltjes.length || bronnen.length) requestAnimationFrame(stap); else { c.clearRect(0, 0, 1920, 1080); loopt = false; }
+        }
+        return { voeg, bron, knal };
+    })();
+
+    // Vuurwerk (window.vuurwerk(niveau, duur, hartjes)): hoe groter de alert, hoe meer pijlen, vanaf niveau 3 een
+    // slotsalvo. In haar kleuren (lichtblauw, roze, lila, wit), bij subs ook hartjes.
+    (() => {
+        const doek = $('vuurwerk'), c = doek.getContext('2d');
+        const KLEUREN = [['#7ff3ff', '#e6fdff'], ['#ff6fcf', '#ffd1f1'], ['#b58cff', '#e8dcff'], ['#ffffff', '#e6fdff'], ['#35d8ff', '#c8f8ff']];
+        const PIJLEN = [2, 5, 9, 14, 20, 28];
+        let pijlen = [], vonken = [], loopt = false, vorige = 0, gepland = 0;
+        function lanceer(hartje) {
+            const x = 260 + Math.random() * 1400, hoogte = 140 + Math.random() * 330;
+            pijlen.push({ x, y: 1100, vx: (960 - x) * 0.04 * Math.random(), vy: -Math.sqrt(2 * 900 * (1100 - hoogte)), kleur: KLEUREN[Math.floor(Math.random() * KLEUREN.length)], hartje, spoor: [] });
+        }
+        function knal(p) {
+            const vorm = p.hartje ? 'hart' : ['bol', 'bol', 'ring', 'palm'][Math.floor(Math.random() * 4)];
+            const n = Math.round((vorm === 'ring' ? 54 : 90) * (ZUINIG ? 0.5 : 1)), kracht = 430 + Math.random() * 190;
+            for (let i = 0; i < n; i++) {
+                const a = (i / n) * Math.PI * 2;
+                let vx, vy;
+                if (vorm === 'hart') { vx = 16 * Math.pow(Math.sin(a), 3) * kracht / 17; vy = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)) * kracht / 17; }
+                else { const s = vorm === 'ring' ? 1 : vorm === 'palm' ? 0.55 + Math.random() * 0.45 : Math.sqrt(Math.random()); vx = Math.cos(a) * kracht * s; vy = Math.sin(a) * kracht * s; }
+                vonken.push({ x: p.x, y: p.y, px: p.x, py: p.y, vx, vy, leeft: 0, max: 1.3 + Math.random() * 0.7, kleur: p.kleur[Math.random() < 0.25 ? 1 : 0], zwaar: vorm === 'palm' ? 260 : vorm === 'hart' ? 60 : 140, knetter: Math.random() < 0.25 });
+            }
+            window.glim.knal(p.x, p.y, 8, 300);   // een paar glinsters in de knal
+        }
+        function stap(nu) {
+            const dt = Math.min(0.05, (nu - vorige) / 1000 || 0.016); vorige = nu;
+            c.globalCompositeOperation = 'source-over'; c.clearRect(0, 0, 1920, 1080); c.globalCompositeOperation = 'lighter';
+            pijlen = pijlen.filter(p => {
+                p.spoor.push([p.x, p.y]); if (p.spoor.length > 4) p.spoor.shift();
+                p.vy += 900 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+                c.strokeStyle = p.kleur[1]; c.lineWidth = 3; c.beginPath(); c.moveTo(p.spoor[0][0], p.spoor[0][1]); c.lineTo(p.x, p.y); c.stroke();
+                if (p.vy >= -40) { knal(p); return false; }
+                return true;
+            });
+            const groepen = new Map();
+            vonken = vonken.filter(v => {
+                v.leeft += dt; const f = 1 - v.leeft / v.max;
+                if (f <= 0) return false;
+                v.px = v.x; v.py = v.y; v.vx *= 1 - 1.35 * dt; v.vy = v.vy * (1 - 1.35 * dt) + v.zwaar * dt; v.x += v.vx * dt; v.y += v.vy * dt;
+                if (v.knetter && f < 0.45 && Math.random() < 0.5) return true;
+                const k = v.kleur + Math.min(3, Math.floor(f * 4));
+                if (!groepen.has(k)) groepen.set(k, []);
+                groepen.get(k).push(v.px, v.py, v.x, v.y);
+                return true;
+            });
+            for (const [k, lijn] of groepen) {
+                const f = (Number(k[7]) + 0.5) / 4;
+                c.strokeStyle = k.slice(0, 7); c.beginPath();
+                for (let i = 0; i < lijn.length; i += 4) { c.moveTo(lijn[i], lijn[i + 1]); c.lineTo(lijn[i + 2], lijn[i + 3]); }
+                if (!ZUINIG) { c.globalAlpha = Math.min(1, f * 1.6) * 0.28; c.lineWidth = 11 * (0.4 + f); c.stroke(); }
+                c.globalAlpha = Math.min(1, f * 1.6); c.lineWidth = 3.6 * (0.4 + f); c.stroke();
+            }
+            c.globalAlpha = 1;
+            if (pijlen.length || vonken.length || gepland > 0) requestAnimationFrame(stap); else { c.clearRect(0, 0, 1920, 1080); loopt = false; }
+        }
+        function starten() { if (loopt) return; loopt = true; vorige = performance.now(); requestAnimationFrame(stap); }
+        window.vuurwerk = (niveau, duur, hartjes = false) => {
+            const aantal = Math.round(PIJLEN[Math.max(0, Math.min(5, niveau))] * (ZUINIG ? 0.6 : 1)), venster = Math.max(1500, duur * 0.6);
+            for (let i = 0; i < aantal; i++) { gepland++; setTimeout(() => { gepland--; lanceer(hartjes && Math.random() < 0.4); starten(); }, 500 + (i / Math.max(1, aantal)) * venster + Math.random() * 300); }
+            if (niveau >= 3) for (let i = 0; i < (niveau - 1) * 2; i++) { gepland++; setTimeout(() => { gepland--; lanceer(hartjes && i % 3 === 0); starten(); }, 500 + venster * 0.8 + i * 90); }
+        };
+    })();
+</script>
+
+<script>
+    // haar eigen kanaal-emotes (via api.gwnlarss.nl, plaatjes rechtstreeks van Twitch); zonder emotes hartjes en sterren
+    const ICOON = svg => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${svg}</svg>`);
+    const RESERVE = [
+        ICOON('<path d="M50 88 C10 60 4 36 18 22 C30 10 46 16 50 30 C54 16 70 10 82 22 C96 36 90 60 50 88Z" fill="#ff5cc8" stroke="#fff" stroke-width="5"/>'),
+        ICOON('<path d="M50 4 Q56 44 96 50 Q56 56 50 96 Q44 56 4 50 Q44 44 50 4Z" fill="#7ff3ff" stroke="#fff" stroke-width="4"/>'),
+        ICOON('<path d="M50 6 L62 36 L94 38 L69 58 L78 90 L50 72 L22 90 L31 58 L6 38 L38 36Z" fill="#b58cff" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>'),
+    ];
+    let EMOTES = [];
+    fetch(API + '/emotes').then(r => r.json()).then(d => { EMOTES = (d.emotes || []).map(e => e.url); EMOTES.forEach(u => { new Image().src = u; }); }).catch(() => { });
+    const emote = () => { const bron = EMOTES.length ? EMOTES : RESERVE; return bron[Math.floor(Math.random() * bron.length)]; };
+    function emoteImg(maat, klasse) {
+        const img = new Image(); img.src = emote(); img.style.width = img.style.height = maat + 'px';
+        if (klasse) img.className = klasse;
+        $('emotes').appendChild(img); return img;
+    }
+
+    const getal = n => Number(n).toLocaleString('nl-NL');
+    const geld = (b, v) => Number(b).toLocaleString('nl-NL', { style: 'currency', currency: v || 'EUR' });
+    const trap = (waarde, grenzen) => grenzen.filter(g => waarde >= g).length;
+    // niveau -1 t/m 5: hoe groter de alert, hoe meer emotes, glinsters en vuurwerk (volgers: geen vuurwerk)
+    function niveauVan(e) {
+        const x = e.extra ?? {};
+        switch (e.soort) {
+            case 'follower': return -1;
+            case 'subscriber': return Math.min(3, x.tier ?? 1);
+            case 'resub': return 1 + trap(x.maanden ?? 1, [12, 24, 48]);
+            case 'gift': return trap(x.aantal ?? 1, [5, 10, 20, 50, 100]);
+            case 'cheer': return trap(x.bits ?? 0, [500, 1000, 5000, 10000, 25000]);
+            case 'raid': return trap(x.kijkers ?? 0, [10, 25, 50, 100, 250]);
+            case 'donatie': return trap(x.bedrag ?? 0, [5, 10, 25, 50, 100]);
+            default: return 0;
+        }
+    }
+    // per soort: titel, gewone extra regel en de ragebait-versie
+    function opbouw(e) {
+        const x = e.extra ?? {}, n = niveauVan(e);
+        const o = (() => { switch (e.soort) {
+            case 'follower': return { soort: 'Nieuwe volger', extra: 'Welkom bij de chaos!', rage: 'Gevolgd. Geen weg meer terug.' };
+            case 'subscriber': return { soort: x.tier > 1 ? `Nieuwe tier ${x.tier} sub` : 'Nieuwe sub', extra: 'Bedankt voor je steun!', rage: 'Sub! Nu mag je officieel boos worden.' };
+            case 'resub': return { soort: 'Resub', extra: `${x.maanden ?? 1} maanden sub!`, rage: `${x.maanden ?? 1} maanden ragebait overleefd!`, bericht: x.bericht };
+            case 'gift': return { soort: `${x.aantal ?? 1} gifted sub${(x.aantal ?? 1) === 1 ? '' : 's'}`, extra: 'Cadeautjes voor de chat!', rage: 'Cadeautjes! Verdien ze maar.' };
+            case 'cheer': return { soort: `${getal(x.bits ?? 0)} bits`, extra: 'Bedankt voor de bits!', rage: 'Bits! Die zijn nu van Rianne.', bericht: x.bericht };
+            case 'raid': return { soort: 'Raid!', extra: `komt binnen met ${getal(x.kijkers ?? 0)} kijkers`, rage: `${getal(x.kijkers ?? 0)} kijkers stormen de chaos in!` };
+            case 'donatie': return { soort: `Donatie · ${geld(x.bedrag ?? 0, x.valuta)}`, extra: 'Bedankt voor je donatie!', rage: 'Donatie! Dit vergeet ze nooit.', bericht: x.bericht };
+            default: return { soort: 'Alert', extra: '', rage: '' };
+        } })();
+        return { ...o, niveau: n, aantal: Math.round(Math.min(60, 12 * (1 + 0.6 * Math.max(0, n))) * (ZUINIG ? 0.5 : 1)) };
+    }
+    // naam zo groot mogelijk zonder afkappen (anders met …)
+    function pasNaam(el, maat, min) { el.style.fontSize = maat + 'px'; while (el.scrollWidth > el.clientWidth + 1 && maat > min) { maat -= 4; el.style.fontSize = maat + 'px'; } }
+    const grootte = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--grootte')) || 1;
+    const opPodium = (x, y) => { const s = grootte(); return [960 + (x - 960) * s, 40 + (y - 40) * s]; };   // punt in #alles naar het podium
+    // willekeurig punt op de rand van een afgeronde kaart (ongeveer, voor glinsters langs de lijst)
+    function randPunt(x, y, b, h) {
+        const omtrek = 2 * (b + h), p = Math.random() * omtrek;
+        const [px, py] = p < b ? [x + p, y] : p < b + h ? [x + b, y + p - b] : p < 2 * b + h ? [x + b - (p - b - h), y + h] : [x, y + h - (p - 2 * b - h)];
+        const kx = Math.min(Math.max(px, x + 30), x + b - 30), ky = Math.min(Math.max(py, y + 30), y + h - 30);   // hoeken iets naar binnen (afgerond)
+        const naHoek = (px === kx || py === ky) ? [px, py] : [kx + (px - kx) * 0.6, ky + (py - ky) * 0.6];
+        return opPodium(naHoek[0] + (Math.random() - 0.5) * 10, naHoek[1] + (Math.random() - 0.5) * 10);
+    }
+    function speel(el, klasse = 'aan') { el.classList.remove('aan', 'weg'); void el.offsetWidth; el.classList.add(klasse); }
+
+    // ---------- glitter ----------
+    function toonGlitter(e, o, duur) {
+        const a = $('glitter');
+        $('g-soort').textContent = o.soort; $('g-naam').textContent = e.naam; $('g-extra').textContent = o.extra;
+        speel(a); pasNaam($('g-naam'), 84, 48);
+        // glinsters trekken mee met de lijst die zich tekent, daarna twinkelen ze langs de hele rand
+        setTimeout(() => window.glim.bron(() => randPunt(510, 80, 900, 250), 16 + o.niveau * 4, duur - 900), 500);
+        setTimeout(() => { const [x, y] = opPodium(635, 205); window.glim.knal(x, y, 26, 520); }, 650);   // bij de foto
+        // haar emotes springen uit de lijst naar buiten en dwarrelen omlaag als glitter
+        for (let i = 0; i < o.aantal; i++) {
+            setTimeout(() => {
+                const [x, y] = randPunt(510, 80, 900, 250), maat = 64 + Math.random() * 46, uit = x < 960 ? -1 : 1;
+                const img = emoteImg(maat), dx = uit * (60 + Math.random() * 260), dy = -40 - Math.random() * 60, val = 600 + Math.random() * 500, draai = (Math.random() - 0.5) * 80;
+                const x0 = x - maat / 2, y0 = y - maat / 2;
+                img.animate([
+                    { transform: `translate(${x0}px, ${y0}px) scale(0)`, opacity: 1 },
+                    { transform: `translate(${x0 + dx * 0.6}px, ${y0 + dy}px) scale(1.05) rotate(${draai * 0.3}deg)`, opacity: 1, offset: 0.16 },
+                    { transform: `translate(${x0 + dx + Math.sin(i) * 60}px, ${y0 + val * 0.5}px) scale(0.95) rotate(${draai * 0.7}deg)`, opacity: 1, offset: 0.6 },
+                    { transform: `translate(${x0 + dx - Math.sin(i) * 40}px, ${y0 + val}px) scale(0.8) rotate(${draai}deg)`, opacity: 0 },
+                ], { duration: 3600 + Math.random() * 1600, easing: 'cubic-bezier(.25,.6,.4,1)', fill: 'both' }).onfinish = () => img.remove();
+            }, 900 + Math.random() * duur * 0.6);
+        }
+        setTimeout(() => speel(a, 'weg'), duur);
+    }
+
+    // ---------- ragebait ----------
+    function toonRage(e, o, duur) {
+        const a = $('rage');
+        $('r-soort').textContent = o.soort; $('r-naam').textContent = e.naam; $('r-extra').textContent = o.rage;
+        speel(a); pasNaam($('r-naam'), 100, 52);
+        setTimeout(() => {   // de klap: beeld schudt en flitst
+            const p = $('podium'); p.classList.remove('schud'); void p.offsetWidth; p.classList.add('schud');
+            $('flits').animate([{ opacity: 0.55 }, { opacity: 0 }], { duration: 260, easing: 'ease-out' });
+            const [x, y] = opPodium(960, 210); window.glim.knal(x, y, 30, 700);
+        }, 260);
+        // emotes als stickers rondom op het scherm geplakt, aan het eind vallen ze er allemaal af
+        const stickers = [], vrij = (x, y) => !(x > 380 && x < 1540 && y < 470);
+        for (let i = 0; i < o.aantal; i++) {
+            setTimeout(() => {
+                let x, y, poging = 0;
+                do { x = 90 + Math.random() * 1740; y = 70 + Math.random() * 940; } while (!vrij(x, y) && ++poging < 30);
+                const maat = 86 + Math.random() * 60, draai = (Math.random() - 0.5) * 50;
+                const img = emoteImg(maat, 'stickerEmote'), x0 = x - maat / 2, y0 = y - maat / 2;
+                img.style.transform = `translate(${x0}px, ${y0}px) rotate(${draai}deg)`;
+                img.animate([{ transform: `translate(${x0}px, ${y0}px) rotate(${draai - 25}deg) scale(2.4)`, opacity: 0 }, { transform: `translate(${x0}px, ${y0}px) rotate(${draai}deg) scale(1)`, opacity: 1 }],
+                    { duration: 260, easing: 'cubic-bezier(.3,1.6,.5,1)', fill: 'backwards' });
+                stickers.push({ img, x0, y0, draai });
+            }, 700 + (i / o.aantal) * duur * 0.55 + Math.random() * 120);
+        }
+        setTimeout(() => {
+            speel(a, 'weg');
+            stickers.forEach(({ img, x0, y0, draai }, i) => {
+                img.animate([{ transform: `translate(${x0}px, ${y0}px) rotate(${draai}deg)` }, { transform: `translate(${x0 + (Math.random() - 0.5) * 200}px, ${y0 + 1250}px) rotate(${draai + (Math.random() - 0.5) * 400}deg)` }],
+                    { duration: 900 + Math.random() * 500, delay: i * 18, easing: 'cubic-bezier(.5,0,.9,.6)', fill: 'forwards' }).onfinish = () => img.remove();
+            });
+        }, duur);
+    }
+
+    // ---------- led (volledig scherm) ----------
+    function toonLed(e, o, duur) {
+        const a = $('led');
+        $('l-soort').textContent = o.soort; $('l-extra').textContent = o.extra;
+        $('l-naam').innerHTML = '';
+        [...e.naam].forEach((t, i) => { const s = document.createElement('span'); s.textContent = t === ' ' ? ' ' : t; s.style.setProperty('--i', i); $('l-naam').appendChild(s); });
+        $('l-naam').style.fontSize = '170px';
+        speel(a);
+        { let m = 170; while ($('l-naam').scrollWidth > 1760 && m > 70) { m -= 6; $('l-naam').style.fontSize = m + 'px'; } }
+        // de ledstrip wisselt rustig van lichtblauw naar roze en terug
+        const roze = a.querySelector('.strip.roze'), wissel = setInterval(() => roze.style.opacity = roze.style.opacity === '1' ? '0' : '1', 1600);
+        roze.style.opacity = '0';
+        setTimeout(() => { window.glim.knal(960, 285, 40, 760); }, 700);   // uit de ring
+        setTimeout(() => window.glim.bron(() => [60 + Math.random() * 1800, 60 + Math.random() * 960], 26 + o.niveau * 6, duur - 1200), 400);
+        // emotes stijgen als bellen op vanaf de onderkant over het hele scherm
+        for (let i = 0; i < o.aantal; i++) {
+            setTimeout(() => {
+                const maat = 70 + Math.random() * 70, x = 80 + Math.random() * 1700, img = emoteImg(maat), zwaai = 40 + Math.random() * 70, duurB = 4200 + Math.random() * 2200;
+                img.animate([
+                    { transform: `translate(${x}px, 1100px) scale(0.6)`, opacity: 0 },
+                    { transform: `translate(${x + zwaai}px, 800px) scale(1)`, opacity: 1, offset: 0.2 },
+                    { transform: `translate(${x - zwaai}px, 420px) scale(1)`, opacity: 1, offset: 0.6 },
+                    { transform: `translate(${x + zwaai * 0.5}px, 60px) scale(1.1)`, opacity: 0 },
+                ], { duration: duurB, easing: 'linear', fill: 'both' }).onfinish = () => img.remove();
+            }, 800 + Math.random() * duur * 0.6);
+        }
+        setTimeout(() => { clearInterval(wissel); speel(a, 'weg'); }, duur);
+        setTimeout(() => { a.classList.remove('weg'); }, duur + 800);
+    }
+
+    let instellingen = { stijl: 'glitter', volume: 0.7, duur: 7000 }, geluiden = {};   // geluiden: soort -> versie van haar eigen geluid
+    const pasGrootteToe = () => document.documentElement.style.setProperty('--grootte', instellingen.grootte ?? 1);
+    const haalInstellingen = () => fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => { if (d?.instellingen) instellingen = d.instellingen; geluiden = d?.geluiden ?? {}; pasGrootteToe(); }).catch(() => { });
+    // eigen geluid als ze dat heeft geüpload, anders de klank van de stijl
+    function geluid(soort) {
+        if (VOORBEELD) return;   // in de instelpagina speelt de pagina zelf het geluid af
+        const volume = instellingen.volume ?? 0.7;
+        if (!geluiden[soort]) return window.rianneGeluid(instellingen.stijl, soort, volume);
+        const a = new Audio(`${API}/geluid/${soort}?v=${geluiden[soort]}`);
+        a.volume = Math.min(1, Math.max(0, volume));
+        a.play().catch(() => window.rianneGeluid(instellingen.stijl, soort, volume));
+    }
+    haalInstellingen(); setInterval(haalInstellingen, 30000);
+
+    const wachtrij = []; let bezig = false;
+    function volgende() {
+        if (bezig || !wachtrij.length) return;
+        bezig = true;
+        const e = wachtrij.shift(), o = opbouw(e), duur = instellingen.duur ?? 7000, stijl = instellingen.stijl ?? 'glitter';
+        if (o.niveau >= 0) window.vuurwerk(o.niveau, duur, ['subscriber', 'resub', 'gift'].includes(e.soort));
+        geluid(e.soort);
+        ({ glitter: toonGlitter, ragebait: toonRage, led: toonLed }[stijl] ?? toonGlitter)(e, o, duur);
+        const b = $('bericht');
+        b.textContent = o.bericht || ''; b.classList.toggle('led', stijl === 'led');
+        setTimeout(() => b.classList.toggle('aan', Boolean(o.bericht)), 1200);
+        setTimeout(() => b.classList.remove('aan'), duur);
+        setTimeout(() => { bezig = false; volgende(); }, duur + 900);
+    }
+
+    function verbind() {
+        const bron = new EventSource(API + '/stream?bron=' + (VOORBEELD ? 'voorbeeld' : 'alerts'));   // bron: voor de status op api.gwnlarss.nl
+        bron.onmessage = m => {
+            try {
+                const d = JSON.parse(m.data);
+                // instellingen gewijzigd op de instelpagina (stijl, volume, geluiden): meteen overnemen
+                if (d.soort === '_instellingen') { instellingen = d.instellingen ?? instellingen; geluiden = d.geluiden ?? {}; pasGrootteToe(); return; }
+                wachtrij.push(d); volgende();
+            } catch { /* onleesbaar bericht */ }
+        };
+        bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
+    }
+    verbind();
+    // voor screenshots en lokaal testen: window.testAlert({ soort, naam, extra }, stijl)
+    window.testAlert = (e, stijl) => { if (stijl) instellingen.stijl = stijl; wachtrij.push(e); volgende(); };
+    document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
+</script>
+</body>
+</html>
