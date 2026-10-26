@@ -167,7 +167,10 @@
 
     /* ---------- 12. volledig scherm (1920 x 1080): wazige hoes over het hele beeld, grote hoes links, grote tekst rechts ---------- */
     .volledig .vlak { position: absolute; inset: 0; overflow: hidden; background: #08060f; }
-    .volledig .achter { position: absolute; inset: -80px; background: center / cover no-repeat; filter: blur(60px) brightness(0.45) saturate(1.4); transform: scale(1.1); }
+    /* klein wazig plaatje (een kwart van het beeld) dat 4x vergroot wordt: zelfde waas als blur(60px) over het hele scherm,
+       maar de browser hoeft maar een fractie uit te rekenen */
+    .volledig .achter { position: absolute; left: -80px; top: -80px; width: 520px; height: 310px; transform-origin: 0 0; transform: scale(4);
+        background: center / cover no-repeat; filter: blur(15px) brightness(0.45) saturate(1.4); will-change: opacity; }
     .volledig .vlak::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 50%, transparent 30%, rgba(0, 0, 0, 0.55) 100%); }
     .volledig .schuif { transform: scale(0.96); }
     body.rechts .volledig .schuif { transform: scale(0.96); }
@@ -424,18 +427,21 @@
         });
     }
     function vervaag(el, url, voor) {
-        el.parentElement.querySelectorAll(':scope > [data-laag]').forEach(k => k.remove());   // vorige overgang nog bezig
+        el.npKopie?.remove();   // alleen de eigen vorige overgang opruimen (achtergrond en hoes kunnen in hetzelfde vak zitten)
         const beeld = url ? `url("${url}")` : '';
         const kopie = el.cloneNode(false);
         kopie.dataset.laag = '1';
         kopie.style.backgroundImage = beeld; kopie.style.opacity = '0';
-        el.after(kopie);
+        el.after(kopie); el.npKopie = kopie;
         const doel = getComputedStyle(el).opacity;
         const loop = el.getAnimations().find(a => a.animationName === 'kenburns');
         if (loop) kopie.getAnimations().forEach(a => (a.currentTime = loop.currentTime));
-        const klaar = () => { el.style.backgroundImage = beeld; requestAnimationFrame(() => kopie.remove()); };
+        const klaar = () => { el.style.backgroundImage = beeld; requestAnimationFrame(() => { kopie.remove(); if (el.npKopie === kopie) el.npKopie = null; }); };
         const img = new Image();
-        const sporen = [{ opacity: 0, scale: '1.06' }, { opacity: doel, scale: '1' }];
+        // hoes: vervagen met een lichte zoom; wazige achtergrond: alleen vervagen. Inzoomen op een wazig vlak laat de browser
+        // de waas elk beeldje opnieuw uitrekenen (haperen en dan ineens omspringen); zo wordt de laag één keer getekend.
+        const sporen = voor ? [{ opacity: 0, scale: '1.06' }, { opacity: doel, scale: '1' }] : [{ opacity: 0 }, { opacity: doel }];
+        if (!voor) kopie.style.willChange = 'opacity';
         img.onload = img.onerror = () => kopie.animate(sporen, { duration: 1100, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.then(klaar);
         if (url) img.src = url; else img.onload();
     }
