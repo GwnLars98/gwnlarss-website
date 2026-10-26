@@ -414,7 +414,7 @@
     }
 
     function verbind() {
-        const bron = new EventSource(`${API_BASE}/api/alerts/stream`);
+        const bron = new EventSource(`${API_BASE}/api/alerts/stream?kanaal=${encodeURIComponent(KANAAL)}&bron=lurk`);
         bron.onmessage = e => {
             const event = JSON.parse(e.data);
             if (event.type !== 'lurk') return; // andere alert-types negeren, die horen bij andere overlays

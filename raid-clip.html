@@ -248,7 +248,7 @@
     }
 
     function verbind() {
-        const bron = new EventSource(`${API_BASE}/api/alerts/stream`);
+        const bron = new EventSource(`${API_BASE}/api/alerts/stream?kanaal=${encodeURIComponent(KANAAL)}&bron=raid-clip`);
         bron.onmessage = e => {
             const event = JSON.parse(e.data);
             if (event.type !== 'raid_clip') return; // andere alert-types negeren, die horen bij andere overlays

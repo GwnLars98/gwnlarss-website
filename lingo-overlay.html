@@ -197,7 +197,7 @@
     setInterval(haalStateOp, 15000);
 
     function verbind() {
-        const bron = new EventSource(`${API_BASE}/api/alerts/stream`);
+        const bron = new EventSource(`${API_BASE}/api/alerts/stream?kanaal=${encodeURIComponent(KANAAL)}&bron=lingo`);
         bron.onmessage = e => {
             const event = JSON.parse(e.data);
             if (event.type === 'herlaad' && (!event.extra?.kanaal || event.extra.kanaal === KANAAL)) return location.reload();
