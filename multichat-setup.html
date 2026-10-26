@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Multichat instellen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
+<link rel="stylesheet" href="setup.css">
+<style>
+    /* Nog niet openbaar: niet gelinkt vanaf tools.html en noindex. Beheer met een geheime sleutel (deze browser en de
+       beheerlink); de server zit in utils/multichat.js. */
+    .platforms { display: grid; gap: 10px; }
+    .platform { display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 10px; }
+    .platform b { font-family: var(--display); font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+    .platform b i { width: 12px; height: 12px; border-radius: 3px; }
+    .platform input { font-size: 1rem; padding: 10px 14px; }
+    .stip { font-family: var(--mono); font-size: 0.72rem; color: var(--dim); white-space: nowrap; }
+    .stip.verbonden { color: #7dffb0; } .stip.verbinden { color: #ffc46b; } .stip.fout, .stip.onbereikbaar { color: #ff8aa0; }
+    .stijl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stijl-kaart { font: inherit; text-align: left; display: grid; gap: 3px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--lijn); background: rgba(255, 255, 255, 0.03); color: var(--tekst); cursor: pointer; }
+    .stijl-kaart b { font-family: var(--display); font-size: 1.05rem; }
+    .stijl-kaart span { color: var(--dim); font-size: 0.78rem; line-height: 1.35; }
+    .stijl-kaart.is-actief { border-color: var(--roze); background: rgba(255, 62, 165, 0.1); box-shadow: 0 0 22px -8px var(--roze); }
+    .schakel { display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
+    .schakel input { width: 18px; height: 18px; accent-color: var(--roze); flex: 0 0 auto; }
+    .knoppen { display: flex; flex-wrap: wrap; gap: 10px; }
+    .vv.mc { aspect-ratio: 4 / 5; max-width: 420px; justify-self: center; width: 100%; }
+    .vv.mc iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; z-index: 2; color-scheme: normal; }
+    .beheer[hidden] { display: none !important; }
+    .gevaar { color: #ff8aa0; border-color: rgba(255, 92, 122, 0.45); }
+    @media (max-width: 560px) { .platform { grid-template-columns: 1fr; } .stijl-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<canvas id="veld" aria-hidden="true"></canvas>
+<div class="page-wrap laag">
+<nav class="top">
+  <a class="merk" href="index.html">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a href="tools.html">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
+</nav>
+
+<header class="held">
+    <a class="terug" href="tools.html">&larr; Alle tools</a>
+    <p class="label">Overlay</p>
+    <h1>Multichat</h1>
+    <p class="intro">Twitch, Kick, YouTube en TikTok in één chat. Vul je kanaalnamen in en zet de overlay in OBS, of open de chatpagina op je tweede scherm. De chat van een platform komt vanzelf binnen zodra je daar live bent.</p>
+</header>
+
+<div class="opzet">
+<div class="card rand">
+
+    <div id="start">
+        <p class="thema-hint">Maak je multichat aan. Je krijgt een eigen beheerlink: bewaar die goed, daarmee pas je hem later aan.</p>
+        <button type="button" class="btn btn--primary" id="maak-btn">Maak mijn multichat</button>
+    </div>
+
+    <div class="beheer" id="beheer" hidden>
+        <p class="thema-label">Jouw kanalen</p>
+        <div class="platforms">
+            <label class="platform"><b><i style="background:#a970ff"></i>Twitch</b><input type="text" data-platform="twitch" placeholder="jouw-naam" autocomplete="off"><span class="stip" data-stip="twitch"></span></label>
+            <label class="platform"><b><i style="background:#53fc18"></i>Kick</b><input type="text" data-platform="kick" placeholder="jouw-naam" autocomplete="off"><span class="stip" data-stip="kick"></span></label>
+            <label class="platform"><b><i style="background:#ff3b3b"></i>YouTube</b><input type="text" data-platform="youtube" placeholder="@jouwnaam" autocomplete="off"><span class="stip" data-stip="youtube"></span></label>
+            <label class="platform"><b><i style="background:#ff2f6e"></i>TikTok</b><input type="text" data-platform="tiktok" placeholder="@jouwnaam" autocomplete="off"><span class="stip" data-stip="tiktok"></span></label>
+        </div>
+        <p class="thema-hint">Laat leeg wat je niet gebruikt. TikTok en Kick lezen we mee via hun eigen website (er is geen officiële chat-koppeling), dat kan af en toe haperen als zij iets veranderen.</p>
+
+        <p class="thema-label">Stijl</p>
+        <div class="stijl-grid">
+            <button type="button" class="stijl-kaart" data-stijl="strak"><b>Strak</b><span>Nette donkere regels met een kleur per platform</span></button>
+            <button type="button" class="stijl-kaart" data-stijl="bubbels"><b>Bubbels</b><span>Witte chatballonnen met de naam erboven</span></button>
+            <button type="button" class="stijl-kaart" data-stijl="minimaal"><b>Minimaal</b><span>Alleen tekst met schaduw, geen kader</span></button>
+        </div>
+
+        <p class="thema-label">Grootte</p>
+        <div class="volume-rij"><input type="range" id="grootte" min="0.6" max="2" step="0.1"><span class="volume-rij__waarde" id="grootte-waarde">100%</span></div>
+        <p class="thema-label">Berichten laten verdwijnen</p>
+        <div class="volume-rij"><input type="range" id="verdwijnen" min="0" max="120" step="5"><span class="volume-rij__waarde" id="verdwijnen-waarde">nooit</span></div>
+        <label class="schakel"><input type="checkbox" id="bron"> Icoontje van het platform tonen</label>
+        <label class="schakel"><input type="checkbox" id="avatars"> Profielfoto tonen (YouTube en TikTok)</label>
+
+        <div class="knoppen" style="margin-top:10px">
+            <button type="button" class="btn" id="opslaan-btn" disabled>💾 Opslaan</button>
+            <button type="button" class="btn btn--ghost" id="test-btn">💬 Testbericht</button>
+        </div>
+
+        <div class="result is-visible is-goed">
+            <p class="result__titel is-goed">Je links</p>
+            <p>Voor OBS: een <strong>Browser Source</strong> van bijvoorbeeld <strong>500 x 700</strong>. Doorzichtig, nieuwe berichten komen onderaan.</p>
+            <div class="link-row"><input type="text" id="link-obs" readonly><button type="button" class="btn btn--ghost" data-kopieer="link-obs">Kopieer</button></div>
+            <p>Chatpagina voor je tweede scherm (met de status per platform):</p>
+            <div class="link-row"><input type="text" id="link-pagina" readonly><button type="button" class="btn btn--ghost" data-kopieer="link-pagina">Kopieer</button></div>
+            <p>Jouw beheerlink (privé, deel deze niet):</p>
+            <div class="link-row"><input type="text" id="link-beheer" readonly><button type="button" class="btn btn--ghost" data-kopieer="link-beheer">Kopieer</button></div>
+        </div>
+        <button type="button" class="btn btn--ghost gevaar" id="weg-btn">Multichat verwijderen</button>
+    </div>
+    <div class="result" id="result"><p class="result__titel" id="result-titel"></p><p id="result-tekst"></p></div>
+</div>
+<div class="podium">
+    <div class="podium-kop"><span>Zo ziet het eruit</span><span class="live">Live voorbeeld</span></div>
+    <div class="vv mc rand" id="vv"><iframe id="vb" title="Voorbeeld"></iframe></div>
+    <p class="thema-hint">Voorbeeldberichten. Zie je echte chat via de chatpagina.</p>
+</div>
+</div>
+<p class="powered-by">Powered by <a href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">GwnLarss</a></p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+    const API = 'https://api.gwnlarss.nl/api/multichat/';
+    const $ = id => document.getElementById(id);
+    const toastEl = $('toast');
+    const toast = t => { toastEl.textContent = t; toastEl.classList.add('is-visible'); setTimeout(() => toastEl.classList.remove('is-visible'), 2500); };
+    const post = (pad, body) => fetch(API + pad, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(async r => ({ status: r.status, ...(await r.json().catch(() => ({}))) }));
+    const fout = (titel, tekst) => { const r = $('result'); r.classList.add('is-visible', 'is-fout'); $('result-titel').textContent = titel; $('result-tekst').textContent = tekst; };
+    const basis = p => new URL(p, location.href).href;
+
+    let id = '', sleutel = '', opgeslagen = null, stijl = 'strak';
+    const h = new URLSearchParams(location.hash.slice(1));
+    try { id = h.get('id') || localStorage.getItem('mc-id') || ''; sleutel = h.get('sleutel') || (id ? localStorage.getItem('mc-sleutel-' + id) : '') || ''; } catch { id = h.get('id') || ''; sleutel = h.get('sleutel') || ''; }
+    if (location.hash) history.replaceState(null, '', location.pathname);
+
+    const kanaalVelden = [...document.querySelectorAll('[data-platform]')];
+    function huidig() {
+        return {
+            kanalen: Object.fromEntries(kanaalVelden.map(i => [i.dataset.platform, i.value.trim()])),
+            stijl, grootte: +$('grootte').value, verdwijnen: +$('verdwijnen').value, bron: $('bron').checked, avatars: $('avatars').checked,
+        };
+    }
+    function bijwerken() {
+        const k = huidig();
+        $('grootte-waarde').textContent = Math.round(k.grootte * 100) + '%';
+        $('verdwijnen-waarde').textContent = k.verdwijnen ? k.verdwijnen + ' s' : 'nooit';
+        document.querySelectorAll('.stijl-kaart').forEach(c => c.classList.toggle('is-actief', c.dataset.stijl === stijl));
+        $('opslaan-btn').disabled = !opgeslagen || JSON.stringify(k) === JSON.stringify(opgeslagen);
+        $('vb').contentWindow?.postMessage({ mcInstellingen: { stijl, grootte: k.grootte, bron: k.bron, avatars: k.avatars } }, '*');
+    }
+    function vul(d) {
+        for (const i of kanaalVelden) i.value = d.kanalen?.[i.dataset.platform] ?? '';
+        const s = d.instellingen || {};
+        stijl = s.stijl || 'strak'; $('grootte').value = s.grootte ?? 1; $('verdwijnen').value = s.verdwijnen ?? 0; $('bron').checked = s.bron ?? true; $('avatars').checked = s.avatars ?? true;
+        opgeslagen = huidig(); bijwerken(); toonStatus(d.status);
+    }
+    function toonStatus(s) {
+        const tekst = { verbonden: '● live', offline: 'offline', verbinden: 'verbinden…', fout: 'niet gevonden', onbereikbaar: 'niet bereikbaar' };
+        document.querySelectorAll('[data-stip]').forEach(el => { const st = s?.[el.dataset.stip]; el.className = 'stip ' + (st || ''); el.textContent = st ? tekst[st] || st : ''; });
+    }
+    function toonBeheer(d) {
+        $('start').hidden = true; $('beheer').hidden = false;
+        $('link-obs').value = basis('multichat.html') + '?id=' + id;
+        $('link-pagina').value = basis('multichat.html') + '?id=' + id + '&pagina=1';
+        $('link-beheer').value = basis('multichat-setup.html') + '#id=' + id + '&sleutel=' + encodeURIComponent(sleutel);
+        vul(d);
+        // live status per platform volgen (zet ook de chat aan zolang deze pagina openstaat)
+        const bron = new EventSource(API + id + '/stream');
+        bron.onmessage = m => { try { const e = JSON.parse(m.data); if (e.soort === 'status' || e.soort === 'instellingen') toonStatus(e.status); } catch { } };
+    }
+    async function laad() {
+        $('vb').src = basis('multichat.html') + '?demo=1';
+        if (!id || !sleutel) return;
+        const d = await post(id + '/controleer', { sleutel }).catch(() => null);
+        if (d?.ok) { try { localStorage.setItem('mc-id', id); localStorage.setItem('mc-sleutel-' + id, sleutel); } catch { } toonBeheer(d); }
+        else if (d?.status === 403) fout('Beheerlink klopt niet', 'Deze beheerlink hoort niet (meer) bij een multichat.');
+    }
+    $('maak-btn').addEventListener('click', async () => {
+        $('maak-btn').disabled = true;
+        const d = await post('aanmaken', {}).catch(() => ({ fout: 'De server is even niet bereikbaar.' }));
+        $('maak-btn').disabled = false;
+        if (!d.ok) return fout('Dat lukte niet', d.fout || 'Onbekende fout.');
+        id = d.id; sleutel = d.sleutel;
+        try { localStorage.setItem('mc-id', id); localStorage.setItem('mc-sleutel-' + id, sleutel); } catch { }
+        await laad(); toast('💬 Je multichat is klaar! Vul je kanalen in en sla op.');
+    });
+    kanaalVelden.forEach(i => i.addEventListener('input', bijwerken));
+    for (const x of ['grootte', 'verdwijnen']) $(x).addEventListener('input', bijwerken);
+    for (const x of ['bron', 'avatars']) $(x).addEventListener('change', bijwerken);
+    document.querySelectorAll('.stijl-kaart').forEach(c => c.addEventListener('click', () => { stijl = c.dataset.stijl; bijwerken(); }));
+    $('opslaan-btn').addEventListener('click', async () => {
+        const d = await post(id + '/opslaan', { sleutel, ...huidig() }).catch(() => ({ fout: 'De server is even niet bereikbaar.' }));
+        if (!d.ok) return toast('❌ ' + (d.fout || 'Opslaan mislukt'));
+        vul(d); toast('✅ Opgeslagen!');
+    });
+    $('test-btn').addEventListener('click', async () => { const d = await post(id + '/test', { sleutel }).catch(() => ({})); toast(d.ok ? '💬 Testbericht gestuurd naar je overlay' : '❌ Lukte niet'); });
+    $('weg-btn').addEventListener('click', async () => {
+        if (!confirm('Je multichat helemaal verwijderen? De links werken daarna niet meer.')) return;
+        await post(id + '/verwijder', { sleutel }).catch(() => { });
+        try { localStorage.removeItem('mc-sleutel-' + id); localStorage.removeItem('mc-id'); } catch { }
+        location.reload();
+    });
+    document.querySelectorAll('[data-kopieer]').forEach(k => k.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText($(k.dataset.kopieer).value); toast('🔗 Link gekopieerd!'); } catch { $(k.dataset.kopieer).select(); }
+    }));
+    $('vb').addEventListener('load', bijwerken);
+    laad();
+})();
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+  import { $, startVeld, kantel } from './setup.js';
+  kantel($('vv'));
+  startVeld('bubbel', 3.2);
+</script>
+
+</body>
+</html>
