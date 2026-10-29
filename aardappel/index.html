@@ -32,6 +32,8 @@
     .tests { display: flex; flex-wrap: wrap; gap: 8px; }
     #melding, .melding { min-height: 1.4em; color: var(--groen); font-weight: 600; margin: 10px 0 0; }
     #melding.fout, .melding.fout { color: var(--rood); }
+    .invoer { flex: 1; min-width: 220px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--rand); background: #140d07; color: var(--tekst); font: 500 0.95rem 'Inter', sans-serif; }
+    h2 .chip { font: 700 0.8rem 'Inter', sans-serif; vertical-align: middle; margin-left: 8px; }
     .kleuren { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
     .kleuren label { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #140d07; border-radius: 12px; cursor: pointer; }
     .kleuren input { width: 46px; height: 46px; border: 0; padding: 0; background: none; cursor: pointer; flex: none; }
@@ -51,6 +53,10 @@
         <h2>1. Twitch koppelen</h2>
         <div class="rij"><span class="chip" id="koppelStatus">Laden...</span><a class="knop twitch" href="https://api.gwnlarss.nl/api/streamer-alerts/verbind">Koppel met Twitch</a></div>
         <p class="sub">Nodig voor je subs, volgers en bits. Raids werken ook zonder. Je logt in bij Twitch zelf; hier wordt geen wachtwoord bewaard.</p>
+        <h2 style="margin-top:18px">Donaties via StreamElements <span class="chip" id="seStatus">uit</span></h2>
+        <p class="sub">Optioneel, voor donaties (tips) op je sub-scherm. Plak je JWT-token uit StreamElements: log in op streamelements.com, klik rechtsboven op je account, kies <b>Account</b>, tabblad <b>Channels</b>, en klik bij JWT Token op <b>Show secret</b>. Deel dit token met niemand anders.</p>
+        <div class="rij"><input id="seJwt" type="password" placeholder="JWT-token (leeg opslaan = donaties uit)" autocomplete="off" class="invoer"><button class="knop" id="seOpslaan">Opslaan</button></div>
+        <p id="seMelding" class="melding"></p>
     </section>
 
     <section>
@@ -120,6 +126,19 @@
         } catch { kleurMelding('❌ Netwerkfout', true); }
         knop.disabled = false;
     }
+    // ---------- StreamElements (donaties): het token gaat naar de server en wordt hier niet bewaard ----------
+    $('seOpslaan').onclick = async () => {
+        const m = (t, f = false) => { $('seMelding').textContent = t; $('seMelding').className = 'melding' + (f ? ' fout' : ''); };
+        if (!sleutel) return m('Koppel eerst je Twitch (hierboven), daarna kun je StreamElements opslaan.', true);
+        $('seOpslaan').disabled = true;
+        try {
+            const r = await fetch(`${API}/instellingen`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, seJwt: $('seJwt').value }) });
+            if (r.status === 403) m('❌ Je beheersleutel klopt niet meer: koppel je Twitch opnieuw.', true);
+            else if (!r.ok) m('❌ Opslaan lukte niet.', true);
+            else { m($('seJwt').value.trim() ? '✅ Opgeslagen, even geduld: de status hierboven wordt zo bijgewerkt' : '✅ Donaties staan uit'); $('seJwt').value = ''; setTimeout(laad, 3000); setTimeout(laad, 8000); }
+        } catch { m('❌ Netwerkfout', true); }
+        $('seOpslaan').disabled = false;
+    };
     zetKiezers(STANDAARD);   // tot de opgeslagen kleuren binnen zijn
     $('opslaan').onclick = () => bewaarKleuren(huidig(), $('opslaan'));
     $('standaard').onclick = () => { zetKiezers(STANDAARD); bewaarKleuren(null, $('standaard')); };
@@ -128,6 +147,9 @@
         try {
             const d = await (await fetch(API, { cache: 'no-store' })).json();
             if (!laad.gedaan) { laad.gedaan = true; zetKiezers(d?.instellingen?.kleuren); }
+            const se = d?.streamElements ?? 'uit';
+            $('seStatus').className = `chip ${se === 'ok' ? 'ok' : se === 'fout' ? 'nee' : ''}`;
+            $('seStatus').textContent = { uit: 'uit', ok: 'verbonden', fout: 'token geweigerd', bezig: 'verbinden...' }[se] ?? se;
             $('koppelStatus').className = `chip ${d?.gekoppeld ? 'ok' : 'nee'}`;
             $('koppelStatus').textContent = d?.gekoppeld ? `Gekoppeld als ${d.naam}` : 'Twitch nog niet gekoppeld';
         } catch { $('koppelStatus').textContent = 'Status niet bereikbaar'; }
