@@ -30,8 +30,14 @@
     .voorbeeld { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; border: 1px solid var(--rand); margin-top: 14px; }
     .voorbeeld iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
     .tests { display: flex; flex-wrap: wrap; gap: 8px; }
-    #melding { min-height: 1.4em; color: var(--groen); font-weight: 600; }
-    #melding.fout { color: var(--rood); }
+    #melding, .melding { min-height: 1.4em; color: var(--groen); font-weight: 600; margin: 10px 0 0; }
+    #melding.fout, .melding.fout { color: var(--rood); }
+    .kleuren { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+    .kleuren label { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #140d07; border-radius: 12px; cursor: pointer; }
+    .kleuren input { width: 46px; height: 46px; border: 0; padding: 0; background: none; cursor: pointer; flex: none; }
+    .kleuren span { font-weight: 700; line-height: 1.25; } .kleuren small { display: block; font-weight: 500; font-size: 0.78rem; color: var(--dim); }
+    .set { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border-radius: 999px; border: 1px solid var(--rand); background: rgba(255,255,255,0.04); color: var(--tekst); font: 600 0.88rem 'Inter', sans-serif; cursor: pointer; }
+    .set i { display: inline-flex; } .set i b { width: 16px; height: 16px; border-radius: 50%; margin-left: -4px; border: 2px solid var(--paneel); }
 </style>
 </head>
 <body>
@@ -56,11 +62,25 @@
             <li>Zet breedte <b>1920</b> en hoogte <b>1080</b>.</li>
             <li>Op een tweede scherm achter je: klik met rechts op de scène of bron en kies <b>Volledig scherm projector</b>.</li>
         </ol>
-        <div class="voorbeeld"><iframe src="subs.html?demo" title="Voorbeeld van het sub-scherm" loading="lazy"></iframe></div>
+        <div class="voorbeeld"><iframe id="voorbeeld" src="subs.html?demo" title="Voorbeeld van het sub-scherm"></iframe></div>
     </section>
 
     <section>
-        <h2>3. Testen</h2>
+        <h2>3. Eigen kleuren</h2>
+        <p class="sub">Kies je kleuren; het voorbeeld hierboven kleurt meteen mee. Na <b>Opslaan</b> verandert je sub-scherm in OBS vanzelf, je hoeft de link niet te vervangen. De tekst wordt automatisch donker of licht zodat hij leesbaar blijft.</p>
+        <div class="kleuren">
+            <label><input type="color" data-kleur="achtergrond"><span>Achtergrond</span></label>
+            <label><input type="color" data-kleur="hoofd"><span>Hoofdkleur<small>SUBS, laatste sub, alerts</small></span></label>
+            <label><input type="color" data-kleur="tweede"><span>Tweede kleur<small>subs-alerts, rand onderin</small></span></label>
+            <label><input type="color" data-kleur="schaduw"><span>Schaduw en vormen<small>schaduw van het getal, aardappels</small></span></label>
+        </div>
+        <div class="rij" style="margin-top:12px" id="sets"></div>
+        <div class="rij" style="margin-top:12px"><button class="knop" id="opslaan">Kleuren opslaan</button><button class="knop zacht" id="standaard">Terug naar standaard</button></div>
+        <p id="kleurMelding" class="melding"></p>
+    </section>
+
+    <section>
+        <h2>4. Testen</h2>
         <p class="sub" id="testUitleg">Na het koppelen kun je hier een test-alert naar je sub-scherm sturen. Een test telt niet mee in je totaal.</p>
         <div class="tests" id="tests"></div>
         <p id="melding"></p>
@@ -78,9 +98,36 @@
     } catch { }
     if (new URLSearchParams(location.search).has('verbonden')) melding('✅ Je Twitch is gekoppeld!');
 
+    // ---------- eigen kleuren ----------
+    const STANDAARD = { achtergrond: '#1f150c', hoofd: '#f4c542', tweede: '#4caf50', schaduw: '#8a5a2b' };
+    const SETS = [['🥔 Aardappel', STANDAARD], ['🍟 Friet', { achtergrond: '#1a1a1a', hoofd: '#ffd23f', tweede: '#e63946', schaduw: '#c1121f' }],
+        ['🌙 Nacht', { achtergrond: '#0d1b2a', hoofd: '#4cc9f0', tweede: '#f72585', schaduw: '#3a0ca3' }], ['🌿 Moestuin', { achtergrond: '#10230f', hoofd: '#a7c957', tweede: '#f2e8cf', schaduw: '#386641' }]];
+    const kiezers = [...document.querySelectorAll('[data-kleur]')];
+    const huidig = () => Object.fromEntries(kiezers.map(i => [i.dataset.kleur, i.value]));
+    const toonVoorbeeld = () => $('voorbeeld').contentWindow?.postMessage({ kleuren: huidig() }, location.origin);
+    function zetKiezers(k) { kiezers.forEach(i => { i.value = (k ?? STANDAARD)[i.dataset.kleur] ?? STANDAARD[i.dataset.kleur]; }); toonVoorbeeld(); }
+    kiezers.forEach(i => i.addEventListener('input', toonVoorbeeld));
+    $('voorbeeld').addEventListener('load', toonVoorbeeld);
+    $('sets').innerHTML = SETS.map(([naam, k], n) => `<button class="set" data-set="${n}"><i>${Object.values(k).map(c => `<b style="background:${c}"></b>`).join('')}</i>${naam}</button>`).join('');
+    $('sets').addEventListener('click', e => { const b = e.target.closest('[data-set]'); if (b) zetKiezers(SETS[b.dataset.set][1]); });
+    function kleurMelding(t, fout = false) { $('kleurMelding').textContent = t; $('kleurMelding').className = 'melding' + (fout ? ' fout' : ''); }
+    async function bewaarKleuren(kleuren, knop) {
+        if (!sleutel) return kleurMelding('Koppel eerst je Twitch (stap 1) om je kleuren op te slaan. Het voorbeeld laat ze al wel zien.', true);
+        knop.disabled = true;
+        try {
+            const r = await fetch(`${API}/instellingen`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, kleuren }) });
+            kleurMelding(r.ok ? '✅ Opgeslagen, je sub-scherm in OBS is meteen bijgewerkt' : r.status === 403 ? '❌ Je beheersleutel klopt niet meer: koppel je Twitch opnieuw.' : '❌ Opslaan lukte niet.', !r.ok);
+        } catch { kleurMelding('❌ Netwerkfout', true); }
+        knop.disabled = false;
+    }
+    zetKiezers(STANDAARD);   // tot de opgeslagen kleuren binnen zijn
+    $('opslaan').onclick = () => bewaarKleuren(huidig(), $('opslaan'));
+    $('standaard').onclick = () => { zetKiezers(STANDAARD); bewaarKleuren(null, $('standaard')); };
+
     async function laad() {
         try {
             const d = await (await fetch(API, { cache: 'no-store' })).json();
+            if (!laad.gedaan) { laad.gedaan = true; zetKiezers(d?.instellingen?.kleuren); }
             $('koppelStatus').className = `chip ${d?.gekoppeld ? 'ok' : 'nee'}`;
             $('koppelStatus').textContent = d?.gekoppeld ? `Gekoppeld als ${d.naam}` : 'Twitch nog niet gekoppeld';
         } catch { $('koppelStatus').textContent = 'Status niet bereikbaar'; }

@@ -11,8 +11,9 @@
        in rust zijn totaal aantal subs en de laatste sub, groot en met veel contrast; elke nieuwe alert (volger, sub,
        resub, gift, bits, raid, donatie) neemt het hele scherm over. Gegevens via zijn eigen koppeling
        (api.gwnlarss.nl/api/streamer-alerts/mraardappel). Eigen aardappelstijl: goud, aardebruin en loofgroen, plat.
+       Kleuren zijn zelf te kiezen op de instelpagina (achtergrond, hoofdkleur, tweede kleur, schaduw), live via de stream.
        ?demo = nep-alerts om te kijken hoe het eruitziet (raakt niets live). */
-    :root { --aarde: #1f150c; --goud: #f4c542; --bruin: #8a5a2b; --groen: #4caf50; --donker: #1f150c; }
+    :root { --aarde: #1f150c; --goud: #f4c542; --bruin: #8a5a2b; --groen: #4caf50; --donker: #1f150c; --opHoofd: #1f150c; --opTweede: #1f150c; }   /* eigen kleuren overschrijven deze (zetKleuren) */
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--aarde); font-family: 'Inter', system-ui, sans-serif; color: #fff; }
     #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
@@ -22,7 +23,7 @@
     .pieper::before { left: 28%; top: 30%; } .pieper::after { left: 62%; top: 58%; }
     .p1 { width: 620px; height: 440px; left: -220px; top: -150px; transform: rotate(-18deg); }
     .p2 { width: 560px; height: 400px; right: -200px; bottom: -150px; transform: rotate(14deg); }
-    .p3 { width: 260px; height: 190px; right: 120px; top: 70px; transform: rotate(30deg); background: #6e4620; }
+    .p3 { width: 260px; height: 190px; right: 120px; top: 70px; transform: rotate(30deg); filter: brightness(0.8); }
     .loof { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: var(--groen); }
 
     /* ---------- in rust: het getal ---------- */
@@ -31,14 +32,14 @@
     #getal { font: 800 560px/0.86 'Baloo 2', sans-serif; letter-spacing: -0.02em; text-shadow: 18px 18px 0 var(--bruin); display: inline-block; }
     #getal.pop { animation: pop 0.8s cubic-bezier(.2,1.6,.4,1); }
     @keyframes pop { 0% { transform: scale(1); } 35% { transform: scale(1.12); color: var(--goud); } 100% { transform: scale(1); } }
-    #laatste { margin-top: 40px; display: flex; align-items: center; gap: 30px; padding: 18px 44px; background: var(--goud); color: var(--donker); border-radius: 28px; box-shadow: 12px 12px 0 var(--groen); max-width: 1600px; }
-    #laatste small { font: 800 56px 'Baloo 2', sans-serif; color: #6e4620; white-space: nowrap; }
+    #laatste { margin-top: 40px; display: flex; align-items: center; gap: 30px; padding: 18px 44px; background: var(--goud); color: var(--opHoofd); border-radius: 28px; box-shadow: 12px 12px 0 var(--groen); max-width: 1600px; }
+    #laatste small { font: 800 56px 'Baloo 2', sans-serif; opacity: 0.7; white-space: nowrap; }
     #laatste b { font: 800 100px/1.05 'Baloo 2', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* ---------- een alert: neemt het hele scherm over ---------- */
-    #alert { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--goud); color: var(--donker);
+    #alert { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--goud); color: var(--opHoofd);
         clip-path: circle(0% at 50% 50%); transition: clip-path 0.6s cubic-bezier(.6,0,.2,1); }
-    #alert.groen { background: var(--groen); }
+    #alert.groen { background: var(--groen); color: var(--opTweede); }
     #alert.aan { clip-path: circle(80% at 50% 50%); }
     #aIco { width: 260px; height: 260px; border-radius: 60px; background: #fff; display: grid; place-items: center; font-size: 170px; box-shadow: 14px 14px 0 rgba(0,0,0,0.22); }
     #alert.aan #aIco { animation: stuiter 0.9s 0.25s cubic-bezier(.2,1.8,.4,1) both; }
@@ -63,6 +64,16 @@
     const Q = new URLSearchParams(location.search), $ = id => document.getElementById(id);
     function pasAan() { const s = Math.min(innerWidth / 1920, innerHeight / 1080); $('podium').style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`; }
     addEventListener('resize', pasAan); pasAan();
+    // ---------- eigen kleuren (instelpagina, op de server bewaard; komen live binnen) ----------
+    const STANDAARD_KLEUREN = { achtergrond: '#1f150c', hoofd: '#f4c542', tweede: '#4caf50', schaduw: '#8a5a2b' };
+    const licht = hex => { const n = parseInt(hex.slice(1), 16), [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]; return (0.299 * r + 0.587 * g + 0.114 * b) > 150; };
+    function zetKleuren(k = {}) {
+        const c = { ...STANDAARD_KLEUREN, ...k }, st = document.documentElement.style;
+        st.setProperty('--aarde', c.achtergrond); st.setProperty('--goud', c.hoofd); st.setProperty('--groen', c.tweede); st.setProperty('--bruin', c.schaduw);
+        st.setProperty('--opHoofd', licht(c.hoofd) ? '#1f150c' : '#ffffff'); st.setProperty('--opTweede', licht(c.tweede) ? '#1f150c' : '#ffffff');   // tekst altijd leesbaar
+    }
+    // het voorbeeld op de instelpagina stuurt kleuren door terwijl je kiest
+    addEventListener('message', e => { if (e.origin === location.origin && e.data?.kleuren !== undefined) zetKleuren(e.data.kleuren || {}); });
     function pasIn(el, max, breed) { let g = max; el.style.fontSize = g + 'px'; while (el.scrollWidth > breed && g > 60) { g -= 8; el.style.fontSize = g + 'px'; } }   // lange namen kleiner
 
     // ---------- het getal: telt soepel op naar de nieuwe stand ----------
@@ -135,9 +146,10 @@
         let i = 0; setTimeout(() => ontvang(voorbeelden[i++]), 2500); setInterval(() => ontvang(voorbeelden[i++ % voorbeelden.length]), 11000);
     } else {
         haalStats(); setInterval(haalStats, 60000);
+        fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => zetKleuren(d?.instellingen?.kleuren)).catch(() => { });
         (function verbind() {
             const bron = new EventSource(API + '/stream?bron=alerts');
-            bron.onmessage = m => { let e; try { e = JSON.parse(m.data); } catch { return; } ontvang(e); };
+            bron.onmessage = m => { let e; try { e = JSON.parse(m.data); } catch { return; } if (e.soort === '_instellingen') return zetKleuren(e.instellingen?.kleuren); ontvang(e); };
             bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
         })();
     }
