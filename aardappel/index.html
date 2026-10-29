@@ -53,6 +53,20 @@
         <h2>1. Twitch koppelen</h2>
         <div class="rij"><span class="chip" id="koppelStatus">Laden...</span><a class="knop twitch" href="https://api.gwnlarss.nl/api/streamer-alerts/verbind">Koppel met Twitch</a></div>
         <p class="sub">Nodig voor je subs, volgers en bits. Raids werken ook zonder. Je logt in bij Twitch zelf; hier wordt geen wachtwoord bewaard.</p>
+        <!-- inloggen met wachtwoord (ander apparaat) en wachtwoord instellen; echte formulieren met autocomplete, zodat Chrome
+             een sterk wachtwoord voorstelt en het onthoudt -->
+        <div id="inlogBlok" hidden>
+            <h2 style="margin-top:18px">Inloggen</h2>
+            <p class="sub">Op dit apparaat ben je nog niet ingelogd. Klik op Inloggen: Chrome vraagt dan zelf je gebruikersnaam (<b>mraardappel</b>) en wachtwoord en kan ze onthouden.</p>
+            <div class="rij"><a class="knop" href="https://api.gwnlarss.nl/api/streamer-alerts/mraardappel/login">Inloggen</a></div>
+        </div>
+        <form id="wwForm" class="wwForm" hidden>
+            <h2 style="margin-top:18px">Wachtwoord <span class="chip" id="wwStatus">nog niet ingesteld</span></h2>
+            <p class="sub">Stel een wachtwoord in om op een andere pc of je telefoon in te loggen. Klik in het veld: Chrome stelt dan zelf een sterk wachtwoord voor en onthoudt het.</p>
+            <input type="text" name="username" autocomplete="username" value="mraardappel" readonly hidden>
+            <div class="rij"><input id="nieuwWw" type="password" name="new-password" autocomplete="new-password" minlength="8" placeholder="Nieuw wachtwoord (minstens 8 tekens)" class="invoer" required><button class="knop" type="submit">Opslaan</button></div>
+            <p id="wwMelding" class="melding"></p>
+        </form>
         <h2 style="margin-top:18px">Donaties via StreamElements <span class="chip" id="seStatus">uit</span></h2>
         <p class="sub">Optioneel, voor donaties (tips) op je sub-scherm. Plak je JWT-token uit StreamElements: log in op streamelements.com, klik rechtsboven op je account, kies <b>Account</b>, tabblad <b>Channels</b>, en klik bij JWT Token op <b>Show secret</b>. Deel dit token met niemand anders.</p>
         <div class="rij"><input id="seJwt" type="password" placeholder="JWT-token (leeg opslaan = donaties uit)" autocomplete="off" class="invoer"><button class="knop" id="seOpslaan">Opslaan</button></div>
@@ -100,6 +114,7 @@
         sleutel = localStorage.getItem('aardappel-sleutel');
     } catch { }
     if (new URLSearchParams(location.search).has('verbonden')) melding('✅ Je Twitch is gekoppeld!');
+    if (new URLSearchParams(location.search).has('ingelogd')) melding('✅ Je bent ingelogd op dit apparaat');
 
     // ---------- eigen kleuren ----------
     const STANDAARD = { achtergrond: '#1f150c', hoofd: '#f4c542', tweede: '#4caf50', schaduw: '#8a5a2b' };
@@ -123,6 +138,18 @@
         } catch { kleurMelding('❌ Netwerkfout', true); }
         knop.disabled = false;
     }
+    // ---------- wachtwoord ----------
+    const wwMeld = (id, t, f = false) => { $(id).textContent = t; $(id).className = 'melding' + (f ? ' fout' : ''); };
+    $('wwForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+            const r = await fetch(`${API}/wachtwoord`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, wachtwoord: $('nieuwWw').value }) });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok) { wwMeld('wwMelding', '✅ Wachtwoord opgeslagen. Laat Chrome het onthouden, dan kun je overal inloggen.'); $('nieuwWw').value = ''; laad(); }
+            else wwMeld('wwMelding', '❌ ' + (r.status === 403 ? 'Je beheersleutel klopt niet meer: koppel je Twitch opnieuw.' : d.fout || 'Opslaan lukte niet.'), true);
+        } catch { wwMeld('wwMelding', '❌ Netwerkfout', true); }
+    });
+
     // ---------- StreamElements (donaties): het token gaat naar de server en wordt hier niet bewaard ----------
     $('seOpslaan').onclick = async () => {
         const m = (t, f = false) => { $('seMelding').textContent = t; $('seMelding').className = 'melding' + (f ? ' fout' : ''); };
@@ -144,6 +171,10 @@
         try {
             const d = await (await fetch(API, { cache: 'no-store' })).json();
             if (!laad.gedaan) { laad.gedaan = true; zetKiezers(d?.instellingen?.kleuren); }
+            // wachtwoord: ingelogd = instellen/wijzigen tonen; niet ingelogd maar er is een wachtwoord = inloggen tonen
+            $('wwForm').hidden = !sleutel;
+            $('wwStatus').className = `chip ${d?.wachtwoord ? 'ok' : ''}`; $('wwStatus').textContent = d?.wachtwoord ? 'ingesteld' : 'nog niet ingesteld';
+            $('inlogBlok').hidden = Boolean(sleutel) || !d?.wachtwoord;
             const se = d?.streamElements ?? 'uit';
             $('seStatus').className = `chip ${se === 'ok' ? 'ok' : se === 'fout' ? 'nee' : ''}`;
             $('seStatus').textContent = { uit: 'uit', ok: 'verbonden', fout: 'token geweigerd', bezig: 'verbinden...' }[se] ?? se;
