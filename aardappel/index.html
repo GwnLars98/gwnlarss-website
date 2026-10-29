@@ -69,6 +69,10 @@
             <li>Op een tweede scherm achter je: klik met rechts op de scène of bron en kies <b>Volledig scherm projector</b>.</li>
         </ol>
         <div class="voorbeeld"><iframe id="voorbeeld" src="subs.html?demo" title="Voorbeeld van het sub-scherm"></iframe></div>
+        <h2 style="margin-top:18px">Testen</h2>
+        <p class="sub" id="testUitleg">Klik op een alert om hem in het voorbeeld hierboven te zien.</p>
+        <div class="tests" id="tests"></div>
+        <p id="melding"></p>
     </section>
 
     <section>
@@ -83,13 +87,6 @@
         <div class="rij" style="margin-top:12px" id="sets"></div>
         <div class="rij" style="margin-top:12px"><button class="knop" id="opslaan">Kleuren opslaan</button><button class="knop zacht" id="standaard">Terug naar standaard</button></div>
         <p id="kleurMelding" class="melding"></p>
-    </section>
-
-    <section>
-        <h2>4. Testen</h2>
-        <p class="sub" id="testUitleg">Na het koppelen kun je hier een test-alert naar je sub-scherm sturen. Een test telt niet mee in je totaal.</p>
-        <div class="tests" id="tests"></div>
-        <p id="melding"></p>
     </section>
 </main>
 <script>
@@ -157,10 +154,16 @@
     laad();
 
     const TESTS = [['subscriber', '⭐ Sub'], ['resub', '🔁 Resub'], ['gift', '🎁 Gifted subs'], ['follower', '<img class="emo" alt="">🥔 Volger'], ['cheer', '💎 Bits'], ['raid', '🚀 Raid'], ['donatie', '💶 Donatie']];
-    $('tests').innerHTML = TESTS.map(([s, t]) => `<button class="knop zacht" data-soort="${s}" ${sleutel ? '' : 'disabled'}>${t}</button>`).join('');
-    if (!sleutel) $('testUitleg').textContent = 'Koppel eerst je Twitch (stap 1); daarna kun je hier test-alerts naar je sub-scherm sturen.';
+    // zelfde testnamen als de server (streamerAlerts.js); het voorbeeld laat de test altijd zien, na het koppelen gaat hij ook naar OBS
+    const TESTDATA = { follower: ['TestVolger', {}], subscriber: ['TestSub', { tier: 1 }], resub: ['TestResub', { maanden: 12 }], gift: ['TestGifter', { aantal: 5, tier: 1 }],
+        cheer: ['TestBits', { bits: 1000 }], raid: ['TestRaider', { kijkers: 42 }], donatie: ['TestDonateur', { bedrag: 5, valuta: 'EUR' }] };
+    $('tests').innerHTML = TESTS.map(([s, t]) => `<button class="knop zacht" data-soort="${s}">${t}</button>`).join('');
+    if (sleutel) $('testUitleg').textContent = 'Klik op een alert: hij komt in het voorbeeld hierboven én op je sub-scherm in OBS. Een test telt niet mee in je totaal.';
     $('tests').addEventListener('click', async e => {
         const knop = e.target.closest('button[data-soort]'); if (!knop) return;
+        const [naam, extra] = TESTDATA[knop.dataset.soort];
+        $('voorbeeld').contentWindow?.postMessage({ alert: { soort: knop.dataset.soort, naam, extra: { ...extra, test: true } } }, location.origin);
+        if (!sleutel) return melding('👀 Alleen in het voorbeeld. Koppel je Twitch om tests ook naar je sub-scherm in OBS te sturen.');
         knop.disabled = true;
         try {
             const r = await fetch(`${API}/test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, soort: knop.dataset.soort }) });

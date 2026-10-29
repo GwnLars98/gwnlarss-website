@@ -126,7 +126,15 @@
         donatie: e => ({ ico: '💶', emote: 'mraardPOG', soort: 'DONATIE', extra: `${e.extra?.bedrag ?? ''} ${e.extra?.valuta ?? ''}`.trim(), groen: true }),
     };
     const rij = [];
-    let bezig = false;
+    let bezig = false, sluitTimer = null, volgendeTimer = null, demoTimers = [];
+    // een testknop op de instelpagina: de demo-reeks stopt en de test komt meteen in beeld (wat er stond, maakt plaats)
+    addEventListener('message', e => {
+        if (e.origin !== location.origin || !e.data?.alert) return;
+        demoTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); demoTimers = [];
+        clearTimeout(sluitTimer); clearTimeout(volgendeTimer); rij.length = 0;
+        const was = bezig; bezig = false; $('alert').classList.remove('aan'); $('rust').style.opacity = 1;
+        setTimeout(() => ontvang(e.data.alert), was ? 450 : 0);
+    });
     function ontvang(e) {
         const maak = SOORT[e.soort];
         if (!maak) return;   // instellingen e.d. horen hier niet
@@ -142,14 +150,14 @@
         $('alert').className = a.groen ? 'groen' : '';
         void $('alert').offsetWidth; $('alert').classList.add('aan');
         $('rust').style.opacity = 0;
-        setTimeout(() => {
+        sluitTimer = setTimeout(() => {
             $('alert').classList.remove('aan'); $('rust').style.opacity = 1;
             // een test telt niet mee; echte subs en gifts tellen zichtbaar op als het scherm terugkomt
             if (!a.test || Q.has('demo')) {
                 if (a.subs) { zetStand((stand ?? 0) + a.subs, true); setTimeout(haalStats, 65000); }
                 if (a.laatste) zetLaatste(a.naam);
             }
-            setTimeout(volgende, 1200);
+            volgendeTimer = setTimeout(volgende, 1200);
         }, 7000);
     }
 
@@ -157,7 +165,7 @@
         zetStand(64); zetLaatste('Friethoofd');
         const voorbeelden = [{ soort: 'subscriber', naam: 'Kroketje', extra: { tier: 1 } }, { soort: 'follower', naam: 'Pieper123' }, { soort: 'cheer', naam: 'BitsBintje', extra: { bits: 500 } },
             { soort: 'gift', naam: 'DeGulleAardappelboer', extra: { aantal: 5 } }, { soort: 'resub', naam: 'Stamppot', extra: { maanden: 12 } }, { soort: 'raid', naam: 'GwnLarss', extra: { kijkers: 42 } }];
-        let i = 0; setTimeout(() => ontvang(voorbeelden[i++]), 2500); setInterval(() => ontvang(voorbeelden[i++ % voorbeelden.length]), 11000);
+        let i = 0; demoTimers = [setTimeout(() => ontvang(voorbeelden[i++]), 2500), setInterval(() => ontvang(voorbeelden[i++ % voorbeelden.length]), 11000)];
     } else {
         haalStats(); setInterval(haalStats, 60000);
         fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => zetKleuren(d?.instellingen?.kleuren)).catch(() => { });
