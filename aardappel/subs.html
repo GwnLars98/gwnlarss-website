@@ -21,6 +21,11 @@
     .pieper { position: absolute; background: var(--bruin); border-radius: 50% 46% 52% 48% / 58% 52% 48% 42%; }
     .pieper::before, .pieper::after { content: ''; position: absolute; width: 9%; height: 7%; border-radius: 50%; background: rgba(0,0,0,0.22); }
     .pieper::before { left: 28%; top: 30%; } .pieper::after { left: 62%; top: 58%; }
+    /* met zijn emote mraardPOTATO: het plaatje zelf in plaats van de getekende vlek */
+    .pieper.emote { background: var(--emote) center / contain no-repeat; border-radius: 0; }
+    .pieper.emote::before, .pieper.emote::after { display: none; }
+    .p1.emote { width: 520px; height: 520px; left: -150px; top: -170px; } .p2.emote { width: 480px; height: 480px; right: -130px; bottom: -150px; } .p3.emote { width: 230px; height: 230px; filter: none; }
+    #aIco img { width: 76%; height: 76%; object-fit: contain; }
     .p1 { width: 620px; height: 440px; left: -220px; top: -150px; transform: rotate(-18deg); }
     .p2 { width: 560px; height: 400px; right: -200px; bottom: -150px; transform: rotate(14deg); }
     .p3 { width: 260px; height: 190px; right: 120px; top: 70px; transform: rotate(30deg); filter: brightness(0.8); }
@@ -74,6 +79,15 @@
     }
     // het voorbeeld op de instelpagina stuurt kleuren door terwijl je kiest
     addEventListener('message', e => { if (e.origin === location.origin && e.data?.kleuren !== undefined) zetKleuren(e.data.kleuren || {}); });
+    // ---------- zijn eigen emotes (mraardPOTATO als aardappel en als icoon bij een volger); lukt het niet, dan blijft het oude ----------
+    const EMOTES = {};
+    fetch(API + '/emotes').then(r => r.json()).then(d => {
+        for (const e of d.emotes ?? []) EMOTES[e.naam] = e.url;
+        if (!EMOTES.mraardPOTATO) return;
+        const img = new Image();
+        img.onload = () => { document.documentElement.style.setProperty('--emote', `url("${EMOTES.mraardPOTATO}")`); document.querySelectorAll('.pieper').forEach(p => p.classList.add('emote')); };
+        img.src = EMOTES.mraardPOTATO;
+    }).catch(() => { });
     function pasIn(el, max, breed) { let g = max; el.style.fontSize = g + 'px'; while (el.scrollWidth > breed && g > 60) { g -= 8; el.style.fontSize = g + 'px'; } }   // lange namen kleiner
 
     // ---------- het getal: telt soepel op naar de nieuwe stand ----------
@@ -103,7 +117,7 @@
 
     // ---------- alerts: één tegelijk, in de rij, elk 7 seconden het hele scherm ----------
     const SOORT = {
-        follower: e => ({ ico: '🥔', soort: 'NIEUWE VOLGER', extra: 'welkom bij de pieperclub!' }),
+        follower: e => ({ ico: '🥔', emote: 'mraardPOTATO', soort: 'NIEUWE VOLGER', extra: 'welkom bij de pieperclub!' }),
         subscriber: e => ({ ico: '⭐', soort: 'NIEUWE SUB', extra: `Tier ${e.extra?.tier ?? 1}`, groen: true, subs: 1, laatste: true }),
         resub: e => ({ ico: '🔁', soort: 'RESUB', extra: `${e.extra?.maanden ?? '?'} maanden!`, groen: true, laatste: true }),
         gift: e => ({ ico: '🎁', soort: 'GIFTED SUBS', extra: `${e.extra?.aantal ?? 1}× sub weggegeven!`, groen: true, subs: e.extra?.aantal ?? 1 }),
@@ -123,7 +137,7 @@
         const a = rij.shift();
         if (!a) { bezig = false; return; }
         bezig = true;
-        $('aIco').textContent = a.ico; $('aSoort').textContent = a.soort; $('aNaam').textContent = a.naam; $('aExtra').textContent = a.extra;
+        $('aIco').textContent = a.ico; if (a.emote && EMOTES[a.emote]) { const img = new Image(); img.src = EMOTES[a.emote]; img.alt = a.emote; $('aIco').replaceChildren(img); } $('aSoort').textContent = a.soort; $('aNaam').textContent = a.naam; $('aExtra').textContent = a.extra;
         pasIn($('aNaam'), 230, 1780);
         $('alert').className = a.groen ? 'groen' : '';
         void $('alert').offsetWidth; $('alert').classList.add('aan');

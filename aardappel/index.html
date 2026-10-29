@@ -43,7 +43,7 @@
 <body>
 <main>
     <div>
-        <h1>🥔 <span>MrAardappel</span> sub-scherm</h1>
+        <h1><img id="potato" alt="" style="height:1.1em;vertical-align:-0.2em;display:none">🥔 <span>MrAardappel</span> sub-scherm</h1>
         <p class="sub">Een fullscreen scherm met je totaal aantal subs en je laatste sub. Elke nieuwe alert komt groot in beeld. Ideaal voor een scherm achter je.</p>
     </div>
 
@@ -72,7 +72,7 @@
             <label><input type="color" data-kleur="achtergrond"><span>Achtergrond</span></label>
             <label><input type="color" data-kleur="hoofd"><span>Hoofdkleur<small>SUBS, laatste sub, alerts</small></span></label>
             <label><input type="color" data-kleur="tweede"><span>Tweede kleur<small>subs-alerts, rand onderin</small></span></label>
-            <label><input type="color" data-kleur="schaduw"><span>Schaduw en vormen<small>schaduw van het getal, aardappels</small></span></label>
+            <label><input type="color" data-kleur="schaduw"><span>Schaduw en vormen<small>schaduw van het getal en de laatste-sub-rand</small></span></label>
         </div>
         <div class="rij" style="margin-top:12px" id="sets"></div>
         <div class="rij" style="margin-top:12px"><button class="knop" id="opslaan">Kleuren opslaan</button><button class="knop zacht" id="standaard">Terug naar standaard</button></div>
@@ -134,7 +134,7 @@
     }
     laad();
 
-    const TESTS = [['subscriber', '⭐ Sub'], ['resub', '🔁 Resub'], ['gift', '🎁 Gifted subs'], ['follower', '🥔 Volger'], ['cheer', '💎 Bits'], ['raid', '🚀 Raid'], ['donatie', '💶 Donatie']];
+    const TESTS = [['subscriber', '⭐ Sub'], ['resub', '🔁 Resub'], ['gift', '🎁 Gifted subs'], ['follower', '<img class="emo" alt="">🥔 Volger'], ['cheer', '💎 Bits'], ['raid', '🚀 Raid'], ['donatie', '💶 Donatie']];
     $('tests').innerHTML = TESTS.map(([s, t]) => `<button class="knop zacht" data-soort="${s}" ${sleutel ? '' : 'disabled'}>${t}</button>`).join('');
     if (!sleutel) $('testUitleg').textContent = 'Koppel eerst je Twitch (stap 1); daarna kun je hier test-alerts naar je sub-scherm sturen.';
     $('tests').addEventListener('click', async e => {
@@ -149,6 +149,12 @@
         } catch { melding('❌ Netwerkfout', true); }
         knop.disabled = false;
     });
+    // zijn emote mraardPOTATO in plaats van het 🥔-tekentje (titel en testknop)
+    fetch(API + '/emotes').then(r => r.json()).then(d => {
+        const url = (d.emotes ?? []).find(e => e.naam === 'mraardPOTATO')?.url; if (!url) return;
+        const zet = img => { img.src = url; img.style.cssText = (img.style.cssText || '') + ';display:inline-block;height:1.15em;vertical-align:-0.25em;margin-right:4px'; img.nextSibling && img.nextSibling.nodeType === 3 && (img.nextSibling.textContent = img.nextSibling.textContent.replace('🥔', '')); };
+        zet($('potato')); document.querySelectorAll('img.emo').forEach(zet);
+    }).catch(() => { });
     function kopieer() { navigator.clipboard?.writeText($('link').textContent).then(() => melding('📋 Link gekopieerd')).catch(() => melding('Kopiëren lukte niet, selecteer de link zelf.', true)); }
 </script>
 </body>
