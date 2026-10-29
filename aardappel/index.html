@@ -175,6 +175,8 @@
             $('wwForm').hidden = !sleutel;
             $('wwStatus').className = `chip ${d?.wachtwoord ? 'ok' : ''}`; $('wwStatus').textContent = d?.wachtwoord ? 'ingesteld' : 'nog niet ingesteld';
             $('inlogBlok').hidden = Boolean(sleutel) || !d?.wachtwoord;
+            // net als de VPS-pagina: is er een wachtwoord en ben je hier niet ingelogd, dan meteen het inlogvenster van de browser
+            if (!sleutel && d?.wachtwoord) return location.replace('https://api.gwnlarss.nl/api/streamer-alerts/mraardappel/login');
             const se = d?.streamElements ?? 'uit';
             $('seStatus').className = `chip ${se === 'ok' ? 'ok' : se === 'fout' ? 'nee' : ''}`;
             $('seStatus').textContent = { uit: 'uit', ok: 'verbonden', fout: 'token geweigerd', bezig: 'verbinden...' }[se] ?? se;
