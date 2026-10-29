@@ -79,7 +79,7 @@
     }
     // het voorbeeld op de instelpagina stuurt kleuren door terwijl je kiest
     addEventListener('message', e => { if (e.origin === location.origin && e.data?.kleuren !== undefined) zetKleuren(e.data.kleuren || {}); });
-    // ---------- zijn eigen emotes (mraardPOTATO als aardappel en als icoon bij een volger); lukt het niet, dan blijft het oude ----------
+    // ---------- zijn eigen emotes: mraardPOTATO als aardappels, en per alert een eigen emote als icoon; lukt het niet, dan blijft het tekentje ----------
     const EMOTES = {};
     fetch(API + '/emotes').then(r => r.json()).then(d => {
         for (const e of d.emotes ?? []) EMOTES[e.naam] = e.url;
@@ -118,12 +118,12 @@
     // ---------- alerts: één tegelijk, in de rij, elk 7 seconden het hele scherm ----------
     const SOORT = {
         follower: e => ({ ico: '🥔', emote: 'mraardPOTATO', soort: 'NIEUWE VOLGER', extra: 'welkom bij de pieperclub!' }),
-        subscriber: e => ({ ico: '⭐', soort: 'NIEUWE SUB', extra: `Tier ${e.extra?.tier ?? 1}`, groen: true, subs: 1, laatste: true }),
-        resub: e => ({ ico: '🔁', soort: 'RESUB', extra: `${e.extra?.maanden ?? '?'} maanden!`, groen: true, laatste: true }),
-        gift: e => ({ ico: '🎁', soort: 'GIFTED SUBS', extra: `${e.extra?.aantal ?? 1}× sub weggegeven!`, groen: true, subs: e.extra?.aantal ?? 1 }),
-        cheer: e => ({ ico: '💎', soort: 'BITS', extra: `${e.extra?.bits ?? ''} bits!` }),
-        raid: e => ({ ico: '🚀', soort: 'RAID', extra: `met ${e.extra?.kijkers ?? '?'} kijkers!` }),
-        donatie: e => ({ ico: '💶', soort: 'DONATIE', extra: `${e.extra?.bedrag ?? ''} ${e.extra?.valuta ?? ''}`.trim(), groen: true }),
+        subscriber: e => ({ ico: '⭐', emote: 'mraardHYPE', soort: 'NIEUWE SUB', extra: `Tier ${e.extra?.tier ?? 1}`, groen: true, subs: 1, laatste: true }),
+        resub: e => ({ ico: '🔁', emote: 'mraardLOVE', soort: 'RESUB', extra: `${e.extra?.maanden ?? '?'} maanden!`, groen: true, laatste: true }),
+        gift: e => ({ ico: '🎁', emote: 'mraardGIFT', soort: 'GIFTED SUBS', extra: `${e.extra?.aantal ?? 1}× sub weggegeven!`, groen: true, subs: e.extra?.aantal ?? 1 }),
+        cheer: e => ({ ico: '💎', emote: 'mraardBIGWIN', soort: 'BITS', extra: `${e.extra?.bits ?? ''} bits!` }),
+        raid: e => ({ ico: '🚀', emote: 'mraardRAVE', soort: 'RAID', extra: `met ${e.extra?.kijkers ?? '?'} kijkers!` }),
+        donatie: e => ({ ico: '💶', emote: 'mraardPOG', soort: 'DONATIE', extra: `${e.extra?.bedrag ?? ''} ${e.extra?.valuta ?? ''}`.trim(), groen: true }),
     };
     const rij = [];
     let bezig = false;
