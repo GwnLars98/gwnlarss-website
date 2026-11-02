@@ -242,6 +242,14 @@
         50% { box-shadow: 0 8px 34px -4px rgba(255, 46, 77, 0.85); }
     }
 
+    /* kopje Tools met een raster van tool-knoppen */
+    .lt__kopje { align-self: flex-start; margin: 30px 0 12px 4px; font: 800 0.8rem 'Inter', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
+    .lt__tools { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+    .lt__tools a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel);
+        text-decoration: none; font-weight: 600; font-size: 0.92rem; transition: transform 0.15s, border-color 0.2s, background 0.2s; }
+    .lt__tools a:hover { transform: translateY(-2px); border-color: var(--purple); background: rgba(145, 70, 255, 0.08); }
+    .lt__tools span { font-size: 1.1rem; }
+
     .lt__footer {
         margin-top: 40px;
         text-align: center;
@@ -270,7 +278,7 @@
         <span id="lt-badge-text">Status laden...</span>
     </span>
 
-    <p class="lt__tagline">Gamer, prutser en gastheer van <strong>Streamers met een Hart</strong>.</p>
+    <p class="lt__tagline">Gamer, prutser en maker van gratis tools voor streamers.</p>
 
     <div class="lt__list">
         <a class="lt__link lt__link--primary" id="lt-twitch-link" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">
@@ -293,21 +301,13 @@
             </span>
         </a>
 
-        <a class="lt__link" href="https://www.tiktok.com/@gwnlarsss" target="_blank" rel="noopener">
+        <a class="lt__link" href="https://www.tiktok.com/@larsjuhhhh" target="_blank" rel="noopener">
             <span class="lt__link-icon">
                 <svg viewBox="0 0 24 24"><path d="M16.6 5.8a4.6 4.6 0 0 1-3.6-4.2h-3.3v14.4a2.7 2.7 0 1 1-1.9-2.6V9.9a6 6 0 1 0 5.2 6V9.5a7.9 7.9 0 0 0 4.6 1.5V7.7a4.6 4.6 0 0 1-1-1.9Z"/></svg>
             </span>
             <span class="lt__link-text">
                 <span class="lt__link-label">TikTok</span>
                 <span class="lt__link-sub">Korte clips en momentjes</span>
-            </span>
-        </a>
-
-        <a class="lt__link" href="https://streamersmeteenhart.nl/" target="_blank" rel="noopener">
-            <span class="lt__link-icon">💚</span>
-            <span class="lt__link-text">
-                <span class="lt__link-label">Streamers met een Hart</span>
-                <span class="lt__link-sub">Onze jaarlijkse goede-doelenactie</span>
             </span>
         </a>
 
@@ -326,6 +326,27 @@
                 <span class="lt__link-sub">gwnlarssinfo@gmail.com</span>
             </span>
         </a>
+    </div>
+
+    <!-- Tools: de openbare tools van gwnlarss.nl/tools (zelfde lijst) -->
+    <h2 class="lt__kopje">Tools</h2>
+    <div class="lt__list">
+        <a class="lt__link" href="https://gwnlarss.nl/tools" target="_blank" rel="noopener">
+            <span class="lt__link-icon">🧰</span>
+            <span class="lt__link-text">
+                <span class="lt__link-label">Alle tools</span>
+                <span class="lt__link-sub">Gratis overlays en chat-tools voor je stream</span>
+            </span>
+        </a>
+    </div>
+    <div class="lt__tools">
+        <a href="https://gwnlarss.nl/first-chat-setup.html" target="_blank" rel="noopener"><span>👋</span>Eerste chat</a>
+        <a href="https://gwnlarss.nl/cam-border-setup.html" target="_blank" rel="noopener"><span>🖼️</span>Cam-border</a>
+        <a href="https://gwnlarss.nl/clip-setup.html" target="_blank" rel="noopener"><span>🎬</span>!clip</a>
+        <a href="https://gwnlarss.nl/lurk-setup.html" target="_blank" rel="noopener"><span>😴</span>!lurk</a>
+        <a href="https://gwnlarss.nl/raid-clip-setup.html" target="_blank" rel="noopener"><span>🚀</span>Raid-clip</a>
+        <a href="https://gwnlarss.nl/channel-points-setup.html" target="_blank" rel="noopener"><span>🪙</span>Kanaalpunten</a>
+        <a href="https://gwnlarss.nl/lingo-setup.html" target="_blank" rel="noopener"><span>🟩</span>Lingo</a>
     </div>
 
     <p class="lt__footer">&copy; <span id="lt-year"></span> GwnLarss · <a href="https://gwnlarss.nl/">gwnlarss.nl</a></p>
