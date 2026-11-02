@@ -2,381 +2,129 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>GwnLarss – Links</title>
 <meta name="description" content="Alle links van GwnLarss op één plek: Twitch, Discord, TikTok en meer.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="stijl.css">
 <style>
-    :root {
-        --bg: #0b0b12;
-        --panel: #161623;
-        --border: rgba(255, 255, 255, 0.08);
-        --text: #f1f0f6;
-        --text-dim: #a3a1b5;
-        --purple: #9146ff;
-        --pink: #ff3ea5;
-        --live: #ff2e4d;
-    }
-    * { box-sizing: border-box; }
-    [hidden] { display: none !important; }
-    html, body {
-        margin: 0;
-        min-height: 100vh;
-        background:
-            radial-gradient(55% 40% at 12% 0%, rgba(145, 70, 255, 0.14), transparent 70%),
-            radial-gradient(50% 38% at 100% 15%, rgba(255, 62, 165, 0.12), transparent 70%),
-            radial-gradient(45% 35% at 50% 100%, rgba(145, 70, 255, 0.08), transparent 70%),
-            var(--bg);
-        background-attachment: fixed;
-        color: var(--text);
-        font-family: 'Inter', system-ui, sans-serif;
-    }
-    body {
-        display: flex;
-        justify-content: center;
-        padding: 8vh 6vw 6vh;
-        overflow-x: hidden;
-    }
-    a { color: inherit; }
+  /* Links: zelfde stijl als de rest van gwnlarss.nl (stijl.css): het deeltjesveld als achtergrond, glazen panelen met
+     de draaiende neonrand, Baloo voor koppen en JetBrains Mono voor labels. */
+  .links-pagina { max-width: 480px; width: 100%; margin: 0 auto; padding-block: 40px 20px; display: grid; justify-items: center; gap: 14px; text-align: center; }
+  .avatar-wrap { position: relative; width: 112px; height: 112px; border-radius: 50%; padding: 4px; margin-bottom: 4px; }
+  .avatar-wrap img, .avatar-leeg { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+  .avatar-wrap img[hidden], .avatar-leeg[hidden] { display: none; }
+  .avatar-leeg { display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 2rem; background: linear-gradient(135deg, var(--paars), var(--roze)); }
+  .naam { font-size: clamp(2.4rem, 9vw, 3.2rem); margin: 0; }
+  .slogan { margin: 0; color: var(--dim); max-width: 26rem; text-wrap: balance; }
 
-    .lt__glow {
-        position: fixed;
-        inset: -20% -10% auto -10%;
-        height: 60vh;
-        filter: blur(40px);
-        z-index: 0;
-        pointer-events: none;
-        animation: lt-glow-rotate 22s linear infinite;
-    }
-    .lt__glow::before,
-    .lt__glow::after {
-        content: '';
-        position: absolute;
-        border-radius: 50%;
-    }
-    .lt__glow::before {
-        width: 55%;
-        height: 100%;
-        left: 8%;
-        top: -10%;
-        background: radial-gradient(circle, rgba(145, 70, 255, 0.46), transparent 70%);
-        animation: lt-blob-a 7s ease-in-out infinite alternate;
-    }
-    .lt__glow::after {
-        width: 46%;
-        height: 90%;
-        right: 4%;
-        top: -14%;
-        background: radial-gradient(circle, rgba(255, 62, 165, 0.38), transparent 70%);
-        animation: lt-blob-b 6s ease-in-out infinite alternate;
-    }
-    @keyframes lt-glow-rotate {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    @keyframes lt-blob-a {
-        0% { transform: translate(0, 0) scale(1); }
-        33% { transform: translate(10%, 7%) scale(1.25); }
-        66% { transform: translate(-7%, 9%) scale(0.82); }
-        100% { transform: translate(6%, -8%) scale(1.1); }
-    }
-    @keyframes lt-blob-b {
-        0% { transform: translate(0, 0) scale(1); }
-        40% { transform: translate(-10%, -8%) scale(1.2); }
-        70% { transform: translate(8%, -4%) scale(0.86); }
-        100% { transform: translate(-6%, 9%) scale(1.14); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .lt__glow, .lt__glow::before, .lt__glow::after { animation: none; }
-    }
+  /* live-status (zelfde als op de homepage) */
+  .live-pil { display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 999px; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--dim); background: var(--glas-sterk); border: 1px solid var(--lijn); }
+  .live-pil i { width: 9px; height: 9px; border-radius: 50%; background: #8b86a3; box-shadow: 0 0 8px #8b86a3; }
+  .live-pil.is-live { color: #fff; border-color: rgba(255, 46, 77, 0.55); background: rgba(255, 46, 77, 0.16); box-shadow: 0 0 34px -6px rgba(255, 46, 77, 0.8); }
+  .live-pil.is-live i { background: #ff2e4d; box-shadow: 0 0 12px #ff2e4d; animation: hartslag 1.4s ease-in-out infinite; }
+  @keyframes hartslag { 50% { transform: scale(1.5); opacity: 0.5; } }
 
-    .lt {
-        position: relative;
-        z-index: 1;
-        width: 100%;
-        max-width: 420px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .lt__avatar-wrap {
-        position: relative;
-        width: 96px;
-        height: 96px;
-        margin-bottom: 18px;
-    }
-    .lt__avatar, .lt__avatar-placeholder {
-        position: absolute;
-        inset: 0;
-        width: 96px;
-        height: 96px;
-        border-radius: 50%;
-        border: 3px solid var(--panel);
-        object-fit: cover;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .lt__avatar-placeholder {
-        background: linear-gradient(135deg, var(--purple), var(--pink));
-        font-family: 'Baloo 2', sans-serif;
-        font-weight: 800;
-        font-size: 1.8rem;
-        color: #fff;
-    }
-    .lt__avatar-wrap::before {
-        content: '';
-        position: absolute;
-        inset: -5px;
-        border-radius: 50%;
-        border: 2px solid var(--live);
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-    .lt__avatar-wrap.is-live::before {
-        opacity: 1;
-        animation: lt-pulse-ring 1.8s infinite;
-    }
-    @keyframes lt-pulse-ring {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(255, 46, 77, 0.5); }
-        50% { box-shadow: 0 0 0 6px rgba(255, 46, 77, 0); }
-    }
-
-    .lt__name {
-        font-family: 'Baloo 2', sans-serif;
-        font-weight: 800;
-        font-size: 1.6rem;
-        margin: 0 0 8px;
-    }
-
-    .lt__badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 14px 7px 10px;
-        border-radius: 999px;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        font-size: 0.82rem;
-        font-weight: 600;
-        color: var(--text-dim);
-        margin-bottom: 10px;
-    }
-    .lt__badge-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
-    .lt__badge.is-live { color: #ffd7e0; border-color: rgba(255, 46, 77, 0.4); background: rgba(255, 46, 77, 0.1); }
-    .lt__badge.is-live .lt__badge-dot { background: var(--live); box-shadow: 0 0 10px var(--live); animation: lt-pulse 1.6s infinite; }
-    @keyframes lt-pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.35; }
-    }
-
-    .lt__tagline {
-        text-align: center;
-        color: var(--text-dim);
-        font-size: 0.95rem;
-        max-width: 34ch;
-        margin: 0 0 28px;
-        line-height: 1.5;
-    }
-
-    .lt__list {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .lt__link {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        width: 100%;
-        padding: 16px 20px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: var(--panel);
-        text-decoration: none;
-        transition: transform 0.15s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
-    }
-    .lt__link:hover { transform: translateY(-2px); border-color: var(--purple); background: rgba(145, 70, 255, 0.08); }
-    .lt__link:active { transform: scale(0.98); }
-
-    .lt__link-icon {
-        flex-shrink: 0;
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.06);
-        font-size: 1.2rem;
-    }
-    .lt__link-icon svg { width: 18px; height: 18px; fill: currentColor; }
-
-    .lt__link-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .lt__link-label { font-weight: 700; font-size: 1rem; }
-    .lt__link-sub {
-        font-size: 0.82rem;
-        color: var(--text-dim);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .lt__link--primary {
-        background: linear-gradient(100deg, var(--purple), var(--pink));
-        border-color: transparent;
-        box-shadow: 0 8px 24px -8px rgba(145, 70, 255, 0.6);
-    }
-    .lt__link--primary .lt__link-icon { background: rgba(255, 255, 255, 0.18); color: #fff; }
-    .lt__link--primary .lt__link-sub { color: rgba(255, 255, 255, 0.85); }
-    .lt__link--primary:hover { border-color: transparent; box-shadow: 0 10px 30px -6px rgba(255, 62, 165, 0.6); }
-    .lt__link--primary.is-live { animation: lt-glow 1.8s infinite; }
-    @keyframes lt-glow {
-        0%, 100% { box-shadow: 0 8px 24px -8px rgba(255, 46, 77, 0.55); }
-        50% { box-shadow: 0 8px 34px -4px rgba(255, 46, 77, 0.85); }
-    }
-
-    .lt__footer {
-        margin-top: 40px;
-        text-align: center;
-        color: var(--text-dim);
-        font-size: 0.8rem;
-        opacity: 0.7;
-    }
-    .lt__footer a { color: var(--text-dim); text-decoration: underline; text-underline-offset: 2px; }
-    .lt__footer a:hover { color: var(--text); }
+  .lijst { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 14px; }
+  .link { display: flex; align-items: center; gap: 16px; min-width: 0; padding: 18px 22px; border-radius: 22px; background: var(--glas); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      text-decoration: none; text-align: left; transition: transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1); }
+  .link:hover { transform: translateY(-4px); }
+  .link .ico { flex: none; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 1.3rem; background: rgba(255, 255, 255, 0.06); }
+  .link .ico svg { width: 20px; height: 20px; fill: currentColor; }
+  .link .tekst { display: grid; gap: 2px; min-width: 0; }
+  .link b { font-family: var(--display); font-size: 1.35rem; line-height: 1.1; }
+  .link span.sub { font-family: var(--mono); font-size: 0.78rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Twitch bovenaan in de verloopkleur, net als de knoppen op de site */
+  .link--twitch { background: linear-gradient(135deg, var(--paars), var(--roze)); box-shadow: 0 10px 34px -8px rgba(255, 62, 165, 0.6); }
+  .link--twitch .ico { background: rgba(255, 255, 255, 0.18); }
+  .link--twitch span.sub { color: rgba(255, 255, 255, 0.85); }
+  .link--twitch.is-live { box-shadow: 0 10px 40px -6px rgba(255, 46, 77, 0.85); }
 </style>
 </head>
 <body>
 
-<div class="lt__glow" aria-hidden="true"></div>
+<canvas id="veld" aria-hidden="true"></canvas>
 
-<div class="lt">
-    <div class="lt__avatar-wrap" id="lt-avatar-wrap">
-        <img id="lt-avatar" class="lt__avatar" alt="GwnLarss avatar" hidden>
-        <div id="lt-avatar-placeholder" class="lt__avatar-placeholder">GL</div>
+<nav class="top">
+  <a class="merk" href="https://gwnlarss.nl/">GwnLarss<span>.</span></a>
+  <div class="nav-links">
+    <a href="tools.html">Tools</a>
+    <a class="knop knop--klein" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
+  </div>
+</nav>
+
+<main class="laag">
+  <div class="links-pagina">
+    <div class="avatar-wrap rand"><img id="avatar" alt="Profielfoto van GwnLarss" hidden><div class="avatar-leeg" id="avatar-leeg">GL</div></div>
+    <h1 class="naam">GwnLarss</h1>
+    <span class="live-pil" id="live-pil"><i></i><span id="live-tekst">Status laden...</span></span>
+    <p class="slogan">Gamer, prutser en maker van gratis tools voor streamers.</p>
+
+    <div class="lijst">
+      <a class="link link--twitch" id="twitch-link" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M7.29 3.43 3.43 7.29v11.14h4v3l3.43-3.43H14l6.57-6.57V3.43Zm11.71 8.29-2.86 2.85h-2.85l-2.5 2.5v-2.5H7.29V5.14h11.71Z"/><path d="M15.14 8.14h1.72v3.72h-1.72zm-3.43 0h1.72v3.72h-1.72z"/></svg></span>
+        <span class="tekst"><b>Twitch</b><span class="sub" id="twitch-sub">twitch.tv/gwnlarss</span></span>
+      </a>
+      <a class="link rand" href="https://discord.gg/NDBSrTyhSw" target="_blank" rel="noopener">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M20.3 5.3A17.9 17.9 0 0 0 15.9 4l-.3.6a13 13 0 0 1 3.5 1.3 15.9 15.9 0 0 0-13.9 0A13 13 0 0 1 8.7 4.6L8.4 4a17.9 17.9 0 0 0-4.4 1.3C1.7 9 1 12.6 1.3 16.1a17.8 17.8 0 0 0 5.4 2.7l.7-1.1a11.5 11.5 0 0 1-1.9-.9l.5-.4a12.9 12.9 0 0 0 11 0l.5.4a11.5 11.5 0 0 1-1.9.9l.7 1.1a17.8 17.8 0 0 0 5.4-2.7c.4-4-.6-7.6-2.4-10.8ZM8.7 14a1.6 1.6 0 1 1 1.5-1.6A1.5 1.5 0 0 1 8.7 14Zm6.6 0a1.6 1.6 0 1 1 1.5-1.6A1.5 1.5 0 0 1 15.3 14Z"/></svg></span>
+        <span class="tekst"><b>Discord</b><span class="sub">Kletsen, memes en updates</span></span>
+      </a>
+      <a class="link rand" href="https://www.tiktok.com/@larsjuhhhh" target="_blank" rel="noopener">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M16.6 5.8a4.6 4.6 0 0 1-3.6-4.2h-3.3v14.4a2.7 2.7 0 1 1-1.9-2.6V9.9a6 6 0 1 0 5.2 6V9.5a7.9 7.9 0 0 0 4.6 1.5V7.7a4.6 4.6 0 0 1-1-1.9Z"/></svg></span>
+        <span class="tekst"><b>TikTok</b><span class="sub">@larsjuhhhh</span></span>
+      </a>
+      <a class="link rand" href="https://gwnlarss.nl/" target="_blank" rel="noopener">
+        <span class="ico">🌐</span>
+        <span class="tekst"><b>Volledige site</b><span class="sub">gwnlarss.nl</span></span>
+      </a>
+      <a class="link rand" href="https://gwnlarss.nl/tools" target="_blank" rel="noopener">
+        <span class="ico">🧰</span>
+        <span class="tekst"><b>Tools</b><span class="sub">Gratis overlays en chat-tools</span></span>
+      </a>
+      <a class="link rand" href="mailto:gwnlarssinfo@gmail.com">
+        <span class="ico">✉️</span>
+        <span class="tekst"><b>Contact</b><span class="sub">gwnlarssinfo@gmail.com</span></span>
+      </a>
     </div>
+  </div>
+  <footer>&copy; <span id="jaar"></span> GwnLarss</footer>
+</main>
 
-    <h1 class="lt__name">GwnLarss</h1>
-
-    <span class="lt__badge" id="lt-badge">
-        <span class="lt__badge-dot" id="lt-badge-dot"></span>
-        <span id="lt-badge-text">Status laden...</span>
-    </span>
-
-    <p class="lt__tagline">Gamer, prutser en maker van gratis tools voor streamers.</p>
-
-    <div class="lt__list">
-        <a class="lt__link lt__link--primary" id="lt-twitch-link" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">
-            <span class="lt__link-icon">
-                <svg viewBox="0 0 24 24"><path d="M7.29 3.43 3.43 7.29v11.14h4v3l3.43-3.43H14l6.57-6.57V3.43Zm11.71 8.29-2.86 2.85h-2.85l-2.5 2.5v-2.5H7.29V5.14h11.71Z"/><path d="M15.14 8.14h1.72v3.72h-1.72zm-3.43 0h1.72v3.72h-1.72z"/></svg>
-            </span>
-            <span class="lt__link-text">
-                <span class="lt__link-label">Twitch</span>
-                <span class="lt__link-sub" id="lt-twitch-sub">twitch.tv/gwnlarss</span>
-            </span>
-        </a>
-
-        <a class="lt__link" href="https://discord.gg/NDBSrTyhSw" target="_blank" rel="noopener">
-            <span class="lt__link-icon">
-                <svg viewBox="0 0 24 24"><path d="M20.3 5.3A17.9 17.9 0 0 0 15.9 4l-.3.6a13 13 0 0 1 3.5 1.3 15.9 15.9 0 0 0-13.9 0A13 13 0 0 1 8.7 4.6L8.4 4a17.9 17.9 0 0 0-4.4 1.3C1.7 9 1 12.6 1.3 16.1a17.8 17.8 0 0 0 5.4 2.7l.7-1.1a11.5 11.5 0 0 1-1.9-.9l.5-.4a12.9 12.9 0 0 0 11 0l.5.4a11.5 11.5 0 0 1-1.9.9l.7 1.1a17.8 17.8 0 0 0 5.4-2.7c.4-4-.6-7.6-2.4-10.8ZM8.7 14a1.6 1.6 0 1 1 1.5-1.6A1.5 1.5 0 0 1 8.7 14Zm6.6 0a1.6 1.6 0 1 1 1.5-1.6A1.5 1.5 0 0 1 15.3 14Z"/></svg>
-            </span>
-            <span class="lt__link-text">
-                <span class="lt__link-label">Discord</span>
-                <span class="lt__link-sub">Kletsen, memes en updates</span>
-            </span>
-        </a>
-
-        <a class="lt__link" href="https://www.tiktok.com/@larsjuhhhh" target="_blank" rel="noopener">
-            <span class="lt__link-icon">
-                <svg viewBox="0 0 24 24"><path d="M16.6 5.8a4.6 4.6 0 0 1-3.6-4.2h-3.3v14.4a2.7 2.7 0 1 1-1.9-2.6V9.9a6 6 0 1 0 5.2 6V9.5a7.9 7.9 0 0 0 4.6 1.5V7.7a4.6 4.6 0 0 1-1-1.9Z"/></svg>
-            </span>
-            <span class="lt__link-text">
-                <span class="lt__link-label">TikTok</span>
-                <span class="lt__link-sub">Korte clips en momentjes</span>
-            </span>
-        </a>
-
-        <a class="lt__link" href="https://gwnlarss.nl/" target="_blank" rel="noopener">
-            <span class="lt__link-icon">🌐</span>
-            <span class="lt__link-text">
-                <span class="lt__link-label">Volledige site</span>
-                <span class="lt__link-sub">gwnlarss.nl</span>
-            </span>
-        </a>
-
-        <a class="lt__link" href="https://gwnlarss.nl/tools" target="_blank" rel="noopener">
-            <span class="lt__link-icon">🧰</span>
-            <span class="lt__link-text">
-                <span class="lt__link-label">Tools</span>
-                <span class="lt__link-sub">Gratis overlays en chat-tools voor je stream</span>
-            </span>
-        </a>
-
-        <a class="lt__link" href="mailto:gwnlarssinfo@gmail.com">
-            <span class="lt__link-icon">✉️</span>
-            <span class="lt__link-text">
-                <span class="lt__link-label">Contact</span>
-                <span class="lt__link-sub">gwnlarssinfo@gmail.com</span>
-            </span>
-        </a>
-    </div>
-
-    <p class="lt__footer">&copy; <span id="lt-year"></span> GwnLarss · <a href="https://gwnlarss.nl/">gwnlarss.nl</a></p>
-</div>
-
-<script>
-    document.getElementById('lt-year').textContent = new Date().getFullYear();
-
-    (async () => {
-        const avatarWrap = document.getElementById('lt-avatar-wrap');
-        const avatar = document.getElementById('lt-avatar');
-        const avatarPlaceholder = document.getElementById('lt-avatar-placeholder');
-        const badge = document.getElementById('lt-badge');
-        const badgeText = document.getElementById('lt-badge-text');
-        const twitchLink = document.getElementById('lt-twitch-link');
-        const twitchSub = document.getElementById('lt-twitch-sub');
-
-        try {
-            // Absolute URL: deze pagina draait op gwnlarss.nl (Netlify, geen eigen backend),
-            // dus moet altijd naar de bot's eigen server verwijzen. CORS staat daar al open.
-            const res = await fetch('https://api.gwnlarss.nl/api/live', { cache: 'no-store' });
-            const data = await res.json();
-            if (!data.geconfigureerd) {
-                badgeText.textContent = 'Live-status niet beschikbaar';
-                return;
-            }
-
-            if (data.twitchLogin) twitchLink.href = `https://twitch.tv/${data.twitchLogin}`;
-            if (data.profileImageUrl) {
-                avatar.src = data.profileImageUrl;
-                avatar.hidden = false;
-                avatarPlaceholder.hidden = true;
-            }
-
-            if (data.live) {
-                avatarWrap.classList.add('is-live');
-                badge.classList.add('is-live');
-                badgeText.textContent = '🔴 Live nu';
-                twitchLink.classList.add('is-live');
-                twitchSub.textContent = data.game
-                    ? `${data.title ? data.title + ' · ' : ''}${data.game}`
-                    : 'Nu live op Twitch';
-            } else {
-                badgeText.textContent = '⚫ Momenteel offline';
-                twitchSub.textContent = 'twitch.tv/gwnlarss';
-            }
-        } catch {
-            badgeText.textContent = 'Live-status kon niet geladen worden';
-        }
-    })();
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
 </script>
+<script type="module">
+  const $ = id => document.getElementById(id);
+  $('jaar').textContent = new Date().getFullYear();
 
+  // live-status en profielfoto (zelfde /api/live als de homepage)
+  async function checkLive() {
+    try {
+      const d = await (await fetch('https://api.gwnlarss.nl/api/live', { cache: 'no-store' })).json();
+      if (!d.geconfigureerd) { $('live-tekst').textContent = 'Live-status niet beschikbaar'; return; }
+      if (d.twitchLogin) $('twitch-link').href = `https://twitch.tv/${d.twitchLogin}`;
+      if (d.profileImageUrl) { $('avatar').src = d.profileImageUrl; $('avatar').hidden = false; $('avatar-leeg').hidden = true; }
+      const live = Boolean(d.live);
+      $('live-pil').classList.toggle('is-live', live);
+      $('twitch-link').classList.toggle('is-live', live);
+      $('live-tekst').textContent = live ? 'Live nu' : 'Momenteel offline';
+      $('twitch-sub').textContent = live ? ([d.title, d.game].filter(Boolean).join(' · ') || 'Nu live op Twitch') : 'twitch.tv/gwnlarss';
+    } catch { $('live-tekst').textContent = 'Live-status kon niet geladen worden'; }
+  }
+  checkLive();
+  setInterval(checkLive, 20000);
+
+  // het deeltjesveld van de site als achtergrond (rustige stofwolk)
+  try {
+    const { deeltjesVeld, VORM } = await import('./deeltjes.js');
+    await deeltjesVeld($('veld'), { stof: { geo: VORM.stof(), breedte: 22 } }, () => ({ van: 'stof', naar: 'stof', mix: 0, x: 0, y: 0, alpha: 0.55 }));
+  } catch { }
+</script>
 </body>
 </html>
