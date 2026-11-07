@@ -185,7 +185,13 @@
         bron.onmessage = m => { let e; try { e = JSON.parse(m.data); } catch { return; } verwerk(e); };
         bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
     }
-    verbind();
+    // demo (?demo): elke 4 seconden een nieuwe naam, los van de server (?stijl= en ?plek= werken ook)
+    if (zoek.has('demo')) {
+        if (!zoek.has('kaal')) document.body.classList.add('voorbeeld');
+        const lijst = [['follower', 'BlokkenBouwer', {}], ['subscriber', 'CreeperKiller', { tier: 1 }], ['cheer', 'DiamondDave', { bits: 1000 }], ['donatie', 'Supporter', { bedrag: 5, valuta: 'EUR' }], ['gift', 'GulleGamer', { aantal: 10 }]];
+        let n = 0;
+        setInterval(() => { const [s, naam, x] = lijst[n++ % lijst.length]; window.testStat(s, naam, x); }, 4000);
+    } else verbind();
     window.testStat = (soort, naam, extra = {}) => { const k = SLEUTEL[soort]; stand[k] = { naam, badge: badgeVoor({ soort, ...extra }) }; nieuwe(k); };
     document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
 </script>

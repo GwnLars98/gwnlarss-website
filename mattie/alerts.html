@@ -378,7 +378,23 @@
         bron.onmessage = m => { try { verwerk(JSON.parse(m.data)); } catch { /* onleesbaar bericht */ } };
         bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
     }
-    verbind();
+    // demo (?demo): alle soorten alerts achter elkaar, wisselend door de drie stijlen (of alleen ?stijl=...),
+    // los van de server. Met een achtergrond in de browser; ?demo&kaal is doorzichtig (voor OBS).
+    const DEMO = zoek.has('demo');
+    if (DEMO) {
+        if (!zoek.has('kaal')) document.body.classList.add('voorbeeld');
+        const lijst = [
+            { soort: 'follower', naam: 'BlokkenBouwer' }, { soort: 'subscriber', naam: 'CreeperKiller', extra: { tier: 1 } },
+            { soort: 'cheer', naam: 'DiamondDave', extra: { bits: 1000, bericht: 'Een stack diamonds voor Mattie!' } }, { soort: 'gift', naam: 'GulleGamer', extra: { aantal: 10, tier: 1 } },
+            { soort: 'resub', naam: 'TrouweKijker', extra: { maanden: 12, bericht: 'Al een jaar fan!' } }, { soort: 'raid', naam: 'GwnLarss', extra: { kijkers: 42 } },
+            { soort: 'donatie', naam: 'Supporter', extra: { bedrag: 5, valuta: 'EUR', bericht: 'Voor de stream!' } },
+        ];
+        const STIJLEN = zoek.get('stijl') ? [zoek.get('stijl')] : ['logo', 'blokken', 'veeg'];
+        let n = 0;
+        const volgendeDemo = () => { instellingen.stijl = STIJLEN[n % STIJLEN.length]; wachtrij.push({ id: n, ...lijst[n % lijst.length], extra: { ...lijst[n % lijst.length].extra, test: true } }); n++; volgende(); };
+        const lus = () => { if (!bezig && !wachtrij.length) volgendeDemo(); setTimeout(lus, 1500); };
+        setTimeout(lus, 1200);
+    } else verbind();
     // voor screenshots en lokaal testen: window.testAlert({ soort, naam, extra }, stijl)
     window.testAlert = (e, stijl) => { if (stijl) instellingen.stijl = stijl; wachtrij.push(e); volgende(); };
     document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
