@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Stream stats · MattieAM</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chewy&family=Rubik:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+    /* Stream stats voor Mattie (MattieAM) als OBS-browserbron (1920x1080, transparant). Laatste volger, sub
+       (ook gifted), donatie en bits, live mee met zijn alerts. Plat, in zijn huisstijl (geel, rood-zwart, witte ring).
+       Drie stijlen, gekozen op gwnlarss.nl/mattie (zelfde OBS-link, plek en grootte worden daar ook opgeslagen):
+       - bord: rood-zwart bord met zijn logo erop en vier regels
+       - tapes: vier gele tapes onder elkaar, een beetje scheef geplakt
+       - rondje: alleen zijn ronde logo met één tape ernaast die steeds naar de volgende stat schuift
+       ?voorbeeld toont een achtergrond erachter, ?stijl= overschrijft de stijl (voor de instelpagina). */
+    :root { --geel: #ffe600; --rood: #e00000; --donker: #5a0000; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Rubik', system-ui, sans-serif; color: #fff; }
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; }
+    body.voorbeeld #podium { background: linear-gradient(180deg, #7fb6e8 0%, #a9d2f2 52%, #5d9a3c 52%, #4a7d2f 70%, #6b4a2b 70%, #553a22 100%); }
+    .stijl { display: none; position: absolute; }
+    body[data-stijl="bord"] #bord, body[data-stijl="tapes"] #tapes, body[data-stijl="rondje"] #rondje { display: block; }
+    #bord, #tapes, #rondje { --rand: 40px; transform: scale(var(--schaal, 1)); }
+    body[data-plek="lb"] .stijl { left: var(--rand); top: var(--rand); transform-origin: 0 0; }
+    body[data-plek="rb"] .stijl { right: var(--rand); top: var(--rand); transform-origin: 100% 0; }
+    body[data-plek="lo"] .stijl { left: var(--rand); bottom: var(--rand); transform-origin: 0 100%; }
+    body[data-plek="ro"] .stijl { right: var(--rand); bottom: var(--rand); transform-origin: 100% 100%; }
+    .foto { background: center / cover; border-radius: 50%; }
+    .badge { font-size: 0.6em; font-weight: 900; color: #000; background: var(--geel); padding: 1px 8px; border-radius: 6px; margin-left: 8px; vertical-align: 0.2em; white-space: nowrap; }
+    .badge:empty { display: none; }
+    .live { display: none; font-weight: 900; font-size: 14px; letter-spacing: 0.1em; padding: 3px 9px 2px; border-radius: 6px; background: var(--rood); color: #fff; box-shadow: 0 0 0 3px #000; }
+    body.live .live { display: inline-block; }
+
+    /* ---------- bord ---------- */
+    #bord { width: 380px; padding-top: 44px; }
+    #bord .rond { position: absolute; left: 22px; top: 0; width: 88px; height: 88px; box-shadow: 0 0 0 6px #fff, 6px 6px 0 6px #000; z-index: 2; }
+    body[data-plek^="r"] #bord .rond { left: auto; right: 22px; }
+    #bord .live { position: absolute; left: 124px; top: 52px; z-index: 2; }
+    body[data-plek^="r"] #bord .live { left: auto; right: 124px; }
+    #bord .vlak { border-radius: 22px; padding: 58px 22px 14px; background: linear-gradient(125deg, #000 0%, #2a0000 35%, var(--donker) 65%, var(--rood) 100%); box-shadow: 0 0 0 5px #000, 10px 10px 0 5px #000; }
+    .regel { padding: 8px 0; border-top: 3px dashed rgba(255, 255, 255, 0.18); }
+    .regel:first-child { border-top: 0; }
+    .regel .label { font-weight: 900; font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--geel); }
+    .regel .naam { font-family: 'Chewy', sans-serif; font-size: 30px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .regel.leeg .naam { color: rgba(255, 255, 255, 0.4); font-size: 24px; }
+    .regel.nieuw { animation: tik 0.6s steps(3); }
+    .regel.nieuw .naam { color: var(--geel); }
+    @keyframes tik { 0% { transform: translateX(-26px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+    body[data-plek^="r"] .regel { text-align: right; }
+
+    /* ---------- tapes ---------- */
+    #tapes { width: 460px; }
+    .tapeRij { display: flex; align-items: baseline; gap: 12px; padding: 9px 18px 7px; margin-top: 12px; background: var(--geel); color: #000; box-shadow: 0 0 0 4px #000, 7px 7px 0 4px #000; }
+    .tapeRij:nth-child(odd) { transform: rotate(-1.6deg); }
+    .tapeRij:nth-child(even) { transform: rotate(1.2deg); margin-left: 16px; margin-right: -16px; }
+    body[data-plek^="r"] .tapeRij { flex-direction: row-reverse; }
+    .tapeRij .label { font-weight: 900; font-size: 15px; letter-spacing: 0.1em; text-transform: uppercase; background: #000; color: var(--geel); padding: 3px 8px 2px; flex-shrink: 0; }
+    .tapeRij .naam { font-family: 'Chewy', sans-serif; font-size: 30px; line-height: 1.1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tapeRij .badge { background: #000; color: var(--geel); }
+    .tapeRij.leeg .naam { color: rgba(0, 0, 0, 0.4); font-size: 24px; }
+    .tapeRij.nieuw { background: var(--rood); color: #fff; animation: plak 0.45s cubic-bezier(.3, 1.4, .5, 1); }
+    .tapeRij.nieuw .badge { background: var(--geel); color: #000; }
+    @keyframes plak { 0% { transform: scale(1.3) rotate(-6deg); opacity: 0; } }
+    #tapes .kop { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+    body[data-plek^="r"] #tapes .kop { flex-direction: row-reverse; }
+    #tapes .kop .foto { width: 58px; height: 58px; box-shadow: 0 0 0 5px #fff, 5px 5px 0 5px #000; }
+
+    /* ---------- rondje ---------- */
+    #rondje { height: 150px; width: 640px; }
+    #rondje .rond { position: absolute; top: 0; left: 0; width: 150px; height: 150px; box-shadow: 0 0 0 8px #fff, 9px 9px 0 8px #000; z-index: 2; }
+    body[data-plek^="r"] #rondje .rond { left: auto; right: 0; }
+    #rondje .live { position: absolute; left: 40px; bottom: -14px; z-index: 3; }
+    body[data-plek^="r"] #rondje .live { left: auto; right: 40px; }
+    .schuif { position: absolute; left: 120px; top: 34px; width: 500px; height: 82px; overflow: hidden; }
+    body[data-plek^="r"] .schuif { left: auto; right: 120px; }
+    .schuifTape { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 22px 0 52px; background: var(--geel); color: #000; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18); }
+    body[data-plek^="r"] .schuifTape { padding: 0 52px 0 22px; text-align: right; }
+    .schuifTape .label { font-weight: 900; font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rood); }
+    .schuifTape .naam { font-family: 'Chewy', sans-serif; font-size: 38px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .schuifTape .badge { background: #000; color: var(--geel); }
+    .schuifTape.in { animation: inSchuif 0.45s cubic-bezier(.3, 1.2, .5, 1) both; }
+    .schuifTape.uit { animation: uitSchuif 0.35s ease-in both; }
+    @keyframes inSchuif { from { transform: translateX(-102%); } }
+    @keyframes uitSchuif { to { transform: translateX(102%); } }
+    body[data-plek^="r"] .schuifTape.in { animation-name: inSchuifR; }
+    body[data-plek^="r"] .schuifTape.uit { animation-name: uitSchuifR; }
+    @keyframes inSchuifR { from { transform: translateX(102%); } }
+    @keyframes uitSchuifR { to { transform: translateX(-102%); } }
+    .schuifTape.nieuw { background: var(--rood); color: #fff; }
+    .schuifTape.nieuw .label { color: var(--geel); }
+    .schuifTape.nieuw .badge { background: var(--geel); color: #000; }
+    #rondje .rand { position: absolute; left: 120px; top: 30px; width: 500px; height: 90px; box-shadow: 0 0 0 4px #000, 8px 8px 0 4px #000; pointer-events: none; }
+    body[data-plek^="r"] #rondje .rand { left: auto; right: 120px; }
+</style>
+</head>
+<body data-stijl="bord" data-plek="lo">
+<div id="podium">
+    <div class="stijl" id="bord"><div class="rond foto"></div><span class="live">LIVE</span><div class="vlak" id="bordLijst"></div></div>
+    <div class="stijl" id="tapes"><div class="kop"><div class="foto"></div><span class="live">LIVE</span></div><div id="tapeLijst"></div></div>
+    <div class="stijl" id="rondje"><div class="rand"></div><div class="schuif" id="schuif"></div><div class="rond foto"></div><span class="live">LIVE</span></div>
+</div>
+<script>
+    const LOGIN = 'mattieam';
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
+    const AVATAR = 'https://static-cdn.jtvnw.net/jtv_user_pictures/467a9a6c-4c34-4ddd-b297-ea26fb71d04d-profile_image-300x300.png';
+    const zoek = new URLSearchParams(location.search);
+    if (zoek.has('voorbeeld')) document.body.classList.add('voorbeeld');
+    const $ = id => document.getElementById(id);
+    document.querySelectorAll('.foto').forEach(f => { f.style.backgroundImage = `url('${AVATAR}')`; });
+    const getal = n => Number(n ?? 0).toLocaleString('nl-NL');
+    const geld = (b, v) => { try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: v || 'EUR' }).format(b ?? 0); } catch { return `${b} ${v ?? ''}`; } };
+    const veilig = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+    function pasPodiumAan() {
+        const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+        $('podium').style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pasPodiumAan); pasPodiumAan();
+
+    // altijd dezelfde vier stats; gifted subs tellen als "laatste sub" (met ×aantal)
+    const STATS = [['volger', 'Laatste volger'], ['sub', 'Laatste sub'], ['donatie', 'Laatste donatie'], ['bits', 'Laatste bits']];
+    const stand = Object.fromEntries(STATS.map(([k]) => [k, { naam: '', badge: '' }]));
+    const badgeVoor = e => ({ subscriber: (e.tier ?? 1) > 1 ? `Tier ${e.tier}` : '', resub: `${e.maanden ?? 1} mnd`, gift: `×${getal(e.aantal ?? 1)}`, cheer: getal(e.bits), donatie: geld(e.bedrag, e.valuta) })[e.soort] ?? '';
+    const SLEUTEL = { follower: 'volger', subscriber: 'sub', resub: 'sub', gift: 'sub', donatie: 'donatie', cheer: 'bits' };
+    const naamHtml = s => s.naam ? `${veilig(s.naam)}<span class="badge">${veilig(s.badge)}</span>` : 'Nog niemand';
+
+    function tekenLijsten(nieuw) {
+        $('bordLijst').innerHTML = STATS.map(([k, label]) => `<div class="regel ${stand[k].naam ? '' : 'leeg'} ${k === nieuw ? 'nieuw' : ''}"><div class="label">${label}</div><div class="naam">${naamHtml(stand[k])}</div></div>`).join('');
+        $('tapeLijst').innerHTML = STATS.map(([k, label]) => `<div class="tapeRij ${stand[k].naam ? '' : 'leeg'} ${k === nieuw ? 'nieuw' : ''}"><span class="label">${label.replace('Laatste ', '')}</span><span class="naam">${naamHtml(stand[k])}</span></div>`).join('');
+        if (nieuw) setTimeout(() => document.querySelectorAll('.nieuw').forEach(el => { if (!el.classList.contains('schuifTape')) el.classList.remove('nieuw'); }), 5000);
+    }
+    // ---------- rondje: elke 6 seconden schuift de volgende stat erin (lege overslaan, tenzij alles leeg is) ----------
+    let nr = 0, timer = null;
+    function toonRondje(k, nieuw = false) {
+        const label = STATS.find(s => s[0] === k)[1], oud = $('schuif').querySelector('.schuifTape:not(.uit)');
+        if (oud) { oud.classList.remove('in'); oud.classList.add('uit'); setTimeout(() => oud.remove(), 400); }
+        const t = document.createElement('div'); t.className = 'schuifTape in' + (nieuw ? ' nieuw' : '');
+        t.innerHTML = `<div class="label">${nieuw ? label.replace('Laatste', 'Nieuwe') : label}</div><div class="naam">${naamHtml(stand[k])}</div>`;
+        $('schuif').appendChild(t);
+    }
+    function volgende() {
+        const gevuld = STATS.filter(([k]) => stand[k].naam), lijst = gevuld.length ? gevuld : STATS;
+        nr = (nr + 1) % lijst.length; toonRondje(lijst[nr][0]);
+    }
+    const startRondje = () => { clearInterval(timer); timer = setInterval(volgende, 6000); };
+
+    function nieuwe(k) {
+        tekenLijsten(k);
+        nr = STATS.findIndex(s => s[0] === k); toonRondje(k, true); startRondje();
+    }
+    function pasInstellingenToe(i) {
+        document.body.dataset.stijl = zoek.get('stijl') || i?.statsStijl || 'bord';
+        document.body.dataset.plek = zoek.get('plek') || i?.statsPlek || 'lo';
+        document.documentElement.style.setProperty('--schaal', Number(zoek.get('grootte')) || i?.statsGrootte || 1);
+    }
+    function toonStats(s) {
+        const L = s.laatste ?? {};
+        stand.volger = { naam: L.follower?.naam ?? '', badge: '' };
+        const sub = ['subscriber', 'resub', 'gift'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
+        stand.sub = { naam: sub?.naam ?? '', badge: sub ? badgeVoor(sub) : '' };
+        stand.donatie = { naam: L.donatie?.naam ?? '', badge: L.donatie ? badgeVoor({ soort: 'donatie', ...L.donatie }) : '' };
+        stand.bits = { naam: L.cheer?.naam ?? '', badge: L.cheer ? badgeVoor({ soort: 'cheer', ...L.cheer }) : '' };
+        document.body.classList.toggle('live', Boolean(s.live));
+        tekenLijsten();
+        if (!$('schuif').children.length) toonRondje(STATS[nr][0]);
+    }
+    let laatsteInst = {};
+    const haal = () => fetch(API + '/stats', { cache: 'no-store' }).then(r => r.json()).then(s => s && toonStats(s)).catch(() => { });
+    pasInstellingenToe(); tekenLijsten(); toonRondje(STATS[0][0]); startRondje();
+    fetch(API, { cache: 'no-store' }).then(r => r.json()).then(d => { laatsteInst = { ...d?.instellingen, ...laatsteInst }; pasInstellingenToe(laatsteInst); }).catch(() => { });
+    haal(); setInterval(haal, 60000);
+
+    function verwerk(e) {
+        if (e?.soort === '_instellingen') { laatsteInst = { ...laatsteInst, ...e.instellingen }; return pasInstellingenToe(laatsteInst); }
+        const k = SLEUTEL[e?.soort];
+        if (!k) return;   // raids en onbekende soorten staan niet in de stats
+        stand[k] = { naam: e.naam, badge: badgeVoor({ soort: e.soort, ...e.extra }) };
+        nieuwe(k);
+        if (!e.extra?.test) setTimeout(haal, 3000);
+    }
+    if (zoek.has('voorbeeld')) addEventListener('message', m => { if (m.origin === location.origin && m.data?.soort) verwerk(m.data); });
+    function verbind() {
+        const bron = new EventSource(API + '/stream?bron=' + (zoek.has('voorbeeld') ? 'voorbeeld' : 'stats'));
+        bron.onmessage = m => { let e; try { e = JSON.parse(m.data); } catch { return; } verwerk(e); };
+        bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
+    }
+    verbind();
+    window.testStat = (soort, naam, extra = {}) => { const k = SLEUTEL[soort]; stand[k] = { naam, badge: badgeVoor({ soort, ...extra }) }; nieuwe(k); };
+    document.fonts.ready.then(() => { document.body.dataset.klaar = '1'; });
+</script>
+</body>
+</html>
