@@ -264,7 +264,10 @@
         }
         document.body.classList.add('geen-sleutel');
         const d = await fetch(API, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
-        if (d?.instellingen) toon(d);
+        if (d?.instellingen) return toon(d);
+        // server niet bereikbaar of kent het kanaal (nog) niet: zeggen in plaats van op "Laden..." te blijven staan
+        $('koppelStatus').className = 'chip nee';
+        $('koppelStatus').innerHTML = `<i></i>${d ? 'Nog niet beschikbaar, probeer het later opnieuw' : 'Server niet bereikbaar, probeer het later opnieuw'}`;
     }
 
     // Geluid bij een test: de pagina speelt het zelf af (alleen de pagina heeft de klik; het voorbeeldkader mag
