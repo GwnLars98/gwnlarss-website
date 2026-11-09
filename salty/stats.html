@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Stream stats · OnlySaltyGuy</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Rubik:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+    /* Stats-balk voor OnlySaltyGuy als OBS-browserbron (1920x1080, transparant), bovenin het scherm.
+       Volgers, laatste volger, laatste sub (ook gifted) en laatste bits, live mee via api.gwnlarss.nl.
+       Huisstijl uit zijn logo: elektrisch blauw, bijna zwart, wit, met platte zoutblokjes. Geen gloed.
+       ?voorbeeld toont een achtergrond, ?demo laat elke 4 seconden een testnaam binnenkomen,
+       ?plek=links|midden|rechts zet de balk ergens anders bovenin, ?grootte=0.8 maakt hem kleiner. */
+    :root { --blauw: #1f8fff; --lichtblauw: #8fcbff; --zwart: #070b14; --nacht: #0f1626; --wit: #ffffff; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Rubik', system-ui, sans-serif; color: var(--wit); }
+    #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; }
+    body.voorbeeld #podium { background: linear-gradient(180deg, #2b3446 0%, #1b2130 100%); }
+    body.voorbeeld #podium::after { content: 'jouw stream'; position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%); font: 64px 'Lilita One', sans-serif; color: rgba(255, 255, 255, 0.08); }
+
+    #balk { position: absolute; top: 26px; left: 50%; display: flex; align-items: stretch; height: 74px; transform: translateX(-50%) scale(var(--schaal, 1)); transform-origin: 50% 0; }
+    body[data-plek="links"] #balk { left: 40px; transform: scale(var(--schaal, 1)); transform-origin: 0 0; }
+    body[data-plek="rechts"] #balk { left: auto; right: 40px; transform: scale(var(--schaal, 1)); transform-origin: 100% 0; }
+
+    /* logo: rond, half over de balk heen */
+    .logo { position: relative; z-index: 2; width: 92px; height: 92px; margin: -9px -18px 0 0; border-radius: 50%; background: var(--zwart) center/cover; box-shadow: 0 0 0 5px var(--blauw), 0 0 0 9px var(--zwart); }
+    .live { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); display: none; font: 13px/1 'Lilita One', sans-serif; letter-spacing: 0.08em; padding: 4px 8px 3px; border-radius: 6px; background: #e8132b; color: #fff; box-shadow: 0 0 0 3px var(--zwart); }
+    body.is-live .live { display: block; }
+
+    .plaat { position: relative; display: flex; align-items: stretch; background: var(--zwart); border-radius: 0 14px 14px 0; padding-left: 26px; box-shadow: 0 0 0 4px var(--blauw), 6px 7px 0 4px rgba(7, 11, 20, 0.55); overflow: hidden; }
+    .plaat::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: var(--blauw); }
+
+    .vak { position: relative; display: flex; flex-direction: column; justify-content: center; min-width: 150px; max-width: 300px; padding: 0 26px 6px 22px; }
+    .vak + .vak::before { content: ''; position: absolute; left: -6px; top: 14px; bottom: 20px; width: 4px; background: var(--blauw); transform: skewX(-16deg); border-radius: 2px; }
+    .label { font-weight: 800; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--lichtblauw); white-space: nowrap; }
+    .naam { font: 27px/1.1 'Lilita One', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .naam .badge { display: inline-block; margin-left: 8px; padding: 1px 7px 0; border-radius: 6px; background: var(--blauw); font-size: 17px; vertical-align: 3px; }
+    .badge:empty { display: none; }
+    .leeg .naam { color: rgba(255, 255, 255, 0.38); font-size: 21px; }
+    .getal { font: 34px/1 'Lilita One', sans-serif; }
+    #volgers { min-width: 120px; }
+
+    /* nieuw: het vak kleurt blauw en de naam valt erin, er vallen een paar zoutblokjes uit */
+    .vak.nieuw { animation: kleur 4.2s ease-out; }
+    .vak.nieuw .naam { animation: inval 0.55s cubic-bezier(.2, 1.4, .4, 1); }
+    @keyframes kleur { 0%, 70% { background: var(--blauw); } 100% { background: transparent; } }
+    @keyframes inval { 0% { transform: translateY(-40px) rotate(-4deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+    .vak.nieuw .label { animation: labelkleur 4.2s; }
+    @keyframes labelkleur { 0%, 70% { color: var(--wit); } }
+    .zout { position: absolute; width: 9px; height: 9px; background: #fff; border-radius: 2px; box-shadow: 1px 1px 0 rgba(7, 11, 20, 0.5); pointer-events: none; animation: val 1.3s ease-in forwards; z-index: 3; }
+    @keyframes val { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 100% { transform: translate(var(--dx), 90px) rotate(var(--rot)); opacity: 0; } }
+    .tel.bump { animation: bump 0.5s; }
+    @keyframes bump { 40% { transform: scale(1.25); color: var(--lichtblauw); } }
+</style>
+</head>
+<body data-plek="midden">
+<div id="podium">
+    <div id="balk">
+        <div class="logo" id="logo"><span class="live">LIVE</span></div>
+        <div class="plaat" id="plaat">
+            <div class="vak" id="volgers"><div class="label">Volgers</div><div class="getal tel" id="volgTal">0</div></div>
+            <div class="vak" id="v-volger"><div class="label">Laatste volger</div><div class="naam"></div></div>
+            <div class="vak" id="v-sub"><div class="label">Laatste sub</div><div class="naam"></div></div>
+            <div class="vak" id="v-bits"><div class="label">Laatste bits</div><div class="naam"></div></div>
+        </div>
+    </div>
+</div>
+<script>
+    const LOGIN = 'onlysaltyguy';
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/' + LOGIN;
+    const AVATAR = 'https://static-cdn.jtvnw.net/jtv_user_pictures/d756d742-72e0-43c8-a9e4-426dd2b97abb-profile_image-300x300.png';
+    const zoek = new URLSearchParams(location.search);
+    const $ = id => document.getElementById(id);
+    if (zoek.has('voorbeeld') || zoek.has('demo') && !zoek.has('kaal')) document.body.classList.add('voorbeeld');
+    $('logo').style.backgroundImage = `url('${AVATAR}')`;
+    document.body.dataset.plek = ['links', 'midden', 'rechts'].includes(zoek.get('plek')) ? zoek.get('plek') : 'midden';
+    if (Number(zoek.get('grootte')) > 0) document.documentElement.style.setProperty('--schaal', Number(zoek.get('grootte')));
+
+    function pasPodiumAan() {
+        const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+        $('podium').style.transform = `translate(${(innerWidth - 1920 * s) / 2}px, ${(innerHeight - 1080 * s) / 2}px) scale(${s})`;
+    }
+    addEventListener('resize', pasPodiumAan); pasPodiumAan();
+
+    const getal = n => Number(n ?? 0).toLocaleString('nl-NL');
+    const veilig = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    const SLEUTEL = { follower: 'volger', subscriber: 'sub', resub: 'sub', gift: 'sub', cheer: 'bits' };
+    const badgeVoor = e => ({ subscriber: (e.tier ?? 1) > 1 ? `Tier ${e.tier}` : '', resub: `${e.maanden ?? 1} mnd`, gift: `×${getal(e.aantal ?? 1)}`, cheer: getal(e.bits) })[e.soort] ?? '';
+    const stand = { volger: { naam: '', badge: '' }, sub: { naam: '', badge: '' }, bits: { naam: '', badge: '' } };
+    let volgers = 0;
+
+    function teken(k) {
+        const vak = $('v-' + k), s = stand[k];
+        vak.classList.toggle('leeg', !s.naam);
+        vak.querySelector('.naam').innerHTML = s.naam ? `${veilig(s.naam)}<span class="badge">${veilig(s.badge)}</span>` : 'Nog niemand';
+    }
+    function tekenAlles() { Object.keys(stand).forEach(teken); $('volgTal').textContent = getal(volgers); }
+
+    function zoutRegen(vak) {
+        const r = vak.getBoundingClientRect(), p = $('plaat').getBoundingClientRect(), s = r.width / vak.offsetWidth || 1;
+        for (let i = 0; i < 9; i++) {
+            const z = document.createElement('div'); z.className = 'zout';
+            z.style.left = ((r.left - p.left) / s + 20 + Math.random() * (vak.offsetWidth - 40)) + 'px';
+            z.style.top = (6 + Math.random() * 14) + 'px';
+            z.style.setProperty('--dx', (Math.random() * 40 - 20) + 'px');
+            z.style.setProperty('--rot', (Math.random() * 300 - 150) + 'deg');
+            z.style.animationDelay = (Math.random() * 0.25) + 's';
+            $('plaat').appendChild(z); setTimeout(() => z.remove(), 1800);
+        }
+    }
+    function nieuw(k) {
+        teken(k);
+        const vak = $('v-' + k);
+        vak.classList.remove('nieuw'); void vak.offsetWidth; vak.classList.add('nieuw');
+        zoutRegen(vak);
+        if (k === 'volger') { volgers++; $('volgTal').textContent = getal(volgers); const t = $('volgTal'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); }
+    }
+
+    function toonStats(s) {
+        const L = s.laatste ?? {};
+        stand.volger = { naam: L.follower?.naam ?? '', badge: '' };
+        const sub = ['subscriber', 'resub', 'gift'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
+        stand.sub = { naam: sub?.naam ?? '', badge: sub ? badgeVoor(sub) : '' };
+        stand.bits = { naam: L.cheer?.naam ?? '', badge: L.cheer ? badgeVoor({ soort: 'cheer', ...L.cheer }) : '' };
+        if (s.totaal?.volgers != null) volgers = s.totaal.volgers;
+        document.body.classList.toggle('is-live', Boolean(s.live));
+        tekenAlles();
+    }
+    const haal = () => fetch(API + '/stats', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(s => s && !zoek.has('demo') && toonStats(s)).catch(() => { });
+    tekenAlles(); haal(); setInterval(haal, 60000);
+
+    function verwerk(e) {
+        const k = SLEUTEL[e?.soort];
+        if (!k) return;   // raids, donaties en instellingen staan niet in deze balk
+        stand[k] = { naam: e.naam, badge: badgeVoor({ soort: e.soort, ...e.extra }) };
+        nieuw(k);
+        if (!e.extra?.test) setTimeout(haal, 3000);
+    }
+    function verbind() {
+        const bron = new EventSource(API + '/stream?bron=' + (zoek.has('voorbeeld') ? 'voorbeeld' : 'stats'));
+        bron.addEventListener('message', m => { if (m.data.includes('"_herlaad"')) location.reload(); });   // op afstand herladen vanaf api.gwnlarss.nl/status
+        bron.onmessage = m => { let e; try { e = JSON.parse(m.data); } catch { return; } verwerk(e); };
+        bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
+    }
+    window.testStat = (soort, naam, extra = {}) => verwerk({ soort, naam, extra: { ...extra, test: true } });
+    if (zoek.has('demo')) {
+        volgers = 81; tekenAlles();
+        const lijst = [['follower', 'ZoutVaatje', {}], ['subscriber', 'PeperBoy', { tier: 1 }], ['cheer', 'ChipsKoning', { bits: 500 }], ['gift', 'GulleGamer', { aantal: 5 }], ['resub', 'TrouweKijker', { maanden: 6 }]];
+        let n = 0;
+        setInterval(() => { const [s, naam, x] = lijst[n++ % lijst.length]; window.testStat(s, naam, x); }, 4000);
+    } else verbind();
+    if (zoek.has('voorbeeld')) addEventListener('message', m => { if (m.origin === location.origin && m.data?.soort) verwerk(m.data); });
+</script>
+</body>
+</html>

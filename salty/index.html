@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stats-balk · OnlySaltyGuy</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+    /* Instelpagina voor de stats-balk van OnlySaltyGuy: koppelen met Twitch, OBS-link kopiëren, live voorbeeld. */
+    :root { --blauw: #1f8fff; --lichtblauw: #8fcbff; --zwart: #070b14; --nacht: #0f1626; --kaart: #141d31; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--nacht); color: #fff; font-family: 'Rubik', system-ui, sans-serif; }
+    main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 60px; }
+    header { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; }
+    header img { width: 84px; height: 84px; border-radius: 50%; box-shadow: 0 0 0 4px var(--blauw), 0 0 0 8px var(--zwart); }
+    h1 { margin: 0; font: 40px/1.05 'Lilita One', sans-serif; }
+    h1 span { color: var(--blauw); }
+    header p { margin: 4px 0 0; color: var(--lichtblauw); }
+    .voorbeeld { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 4px var(--blauw); background: #000; }
+    .voorbeeld iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .stappen { display: grid; gap: 16px; margin-top: 26px; }
+    .stap { background: var(--kaart); border-radius: 14px; padding: 20px 22px; border-left: 6px solid var(--blauw); }
+    .stap h2 { margin: 0 0 8px; font: 24px 'Lilita One', sans-serif; }
+    .stap h2 b { display: inline-grid; place-items: center; width: 34px; height: 34px; margin-right: 10px; border-radius: 50%; background: var(--blauw); font-size: 18px; vertical-align: 2px; }
+    .stap p { margin: 0 0 12px; color: #cdd8ea; line-height: 1.5; }
+    .knop { display: inline-block; border: 0; border-radius: 10px; padding: 11px 18px; font: 700 16px 'Rubik', sans-serif; text-decoration: none; cursor: pointer; background: var(--blauw); color: #fff; }
+    .knop.twitch { background: #9146ff; }
+    .knop:hover { filter: brightness(1.1); }
+    .rij { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    code { display: block; flex: 1 1 320px; min-width: 0; padding: 11px 14px; border-radius: 10px; background: var(--zwart); color: var(--lichtblauw); font-size: 15px; overflow-wrap: anywhere; }
+    .status { margin-top: 10px; font-weight: 700; }
+    .ok { color: #57e38a; } .nee { color: #ff8a8a; }
+    select { padding: 9px 12px; border-radius: 10px; border: 0; background: var(--zwart); color: #fff; font: 600 15px 'Rubik', sans-serif; }
+    .klein { font-size: 14px; color: #9fb0cc; }
+</style>
+</head>
+<body>
+<main>
+    <header>
+        <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/d756d742-72e0-43c8-a9e4-426dd2b97abb-profile_image-300x300.png" alt="OnlySaltyGuy">
+        <div><h1>Stats-balk voor <span>OnlySaltyGuy</span></h1><p>Volgers, laatste volger, sub en bits, live bovenin je stream.</p></div>
+    </header>
+
+    <div class="voorbeeld"><iframe id="voorbeeld" title="Voorbeeld" src="stats.html?demo"></iframe></div>
+
+    <div class="stappen">
+        <section class="stap">
+            <h2><b>1</b>Koppel met Twitch</h2>
+            <p>Log één keer in met je eigen Twitch-account (onlysaltyguy). Dan komen nieuwe volgers, subs en bits vanzelf binnen.</p>
+            <a class="knop twitch" href="https://api.gwnlarss.nl/api/streamer-alerts/verbind">Koppel met Twitch</a>
+            <div class="status" id="status">Status ophalen…</div>
+        </section>
+        <section class="stap">
+            <h2><b>2</b>Zet hem in OBS</h2>
+            <p>Voeg een <b>Browserbron</b> toe met deze link, breedte <b>1920</b> en hoogte <b>1080</b>, en zet hem bovenop je scènes. De balk staat zelf al bovenin.</p>
+            <div class="rij">
+                <label>Plek <select id="plek"><option value="midden">midden</option><option value="links">links</option><option value="rechts">rechts</option></select></label>
+                <label>Grootte <select id="grootte"><option value="1">100%</option><option value="0.9">90%</option><option value="0.8">80%</option><option value="0.7">70%</option></select></label>
+            </div>
+            <div class="rij" style="margin-top:12px"><code id="link"></code><button class="knop" id="kopieer">Kopieer</button></div>
+            <p class="klein" style="margin-top:10px">Wil je hem testen? Zet <b>?demo</b> achter de link, dan komen er elke paar seconden testnamen langs.</p>
+        </section>
+    </div>
+</main>
+<script>
+    const $ = id => document.getElementById(id);
+    const BASIS = 'https://gwnlarss.nl/salty/stats.html';
+    function link() {
+        const p = new URLSearchParams();
+        if ($('plek').value !== 'midden') p.set('plek', $('plek').value);
+        if ($('grootte').value !== '1') p.set('grootte', $('grootte').value);
+        const q = p.toString();
+        $('link').textContent = BASIS + (q ? '?' + q : '');
+        $('voorbeeld').src = 'stats.html?demo' + (q ? '&' + q : '');
+    }
+    $('plek').onchange = $('grootte').onchange = link; link();
+    $('kopieer').onclick = async () => { try { await navigator.clipboard.writeText($('link').textContent); $('kopieer').textContent = 'Gekopieerd!'; } catch { $('kopieer').textContent = 'Selecteer en kopieer zelf'; } setTimeout(() => $('kopieer').textContent = 'Kopieer', 2000); };
+    // na het koppelen komt hij hier terug met #sleutel=...; die is voor deze balk niet nodig, dus haal hem uit de adresbalk
+    if (location.hash.includes('sleutel=')) history.replaceState(null, '', location.pathname + location.search);
+    fetch('https://api.gwnlarss.nl/api/streamer-alerts/onlysaltyguy', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+        $('status').innerHTML = d?.gekoppeld ? '<span class="ok">✅ Gekoppeld, de balk krijgt live je volgers, subs en bits.</span>' : '<span class="nee">Nog niet gekoppeld.</span>';
+    }).catch(() => { $('status').textContent = 'Kon de status niet ophalen.'; });
+</script>
+</body>
+</html>
