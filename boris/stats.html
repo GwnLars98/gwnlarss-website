@@ -134,6 +134,7 @@
     // live mee met de alerts (ook testalerts: die laten we even zien, de server bewaart ze niet)
     function verbind() {
         const bron = new EventSource(API + '/stream?bron=' + (zoek.has('voorbeeld') ? 'voorbeeld' : 'stats'));   // bron: voor de status op api.gwnlarss.nl
+        bron.addEventListener('message', m => { if (m.data.includes('"_herlaad"')) location.reload(); });   // op afstand herladen vanaf api.gwnlarss.nl/status
         bron.onmessage = m => {
             let e; try { e = JSON.parse(m.data); } catch { return; }
             const id = TEGEL[e?.soort];

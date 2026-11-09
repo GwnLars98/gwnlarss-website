@@ -523,6 +523,7 @@
     if (VOORBEELD) addEventListener('message', m => { if (m.origin === location.origin && m.data?.soort) verwerk(m.data); });
     function verbind() {
         const bron = new EventSource(API + '/stream?bron=' + (VOORBEELD ? 'voorbeeld' : 'alerts'));   // bron: voor de status op api.gwnlarss.nl
+        bron.addEventListener('message', m => { if (m.data.includes('"_herlaad"')) location.reload(); });   // op afstand herladen vanaf api.gwnlarss.nl/status
         bron.onmessage = m => { try { verwerk(JSON.parse(m.data)); } catch { /* onleesbaar bericht */ } };
         bron.onerror = () => { bron.close(); setTimeout(verbind, 3000); };
     }

@@ -458,6 +458,7 @@
     if (!isDemo) {
         (function verbind() {
             const bron = new EventSource(API + '/stream?bron=stats');
+            bron.addEventListener('message', m => { if (m.data.includes('"_herlaad"')) location.reload(); });   // op afstand herladen vanaf api.gwnlarss.nl/status
             bron.onmessage = m => { try { opAlert(JSON.parse(m.data)); } catch { } };
             bron.onerror = () => { bron.close(); setTimeout(verbind, 5000); };
         })();

@@ -282,6 +282,7 @@
     haalInstellingen();
     function verbind() {
         const bron = new EventSource(API + '/stream?bron=' + (VOORBEELD ? 'voorbeeld' : 'alerts'));
+        bron.addEventListener('message', m => { if (m.data.includes('"_herlaad"')) location.reload(); });   // op afstand herladen vanaf api.gwnlarss.nl/status
         bron.onmessage = m => {
             try {
                 const d = JSON.parse(m.data);
