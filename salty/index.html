@@ -41,7 +41,7 @@
 <main>
     <header>
         <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/d756d742-72e0-43c8-a9e4-426dd2b97abb-profile_image-300x300.png" alt="OnlySaltyGuy">
-        <div><h1>Stats-balk voor <span>OnlySaltyGuy</span></h1><p>Volgers, laatste volger, sub en bits, live bovenin je stream.</p></div>
+        <div><h1>Stats-balk voor <span>OnlySaltyGuy</span></h1><p>Volgers, laatste volger, sub, donatie en bits, live bovenin je stream.</p></div>
     </header>
 
     <div class="voorbeeld"><iframe id="voorbeeld" title="Voorbeeld" src="stats.html?demo"></iframe></div>
@@ -63,6 +63,13 @@
             <div class="rij" style="margin-top:12px"><code id="link"></code><button class="knop" id="kopieer">Kopieer</button></div>
             <p class="klein" style="margin-top:10px">Wil je hem testen? Zet <b>?demo</b> achter de link, dan komen er elke paar seconden testnamen langs.</p>
         </section>
+        <section class="stap">
+            <h2><b>3</b>Donaties (StreamElements)</h2>
+            <p>Krijg je donaties via StreamElements? Plak dan hier je <b>JWT-token</b>. Je vindt hem op <b>streamelements.com</b>, dan rechtsboven je profiel, <b>Account</b>, tabblad <b>Channels</b>, en daar <b>Show secrets</b>. Leeg laten en opslaan zet donaties weer uit.</p>
+            <div class="rij"><input id="seJwt" type="password" placeholder="JWT-token" autocomplete="off" style="flex:1 1 320px;min-width:0;padding:11px 14px;border-radius:10px;border:0;background:var(--zwart);color:#fff;font:15px 'Rubik',sans-serif"><button class="knop" id="seOpslaan">Opslaan</button></div>
+            <div class="status" id="seStatus"></div>
+            <p class="klein" id="seSlot" style="margin-top:8px">Koppel eerst met Twitch (stap 1), daarna kun je dit opslaan.</p>
+        </section>
     </div>
 </main>
 <script>
@@ -78,11 +85,28 @@
     }
     $('plek').onchange = $('grootte').onchange = link; link();
     $('kopieer').onclick = async () => { try { await navigator.clipboard.writeText($('link').textContent); $('kopieer').textContent = 'Gekopieerd!'; } catch { $('kopieer').textContent = 'Selecteer en kopieer zelf'; } setTimeout(() => $('kopieer').textContent = 'Kopieer', 2000); };
-    // na het koppelen komt hij hier terug met #sleutel=...; die is voor deze balk niet nodig, dus haal hem uit de adresbalk
-    if (location.hash.includes('sleutel=')) history.replaceState(null, '', location.pathname + location.search);
-    fetch('https://api.gwnlarss.nl/api/streamer-alerts/onlysaltyguy', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
-        $('status').innerHTML = d?.gekoppeld ? '<span class="ok">✅ Gekoppeld, de balk krijgt live je volgers, subs en bits.</span>' : '<span class="nee">Nog niet gekoppeld.</span>';
-    }).catch(() => { $('status').textContent = 'Kon de status niet ophalen.'; });
+    // na het koppelen komt hij hier terug met #sleutel=...: bewaar die in deze browser, dan kan hij donaties instellen
+    const API = 'https://api.gwnlarss.nl/api/streamer-alerts/onlysaltyguy', OPSLAG = 'salty-sleutel';
+    const hash = new URLSearchParams(location.hash.slice(1));
+    if (hash.get('sleutel')) { try { localStorage.setItem(OPSLAG, hash.get('sleutel')); } catch {} history.replaceState(null, '', location.pathname + location.search); }
+    const sleutel = (() => { try { return localStorage.getItem(OPSLAG); } catch { return null; } })();
+    $('seSlot').style.display = sleutel ? 'none' : '';
+    const SE = { uit: '<span class="nee">Donaties staan uit.</span>', ok: '<span class="ok">✅ StreamElements verbonden, donaties komen binnen.</span>', fout: '<span class="nee">❌ StreamElements weigert dit token, controleer het nog eens.</span>', bezig: 'Verbinden met StreamElements…' };
+    function laad() {
+        fetch(API, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+            $('status').innerHTML = d?.gekoppeld ? '<span class="ok">✅ Gekoppeld, de balk krijgt live je volgers, subs en bits.</span>' : '<span class="nee">Nog niet gekoppeld.</span>';
+            $('seStatus').innerHTML = SE[d?.streamElements] ?? '';
+        }).catch(() => { $('status').textContent = 'Kon de status niet ophalen.'; });
+    }
+    laad();
+    $('seOpslaan').onclick = async () => {
+        if (!sleutel) { $('seStatus').innerHTML = '<span class="nee">Koppel eerst met Twitch (stap 1).</span>'; return; }
+        $('seOpslaan').disabled = true;
+        const d = await fetch(API + '/instellingen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sleutel, seJwt: $('seJwt').value }) }).then(r => r.json()).catch(() => null);
+        $('seOpslaan').disabled = false; $('seJwt').value = '';
+        $('seStatus').innerHTML = d?.ok ? 'Opgeslagen, verbinden…' : '<span class="nee">❌ Opslaan mislukt.</span>';
+        setTimeout(laad, 3000);
+    };
 </script>
 </body>
 </html>

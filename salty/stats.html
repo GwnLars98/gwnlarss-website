@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Rubik:wght@600;800;900&display=swap" rel="stylesheet">
 <style>
     /* Stats-balk voor OnlySaltyGuy als OBS-browserbron (1920x1080, transparant), bovenin het scherm.
-       Volgers, laatste volger, laatste sub (ook gifted) en laatste bits, live mee via api.gwnlarss.nl.
+       Volgers, laatste volger, laatste sub (ook gifted), laatste donatie (StreamElements) en laatste bits, live mee via api.gwnlarss.nl.
        Huisstijl uit zijn logo: elektrisch blauw, bijna zwart, wit, met platte zoutblokjes. Geen gloed.
        ?voorbeeld toont een achtergrond, ?demo laat elke 4 seconden een testnaam binnenkomen,
        ?plek=links|midden|rechts zet de balk ergens anders bovenin, ?grootte=0.8 maakt hem kleiner. */
@@ -62,6 +62,7 @@
             <div class="vak" id="volgers"><div class="label">Volgers</div><div class="getal tel" id="volgTal">0</div></div>
             <div class="vak" id="v-volger"><div class="label">Laatste volger</div><div class="naam"></div></div>
             <div class="vak" id="v-sub"><div class="label">Laatste sub</div><div class="naam"></div></div>
+            <div class="vak" id="v-donatie"><div class="label">Laatste donatie</div><div class="naam"></div></div>
             <div class="vak" id="v-bits"><div class="label">Laatste bits</div><div class="naam"></div></div>
         </div>
     </div>
@@ -85,9 +86,10 @@
 
     const getal = n => Number(n ?? 0).toLocaleString('nl-NL');
     const veilig = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-    const SLEUTEL = { follower: 'volger', subscriber: 'sub', resub: 'sub', gift: 'sub', cheer: 'bits' };
-    const badgeVoor = e => ({ subscriber: (e.tier ?? 1) > 1 ? `Tier ${e.tier}` : '', resub: `${e.maanden ?? 1} mnd`, gift: `×${getal(e.aantal ?? 1)}`, cheer: getal(e.bits) })[e.soort] ?? '';
-    const stand = { volger: { naam: '', badge: '' }, sub: { naam: '', badge: '' }, bits: { naam: '', badge: '' } };
+    const SLEUTEL = { follower: 'volger', subscriber: 'sub', resub: 'sub', gift: 'sub', donatie: 'donatie', cheer: 'bits' };
+    const geld = (b, v) => { try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: v || 'EUR' }).format(b ?? 0); } catch { return `${b} ${v ?? ''}`; } };
+    const badgeVoor = e => ({ subscriber: (e.tier ?? 1) > 1 ? `Tier ${e.tier}` : '', resub: `${e.maanden ?? 1} mnd`, gift: `×${getal(e.aantal ?? 1)}`, cheer: getal(e.bits), donatie: geld(e.bedrag, e.valuta) })[e.soort] ?? '';
+    const stand = { volger: { naam: '', badge: '' }, sub: { naam: '', badge: '' }, donatie: { naam: '', badge: '' }, bits: { naam: '', badge: '' } };
     let volgers = 0;
 
     function teken(k) {
@@ -122,6 +124,7 @@
         stand.volger = { naam: L.follower?.naam ?? '', badge: '' };
         const sub = ['subscriber', 'resub', 'gift'].map(k => L[k] && { soort: k, ...L[k] }).filter(Boolean).sort((a, b) => b.op - a.op)[0];
         stand.sub = { naam: sub?.naam ?? '', badge: sub ? badgeVoor(sub) : '' };
+        stand.donatie = { naam: L.donatie?.naam ?? '', badge: L.donatie ? badgeVoor({ soort: 'donatie', ...L.donatie }) : '' };
         stand.bits = { naam: L.cheer?.naam ?? '', badge: L.cheer ? badgeVoor({ soort: 'cheer', ...L.cheer }) : '' };
         if (s.totaal?.volgers != null) volgers = s.totaal.volgers;
         document.body.classList.toggle('is-live', Boolean(s.live));
@@ -132,7 +135,7 @@
 
     function verwerk(e) {
         const k = SLEUTEL[e?.soort];
-        if (!k) return;   // raids, donaties en instellingen staan niet in deze balk
+        if (!k) return;   // raids en instellingen staan niet in deze balk
         stand[k] = { naam: e.naam, badge: badgeVoor({ soort: e.soort, ...e.extra }) };
         nieuw(k);
         if (!e.extra?.test) setTimeout(haal, 3000);
@@ -146,7 +149,7 @@
     window.testStat = (soort, naam, extra = {}) => verwerk({ soort, naam, extra: { ...extra, test: true } });
     if (zoek.has('demo')) {
         volgers = 81; tekenAlles();
-        const lijst = [['follower', 'ZoutVaatje', {}], ['subscriber', 'PeperBoy', { tier: 1 }], ['cheer', 'ChipsKoning', { bits: 500 }], ['gift', 'GulleGamer', { aantal: 5 }], ['resub', 'TrouweKijker', { maanden: 6 }]];
+        const lijst = [['follower', 'ZoutVaatje', {}], ['subscriber', 'PeperBoy', { tier: 1 }], ['cheer', 'ChipsKoning', { bits: 500 }], ['donatie', 'Zoutlover', { bedrag: 5, valuta: 'EUR' }], ['gift', 'GulleGamer', { aantal: 5 }], ['resub', 'TrouweKijker', { maanden: 6 }]];
         let n = 0;
         setInterval(() => { const [s, naam, x] = lijst[n++ % lijst.length]; window.testStat(s, naam, x); }, 4000);
     } else verbind();
