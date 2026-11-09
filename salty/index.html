@@ -58,6 +58,7 @@
             <p>Voeg een <b>Browserbron</b> toe met deze link, breedte <b>1920</b> en hoogte <b>1080</b>, en zet hem bovenop je scènes. De balk staat zelf al bovenin.</p>
             <div class="rij">
                 <label>Plek <select id="plek"><option value="midden">midden</option><option value="links">links</option><option value="rechts">rechts</option></select></label>
+                <label><input type="checkbox" id="donaties" checked> Donaties tonen</label>
                 <label>Grootte <select id="grootte"><option value="1">100%</option><option value="0.9">90%</option><option value="0.8">80%</option><option value="0.7">70%</option></select></label>
             </div>
             <div class="rij" style="margin-top:12px"><code id="link"></code><button class="knop" id="kopieer">Kopieer</button></div>
@@ -79,11 +80,12 @@
         const p = new URLSearchParams();
         if ($('plek').value !== 'midden') p.set('plek', $('plek').value);
         if ($('grootte').value !== '1') p.set('grootte', $('grootte').value);
+        if (!$('donaties').checked) p.set('donaties', 'uit');
         const q = p.toString();
         $('link').textContent = BASIS + (q ? '?' + q : '');
         $('voorbeeld').src = 'stats.html?demo' + (q ? '&' + q : '');
     }
-    $('plek').onchange = $('grootte').onchange = link; link();
+    $('plek').onchange = $('grootte').onchange = $('donaties').onchange = link; link();
     $('kopieer').onclick = async () => { try { await navigator.clipboard.writeText($('link').textContent); $('kopieer').textContent = 'Gekopieerd!'; } catch { $('kopieer').textContent = 'Selecteer en kopieer zelf'; } setTimeout(() => $('kopieer').textContent = 'Kopieer', 2000); };
     // na het koppelen komt hij hier terug met #sleutel=...: bewaar die in deze browser, dan kan hij donaties instellen
     const API = 'https://api.gwnlarss.nl/api/streamer-alerts/onlysaltyguy', OPSLAG = 'salty-sleutel';

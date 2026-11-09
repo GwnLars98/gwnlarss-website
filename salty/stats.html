@@ -12,11 +12,13 @@
        Volgers, laatste volger, laatste sub (ook gifted), laatste donatie (StreamElements) en laatste bits, live mee via api.gwnlarss.nl.
        Huisstijl uit zijn logo: elektrisch blauw, bijna zwart, wit, met platte zoutblokjes. Geen gloed.
        ?voorbeeld toont een achtergrond, ?demo laat elke 4 seconden een testnaam binnenkomen,
-       ?plek=links|midden|rechts zet de balk ergens anders bovenin, ?grootte=0.8 maakt hem kleiner. */
+       ?plek=links|midden|rechts zet de balk ergens anders bovenin, ?grootte=0.8 maakt hem kleiner,
+       ?donaties=uit haalt het donatievak weg. */
     :root { --blauw: #1f8fff; --lichtblauw: #8fcbff; --zwart: #070b14; --nacht: #0f1626; --wit: #ffffff; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Rubik', system-ui, sans-serif; color: var(--wit); }
     #podium { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; }
     body.voorbeeld #podium { background: linear-gradient(180deg, #2b3446 0%, #1b2130 100%); }
+    body.zonder-donaties #v-donatie { display: none; }
     body.voorbeeld #podium::after { content: 'jouw stream'; position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%); font: 64px 'Lilita One', sans-serif; color: rgba(255, 255, 255, 0.08); }
 
     #balk { position: absolute; top: 26px; left: 50%; display: flex; align-items: stretch; height: 74px; transform: translateX(-50%) scale(var(--schaal, 1)); transform-origin: 50% 0; }
@@ -76,6 +78,7 @@
     if (zoek.has('voorbeeld') || zoek.has('demo') && !zoek.has('kaal')) document.body.classList.add('voorbeeld');
     $('logo').style.backgroundImage = `url('${AVATAR}')`;
     document.body.dataset.plek = ['links', 'midden', 'rechts'].includes(zoek.get('plek')) ? zoek.get('plek') : 'midden';
+    if (zoek.get('donaties') === 'uit') document.body.classList.add('zonder-donaties');
     if (Number(zoek.get('grootte')) > 0) document.documentElement.style.setProperty('--schaal', Number(zoek.get('grootte')));
 
     function pasPodiumAan() {
