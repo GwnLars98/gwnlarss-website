@@ -70,7 +70,8 @@
 <script>
     CC.kop('deaths');
     const p = new URLSearchParams(location.search);
-    const staat = { view: p.get('view') || 'tijdlijn', team: p.get('team') || 'alle', zoek: '' };
+    const staat = { view: p.get('view') || 'tijdlijn', team: p.get('team') || 'alle', zoek: p.get('zoek') || '' };
+    document.getElementById('zoek').value = staat.zoek;
     let data = null, crew = null;
     const ouders = [...new Set([location.hostname || 'gwnlarss.nl', 'gwnlarss.nl', 'www.gwnlarss.nl'])].map(h => 'parent=' + encodeURIComponent(h)).join('&');
 

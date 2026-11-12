@@ -35,6 +35,9 @@
     .pil { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px; padding: 1px 6px; }
     .pil.levend { color: #0d2a14; background: var(--groen); } .pil.uit { color: #fff; background: var(--rood); }
     .pil.online { color: #2a1a00; background: var(--goud2); }
+    .doodsoorzaak { font-size: 15px; color: var(--perkament); }
+    .doodsoorzaak a { color: inherit; text-decoration-color: rgba(229, 84, 75, 0.6); }
+    .doodsoorzaak b { color: var(--rood); font-weight: 800; }
     .cijfers { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 14px; color: var(--dim); font-variant-numeric: tabular-nums; }
     .cijfers b { color: var(--tekst); font-weight: 700; }
     .geenteam h2 { font: 400 28px/1 var(--kop); color: var(--perkament2); margin: 18px 0 10px; }
@@ -76,7 +79,7 @@
 <script>
     CC.kop('deelnemers');
     const staat = { filter: new URLSearchParams(location.search).get('filter') || 'alle', sorteer: 'live', zoek: '' };
-    let data = null, crew = null;
+    let data = null, crew = null, deaths = new Map();
 
     const isLive = s => s.kanalen.some(k => k.live);
     function laatste(uuid) {
@@ -110,6 +113,7 @@
               </div>
               <div class="regel">${CC.kanalen(s.kanalen) || 'Nog geen kanaal'}
                 ${crew ? s.kanalen.map(k => `<button class="knop licht klein" data-weg="${s.uuid}" data-platform="${k.platform}">${k.platform === 'twitch' ? 'Twitch' : 'YouTube'} los</button>`).join('') : ''}</div>
+              ${s.status === 'uit' && deaths.has(s.uuid) ? (d => `<div class="doodsoorzaak"><a href="creatorcove-deaths?zoek=${encodeURIComponent(s.naam)}">${d.dag ? `<b>Dag ${d.dag}</b> ` : ''}${CC.esc(d.oorzaak || 'Doodgegaan')}</a></div>`)(deaths.get(s.uuid)) : ''}
               ${cijfers}
             </div>
           </article>`;
@@ -193,7 +197,11 @@
     document.getElementById('zoek').addEventListener('input', e => { staat.zoek = e.target.value; teken(); });
 
     async function laad() {
-        try { data = await CC.haal('stats'); }
+        try {
+            const [st, dd] = await Promise.all([CC.haal('stats'), CC.haal('deaths').catch(() => null)]);
+            data = st;
+            if (dd) deaths = new Map(dd.deaths.slice().reverse().map(d => [d.uuid, d]));
+        }
         catch { if (!data) document.getElementById('inhoud').innerHTML = '<div class="leeg"><b>Even geen verbinding</b>De deelnemers konden niet geladen worden. Probeer het zo nog eens.</div>'; return; }
         teken();
         if (crew && !document.getElementById('koppel')) tekenBeheer();
