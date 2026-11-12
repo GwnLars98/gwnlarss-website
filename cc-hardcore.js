@@ -69,6 +69,7 @@ const CC = (() => {
           <a class="merk" href="creatorcove-stats"><b>Creator Cove</b><span>Hardcore</span></a>
           <nav class="nav" aria-label="Pagina's">
             <a href="creatorcove-stats" ${huidig === 'stats' ? 'aria-current="page"' : ''}>Statistieken</a>
+            <a href="creatorcove-deelnemers" ${huidig === 'deelnemers' ? 'aria-current="page"' : ''}>Deelnemers</a>
             <a href="creatorcove-deaths" ${huidig === 'deaths' ? 'aria-current="page"' : ''}>Deaths</a>
           </nav>
           <button type="button" class="crewknop" id="crewknop">Crew</button>`;

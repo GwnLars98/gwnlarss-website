@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Statistieken · Creator Cove Hardcore</title>
-<meta name="description" content="Wie heeft het langst gespeeld, het verst gelopen en de meeste diamanten gevonden in Creator Cove Hardcore? Per dag en in totaal.">
+<meta name="description" content="Wie heeft het langst gespeeld, het verst gelopen en de meeste mobs verslagen in Creator Cove Hardcore? Per dag en in totaal.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="cc-hardcore.css">
 <style>
-    /* Statistieken: links de keuze van de stat (als een logboek), rechts de ranglijst of de grafiek, onderaan de spelers met hun kanalen. */
+    /* Statistieken: links de keuze van de stat (als een logboek), rechts de ranglijst of de grafiek, de spelers staan op creatorcove-deelnemers. */
     .indeling { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; padding-block: 18px; }
     .stats { display: grid; gap: 2px; align-content: start; position: sticky; top: 12px; }
     .stats button { text-align: left; background: transparent; border: 0; border-left: 3px solid transparent; padding: 6px 10px; cursor: pointer; color: var(--dim); font-weight: 700; border-radius: 0 6px 6px 0; }
@@ -43,13 +43,6 @@
     .legenda span { display: inline-flex; align-items: center; gap: 6px; }
     .legenda i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
 
-    .spelers h2 { font: 400 34px/1.1 var(--kop); color: var(--perkament2); margin: 34px 0 4px; }
-    .spelers > p { margin: 0 0 14px; color: var(--dim); }
-    .kaarten { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
-    .kaart { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center; background: var(--diep); border: 1px solid var(--lijn); border-radius: 10px; padding: 10px 12px; }
-    .kaart .hoofd { width: 40px; height: 40px; }
-    .kaart strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .kaart .weg { margin-left: 4px; }
     @media (max-width: 760px) {
         .indeling { grid-template-columns: 1fr; }
         .stats { position: static; grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 6px; }
@@ -65,7 +58,7 @@
 <main class="wrap">
     <section class="titel">
         <h1>Statistieken</h1>
-        <p>Speeltijd, afstand, diamanten en meer van iedereen in Creator Cove Hardcore. Elke tien minuten bijgewerkt vanaf de server.</p>
+        <p>Speeltijd, afstand, kills en meer van iedereen in Creator Cove Hardcore. Elke tien minuten bijgewerkt vanaf de server.</p>
         <span class="dagchip" id="dagchip" hidden></span>
     </section>
 
@@ -92,7 +85,6 @@
 
     <div id="inhoud"></div>
 
-    <section class="spelers" id="spelers"></section>
 </main>
 <footer class="wrap voet">Creator Cove Hardcore. Gegevens van de Survival-server, de live-status van Twitch en YouTube.</footer>
 
@@ -218,59 +210,13 @@
         return `<div class="grafiek">${svg}<div class="legenda">${legenda}</div></div>`;
     }
 
-    function tekenSpelers() {
-        const vak = document.getElementById('spelers');
-        if (!data) { vak.innerHTML = ''; return; }
-        const lijst = data.spelers.filter(s => s.team !== 'crew').sort((a, b) =>
-            (b.kanalen.some(k => k.live) - a.kanalen.some(k => k.live)) || a.naam.localeCompare(b.naam));
-        const beheer = crew ? `
-          <div class="crewpaneel">
-            <h3>Kanaal koppelen</h3>
-            <form class="rij" id="koppel">
-              <input type="text" id="kspeler" list="spelernamen" placeholder="Minecraft-naam" aria-label="Minecraft-naam" required>
-              <select id="kplatform" aria-label="Platform"><option value="twitch">Twitch</option><option value="youtube">YouTube</option></select>
-              <input type="text" id="kinvoer" placeholder="Kanaalnaam of link" aria-label="Kanaalnaam of link" required>
-              <button class="knop" type="submit">Koppelen</button>
-            </form>
-            <datalist id="spelernamen">${data.spelers.map(s => `<option value="${CC.esc(s.naam)}">`).join('')}</datalist>
-            <p class="melding" id="kmelding" role="status">Met een gekoppeld kanaal checkt de server bij "Ben je live?" ook echt of de speler live is.</p>
-          </div>` : '';
-        vak.innerHTML = `<h2>Spelers</h2><p>Wie er meedoet en waar je ze kunt kijken. Wie nu live is, staat bovenaan.</p>${beheer}
-          ${lijst.length ? `<div class="kaarten">${lijst.map(s => `
-            <div class="kaart">
-              <img class="hoofd" src="${CC.hoofd(s.uuid, 40)}" alt="" loading="lazy" width="40" height="40">
-              <div style="min-width:0">
-                <strong>${CC.esc(s.naam)}</strong>
-                <div class="naam"><span class="onder">${s.team ? `<span class="team ${s.team}">${CC.teamNaam(s.team)}</span>` : ''}${s.status === 'uit' ? '<span class="uit">Uitgeschakeld</span>' : ''}</span></div>
-                <div class="onder" style="margin-top:4px">${CC.kanalen(s.kanalen) || '<span class="melding">Nog geen kanaal</span>'}
-                  ${crew ? s.kanalen.map(k => `<button class="knop licht klein weg" data-weg="${s.uuid}" data-platform="${k.platform}">${k.platform === 'twitch' ? 'Twitch' : 'YouTube'} los</button>`).join('') : ''}</div>
-              </div>
-            </div>`).join('')}</div>` : '<div class="leeg"><b>Nog niemand</b>Spelers verschijnen hier zodra ze op Survival zijn geweest of een kanaal hebben gekregen.</div>'}`;
-        const form = document.getElementById('koppel');
-        if (form) form.addEventListener('submit', async e => {
-            e.preventDefault();
-            const m = document.getElementById('kmelding');
-            m.className = 'melding'; m.textContent = 'Kanaal zoeken...';
-            const r = await CC.post('kanaal', { speler: document.getElementById('kspeler').value.trim(), platform: document.getElementById('kplatform').value, invoer: document.getElementById('kinvoer').value.trim() });
-            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
-            m.className = 'melding goed'; m.textContent = `${r.kanaal.naam} gekoppeld aan ${r.speler}.`;
-            laad();
-        });
-        vak.querySelectorAll('[data-weg]').forEach(b => b.addEventListener('click', async () => {
-            const r = await CC.post('kanaal/verwijder', { uuid: b.dataset.weg, platform: b.dataset.platform });
-            if (r.ok) laad();
-        }));
-    }
-
     document.querySelectorAll('[data-zet]').forEach(b => b.addEventListener('click', () => { staat[b.dataset.zet] = b.dataset.waarde; teken(); }));
 
     async function laad() {
         try { data = await CC.haal('stats'); }
         catch { if (!data) document.getElementById('inhoud').innerHTML = '<div class="leeg"><b>Even geen verbinding</b>De statistieken konden niet geladen worden. Probeer het zo nog eens.</div>'; return; }
         teken();
-        tekenSpelers();
     }
-    CC.opCrew(s => { crew = s; tekenSpelers(); });
     teken();
     laad();
     setInterval(laad, 120000);

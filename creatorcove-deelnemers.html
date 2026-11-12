@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Deelnemers · Creator Cove Hardcore</title>
+<meta name="description" content="Wie er meedoet aan Creator Cove Hardcore, per team, met hun Twitch- en YouTube-kanaal en wie er nu live is.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cc-hardcore.css">
+<style>
+    /* Deelnemers: twee bemanningen naast elkaar, elk onder zijn eigen schild. Live bovenaan, uitgeschakeld vervaagd. */
+    .teller { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-block: 6px 2px; color: var(--dim); }
+    .teller b { color: var(--perkament2); font-size: 20px; }
+    .teller .live b { color: var(--rood); }
+    .teams { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding-block: 18px; }
+    .team-kolom { min-width: 0; display: grid; gap: 10px; align-content: start; }
+    .team-kop { display: flex; align-items: center; gap: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--lijn2); }
+    .team-kop img { width: 44px; height: 44px; image-rendering: pixelated; }
+    .team-kop h2 { margin: 0; font: 400 34px/1 var(--kop); }
+    .team-kop span { margin-left: auto; color: var(--dim); font-weight: 700; }
+    .storm .team-kop { border-color: rgba(108, 155, 255, 0.5); } .storm .team-kop h2 { color: var(--storm); }
+    .zon .team-kop { border-color: rgba(242, 201, 76, 0.5); } .zon .team-kop h2 { color: var(--zon); }
+    .speler { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 10px 12px; }
+    .speler.islive { border-color: rgba(229, 84, 75, 0.6); box-shadow: inset 3px 0 0 var(--rood); }
+    .speler .kopje { width: 64px; height: 64px; object-fit: contain; }
+    .speler.isuit { opacity: 0.62; }
+    .speler.isuit .kopje { filter: grayscale(1); }
+    .speler .info { min-width: 0; display: grid; gap: 3px; }
+    .speler strong { font-size: 19px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .speler.isuit strong { text-decoration: line-through; text-decoration-color: var(--rood); }
+    .regel { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 14px; color: var(--dim); }
+    .pil { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px; padding: 1px 6px; }
+    .pil.levend { color: #0d2a14; background: var(--groen); } .pil.uit { color: #fff; background: var(--rood); }
+    .pil.online { color: #2a1a00; background: var(--goud2); }
+    .cijfers { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 14px; color: var(--dim); font-variant-numeric: tabular-nums; }
+    .cijfers b { color: var(--tekst); font-weight: 700; }
+    .geenteam h2 { font: 400 28px/1 var(--kop); color: var(--perkament2); margin: 18px 0 10px; }
+    .geenteam .lijst { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+    @media (max-width: 760px) { .teams { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="wrap kop" id="kop"></header>
+<main class="wrap">
+    <section class="titel">
+        <h1>Deelnemers</h1>
+        <p>Wie er meedoet aan Creator Cove Hardcore, per team, en waar je ze kunt kijken. Wie nu live is, staat bovenaan.</p>
+    </section>
+    <div class="teller" id="teller"></div>
+    <div class="balk">
+        <div class="groep" role="group" aria-label="Status"><span>Status</span>
+            <button class="schakel" data-zet="filter" data-waarde="alle">Iedereen</button>
+            <button class="schakel" data-zet="filter" data-waarde="levend">Nog in leven</button>
+            <button class="schakel" data-zet="filter" data-waarde="uit">Uitgeschakeld</button>
+            <button class="schakel" data-zet="filter" data-waarde="live">Nu live</button>
+        </div>
+        <div class="groep"><span>Sorteren</span>
+            <select id="sorteer" aria-label="Sorteren">
+                <option value="live">Live eerst</option>
+                <option value="naam">Naam</option>
+                <option value="gezien">Laatst gezien</option>
+                <option value="speeltijd">Speeltijd</option>
+            </select>
+        </div>
+        <input type="search" class="zoek" id="zoek" placeholder="Zoek een deelnemer" aria-label="Zoek een deelnemer" style="flex:1 1 200px;max-width:280px">
+    </div>
+    <div id="beheer"></div>
+    <div id="inhoud"></div>
+</main>
+<footer class="wrap voet">Creator Cove Hardcore. Deelnemers uit de teams op de server, kanalen gekoppeld door de Crew, live-status van Twitch en YouTube.</footer>
+
+<script src="cc-hardcore.js"></script>
+<script>
+    CC.kop('deelnemers');
+    const staat = { filter: new URLSearchParams(location.search).get('filter') || 'alle', sorteer: 'live', zoek: '' };
+    let data = null, crew = null;
+
+    const isLive = s => s.kanalen.some(k => k.live);
+    function laatste(uuid) {
+        const ds = Object.keys(data.dagen).map(Number).sort((a, b) => b - a);
+        for (const d of ds) if (data.dagen[d]?.[uuid]) return data.dagen[d][uuid];
+        return null;
+    }
+    function geleden(t) {
+        if (!t) return null;
+        const m = Math.round((Date.now() - t) / 60000);
+        if (m < 2) return 'zojuist';
+        if (m < 60) return `${m} min geleden`;
+        const u = Math.round(m / 60);
+        if (u < 24) return `${u} uur geleden`;
+        const d = Math.round(u / 24);
+        return d === 1 ? 'gisteren' : `${d} dagen geleden`;
+    }
+    const stat = key => data.stats.find(s => s.key === key);
+
+    function kaart(s) {
+        const st = laatste(s.uuid);
+        const gezien = s.online ? null : geleden(s.laatstGezien);
+        const cijfers = st ? `<div class="cijfers"><span>Speeltijd <b>${CC.waarde(stat('speeltijd'), st.speeltijd)}</b></span><span>Afstand <b>${CC.waarde(stat('afstand'), st.afstand)}</b></span><span>Mobs <b>${CC.waarde(stat('mobKills'), st.mobKills)}</b></span></div>` : '';
+        return `<article class="speler ${isLive(s) ? 'islive' : ''} ${s.status === 'uit' ? 'isuit' : ''}">
+            <img class="kopje" src="https://mc-heads.net/head/${encodeURIComponent(s.uuid)}/64" alt="" loading="lazy" width="64" height="64">
+            <div class="info">
+              <strong>${CC.esc(s.naam)}</strong>
+              <div class="regel">
+                ${s.status === 'uit' ? '<span class="pil uit">Uitgeschakeld</span>' : '<span class="pil levend">Levend</span>'}
+                ${s.online ? '<span class="pil online">Nu op Survival</span>' : gezien ? `<span>Laatst gezien ${gezien}</span>` : st ? '' : '<span>Nog niet gespeeld</span>'}
+              </div>
+              <div class="regel">${CC.kanalen(s.kanalen) || 'Nog geen kanaal'}
+                ${crew ? s.kanalen.map(k => `<button class="knop licht klein" data-weg="${s.uuid}" data-platform="${k.platform}">${k.platform === 'twitch' ? 'Twitch' : 'YouTube'} los</button>`).join('') : ''}</div>
+              ${cijfers}
+            </div>
+          </article>`;
+    }
+
+    function gefilterd() {
+        const z = staat.zoek.toLowerCase();
+        const lijst = data.spelers.filter(s => s.team !== 'crew'
+            && (staat.filter === 'alle' || (staat.filter === 'live' ? isLive(s) : (staat.filter === 'uit') === (s.status === 'uit')))
+            && (!z || s.naam.toLowerCase().includes(z)));
+        const speeltijd = s => laatste(s.uuid)?.speeltijd ?? -1;
+        const sort = {
+            live: (a, b) => (isLive(b) - isLive(a)) || (b.online - a.online) || ((a.status === 'uit') - (b.status === 'uit')) || a.naam.localeCompare(b.naam),
+            naam: (a, b) => a.naam.localeCompare(b.naam),
+            gezien: (a, b) => (b.online - a.online) || ((b.laatstGezien ?? 0) - (a.laatstGezien ?? 0)),
+            speeltijd: (a, b) => speeltijd(b) - speeltijd(a),
+        }[staat.sorteer];
+        return lijst.sort(sort);
+    }
+
+    function teken() {
+        document.querySelectorAll('[data-zet]').forEach(b => b.setAttribute('aria-pressed', String(staat[b.dataset.zet] === b.dataset.waarde)));
+        history.replaceState(null, '', staat.filter === 'alle' ? location.pathname : '?filter=' + staat.filter);
+        const inhoud = document.getElementById('inhoud');
+        if (!data) { inhoud.innerHTML = '<div class="leeg"><b>Even laden...</b></div>'; return; }
+        const alle = data.spelers.filter(s => s.team !== 'crew');
+        document.getElementById('teller').innerHTML = alle.length ? `
+            <span><b>${alle.length}</b> deelnemers</span>
+            <span><b>${alle.filter(s => s.team === 'stormhaven').length}</b> Stormhaven</span>
+            <span><b>${alle.filter(s => s.team === 'sunspire').length}</b> Sunspire</span>
+            <span class="live"><b>${alle.filter(isLive).length}</b> nu live</span>
+            <span><b>${alle.filter(s => s.online).length}</b> op Survival</span>
+            <span><b>${alle.filter(s => s.status === 'uit').length}</b> uitgeschakeld</span>` : '';
+        if (!alle.length) { inhoud.innerHTML = '<div class="leeg"><b>Nog geen deelnemers</b>Zodra de Crew spelers in een team zet, staan ze hier.</div>'; return; }
+        const lijst = gefilterd();
+        const kolom = (team, naam, schild, klasse) => {
+            const leden = lijst.filter(s => s.team === team);
+            return `<section class="team-kolom ${klasse}" aria-label="${naam}">
+                <div class="team-kop"><img src="minecraft/schild-${team}.png" alt="" width="44" height="44"><h2>${naam}</h2><span>${leden.length}</span></div>
+                ${leden.length ? leden.map(kaart).join('') : '<div class="melding">Niemand met deze filters.</div>'}
+              </section>`;
+        };
+        const zonder = lijst.filter(s => s.team !== 'stormhaven' && s.team !== 'sunspire');
+        inhoud.innerHTML = `<div class="teams">${kolom('stormhaven', 'Stormhaven', '', 'storm')}${kolom('sunspire', 'Sunspire', '', 'zon')}</div>
+            ${zonder.length ? `<section class="geenteam"><h2>Nog zonder team</h2><div class="lijst">${zonder.map(kaart).join('')}</div></section>` : ''}`;
+        inhoud.querySelectorAll('[data-weg]').forEach(b => b.addEventListener('click', async () => {
+            const r = await CC.post('kanaal/verwijder', { uuid: b.dataset.weg, platform: b.dataset.platform });
+            if (r.ok) laad();
+        }));
+    }
+
+    function tekenBeheer() {
+        const vak = document.getElementById('beheer');
+        if (!crew || !data) { vak.innerHTML = ''; return; }
+        vak.innerHTML = `
+          <div class="crewpaneel">
+            <h3>Kanaal koppelen</h3>
+            <form class="rij" id="koppel">
+              <input type="text" id="kspeler" list="spelernamen" placeholder="Minecraft-naam" aria-label="Minecraft-naam" required>
+              <select id="kplatform" aria-label="Platform"><option value="twitch">Twitch</option><option value="youtube">YouTube</option></select>
+              <input type="text" id="kinvoer" placeholder="Kanaalnaam of link" aria-label="Kanaalnaam of link" required>
+              <button class="knop" type="submit">Koppelen</button>
+            </form>
+            <datalist id="spelernamen">${data.spelers.map(s => `<option value="${CC.esc(s.naam)}">`).join('')}</datalist>
+            <p class="melding" id="kmelding" role="status">Met een gekoppeld kanaal checkt de server bij "Ben je live?" ook echt of iemand live is. Een Minecraft-naam die hier nog niet staat kan ook.</p>
+          </div>`;
+        document.getElementById('koppel').addEventListener('submit', async e => {
+            e.preventDefault();
+            const m = document.getElementById('kmelding');
+            m.className = 'melding'; m.textContent = 'Kanaal zoeken...';
+            const r = await CC.post('kanaal', { speler: document.getElementById('kspeler').value.trim(), platform: document.getElementById('kplatform').value, invoer: document.getElementById('kinvoer').value.trim() });
+            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
+            m.className = 'melding goed'; m.textContent = `${r.kanaal.naam} gekoppeld aan ${r.speler}.`;
+            document.getElementById('kinvoer').value = '';
+            laad();
+        });
+    }
+
+    document.querySelectorAll('[data-zet]').forEach(b => b.addEventListener('click', () => { staat[b.dataset.zet] = b.dataset.waarde; teken(); }));
+    document.getElementById('sorteer').addEventListener('change', e => { staat.sorteer = e.target.value; teken(); });
+    document.getElementById('zoek').addEventListener('input', e => { staat.zoek = e.target.value; teken(); });
+
+    async function laad() {
+        try { data = await CC.haal('stats'); }
+        catch { if (!data) document.getElementById('inhoud').innerHTML = '<div class="leeg"><b>Even geen verbinding</b>De deelnemers konden niet geladen worden. Probeer het zo nog eens.</div>'; return; }
+        teken();
+        if (crew && !document.getElementById('koppel')) tekenBeheer();
+    }
+    CC.opCrew(s => { crew = s; tekenBeheer(); if (data) teken(); });
+    teken();
+    laad();
+    setInterval(() => { if (!document.activeElement?.closest('form')) laad(); }, 120000);
+</script>
+</body>
+</html>
