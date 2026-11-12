@@ -1,0 +1,83 @@
+/* Creator Cove Hardcore: gedeelde stijl van creatorcove-stats.html en creatorcove-deaths.html.
+   Zee bij nacht met perkament en goud, dezelfde letters als het venster "Ben je live?" in de game. */
+:root {
+    --zee: #0b1828; --diep: #11233b; --diep2: #17304f; --lijn: rgba(233, 219, 180, 0.13); --lijn2: rgba(233, 219, 180, 0.24);
+    --perkament: #e9dbb4; --perkament2: #f6e7c1; --inkt: #3a2814; --goud: #e0a11b; --goud2: #f2c14e;
+    --tekst: #edf1f6; --dim: #9db0c9; --storm: #6c9bff; --zon: #f2c94c; --rood: #e5544b; --groen: #7bd88f;
+    --twitch: #a970ff; --yt: #ff4e45;
+    --kop: 'Pirata One', 'Georgia', serif; --ui: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--zee); }
+body {
+    margin: 0; min-height: 100vh; color: var(--tekst); font: 400 17px/1.5 var(--ui);
+    background: radial-gradient(1200px 500px at 50% -120px, #18365c 0%, transparent 70%), var(--zee);
+}
+a { color: var(--goud2); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--goud2); outline-offset: 2px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
+
+/* ---------- kop ---------- */
+.kop { padding-block: 26px 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+.merk { display: flex; align-items: baseline; gap: 10px; text-decoration: none; color: var(--perkament2); margin-right: auto; }
+.merk b { font: 400 34px/1 var(--kop); letter-spacing: 0.01em; }
+.merk span { font: 800 13px/1 var(--ui); letter-spacing: 0.22em; text-transform: uppercase; color: var(--rood); }
+.nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.nav a { text-decoration: none; color: var(--dim); font-weight: 700; padding: 7px 14px; border-radius: 8px; border: 1px solid transparent; }
+.nav a:hover { color: var(--tekst); }
+.nav a[aria-current="page"] { color: var(--perkament2); border-color: var(--lijn2); background: var(--diep); }
+.crewknop { border: 1px solid var(--lijn2); background: transparent; border-radius: 8px; padding: 7px 12px; cursor: pointer; color: var(--dim); font-weight: 700; }
+.crewknop.in { color: var(--goud2); border-color: rgba(224, 161, 27, 0.5); }
+
+.titel { padding-block: 18px 6px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 22px; }
+.titel h1 { margin: 0; font: 400 clamp(38px, 6vw, 56px)/1 var(--kop); color: var(--perkament2); text-shadow: 3px 3px 0 var(--inkt); }
+.titel p { margin: 0 0 6px; color: var(--dim); max-width: 60ch; }
+.dagchip { margin-left: auto; margin-bottom: 6px; font-weight: 800; color: var(--inkt); background: var(--perkament); border-radius: 6px; padding: 4px 10px; letter-spacing: 0.04em; }
+
+/* ---------- bedieningen ---------- */
+.balk { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding-block: 14px; border-bottom: 1px solid var(--lijn); }
+.groep { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.groep > span { font-size: 13px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); margin-right: 4px; }
+.schakel { border: 1px solid var(--lijn); background: var(--diep); border-radius: 7px; padding: 5px 11px; cursor: pointer; font-weight: 700; font-size: 15px; color: var(--dim); }
+.schakel[aria-pressed="true"] { background: var(--perkament); border-color: var(--perkament); color: var(--inkt); }
+.schakel.storm[aria-pressed="true"] { background: var(--storm); border-color: var(--storm); color: #071530; }
+.schakel.zon[aria-pressed="true"] { background: var(--zon); border-color: var(--zon); color: #2b2100; }
+select, input[type="text"], input[type="url"], input[type="search"] {
+    background: var(--diep); border: 1px solid var(--lijn2); border-radius: 7px; padding: 6px 10px; min-width: 0;
+}
+input[type="range"] { accent-color: var(--goud); }
+
+/* ---------- algemeen ---------- */
+.leeg { padding: 48px 20px; text-align: center; color: var(--dim); border: 1px dashed var(--lijn2); border-radius: 12px; margin-block: 24px; }
+.leeg b { display: block; font: 400 28px/1.2 var(--kop); color: var(--perkament2); margin-bottom: 6px; }
+.hoofd { width: 36px; height: 36px; border-radius: 6px; image-rendering: pixelated; background: var(--diep2); flex: none; }
+.team { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.team.stormhaven { color: var(--storm); } .team.sunspire { color: var(--zon); }
+.uit { color: var(--rood); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.kanalen { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.kanaal { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; font-size: 13px; font-weight: 700; color: var(--dim); border: 1px solid var(--lijn); border-radius: 999px; padding: 2px 9px 2px 6px; }
+.kanaal svg { width: 13px; height: 13px; }
+.kanaal.twitch svg { fill: var(--twitch); } .kanaal.youtube svg { fill: var(--yt); }
+.kanaal.live { color: #fff; border-color: var(--rood); background: rgba(229, 84, 75, 0.18); }
+.livepil { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: #fff; background: var(--rood); border-radius: 4px; padding: 1px 5px; }
+.knop { border: 1px solid var(--goud); background: var(--goud); color: #2a1a00; border-radius: 7px; padding: 6px 12px; font-weight: 800; cursor: pointer; }
+.knop.licht { background: transparent; color: var(--goud2); }
+.knop.klein { padding: 3px 8px; font-size: 13px; }
+.melding { font-size: 14px; color: var(--dim); min-height: 1.4em; }
+.melding.fout { color: var(--rood); } .melding.goed { color: var(--groen); }
+.voet { padding-block: 40px 30px; color: var(--dim); font-size: 14px; border-top: 1px solid var(--lijn); margin-top: 40px; }
+
+/* ---------- crew ---------- */
+dialog.login { border: 1px solid var(--lijn2); border-radius: 14px; background: var(--diep); color: var(--tekst); padding: 22px; width: min(420px, calc(100vw - 32px)); }
+dialog.login::backdrop { background: rgba(4, 10, 20, 0.7); }
+dialog.login h2 { margin: 0 0 6px; font: 400 30px/1.1 var(--kop); color: var(--perkament2); }
+dialog.login p { margin: 0 0 14px; color: var(--dim); font-size: 15px; }
+dialog.login code { color: var(--goud2); }
+.rij { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.rij input { flex: 1 1 140px; }
+.crewpaneel { border: 1px solid rgba(224, 161, 27, 0.35); background: rgba(224, 161, 27, 0.06); border-radius: 12px; padding: 14px 16px; margin-block: 18px; display: grid; gap: 10px; }
+.crewpaneel h3 { margin: 0; font: 400 24px/1.1 var(--kop); color: var(--goud2); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

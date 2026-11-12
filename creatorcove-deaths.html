@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Deaths · Creator Cove Hardcore</title>
+<meta name="description" content="Iedereen die in Creator Cove Hardcore is uitgeschakeld: wanneer, waardoor, en de clip van het moment.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cc-hardcore.css">
+<style>
+    /* Deaths: een tijdlijn als logboek van een schip, per dag een kopje, per death een kaart met de clip.
+       Daarnaast alle clips bij elkaar. Clips laden pas bij een klik. */
+    .teller { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-block: 6px 2px; color: var(--dim); }
+    .teller b { color: var(--perkament2); font-size: 20px; }
+    .dagkop { display: flex; align-items: center; gap: 12px; margin: 26px 0 10px; }
+    .dagkop h2 { margin: 0; font: 400 28px/1 var(--kop); color: var(--perkament2); }
+    .dagkop::after { content: ''; flex: 1; height: 1px; background: var(--lijn2); }
+    .deaths { display: grid; gap: 12px; }
+    .death { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 14px; }
+    .death.storm { border-left: 4px solid var(--storm); } .death.zon { border-left: 4px solid var(--zon); }
+    .death .hoofd { width: 64px; height: 64px; filter: grayscale(0.65); }
+    .death .info { min-width: 0; display: grid; gap: 4px; }
+    .death h3 { margin: 0; font-size: 21px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+    .oorzaak { font-size: 18px; color: var(--perkament); }
+    .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; color: var(--dim); }
+    .clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 8px; }
+    .clip { position: relative; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 8px; overflow: hidden; background: #050b14; border: 1px solid var(--lijn); }
+    .clip button.speel { position: absolute; inset: 0; width: 100%; border: 0; cursor: pointer; background: center / cover no-repeat #0a1626; color: #fff; display: grid; place-items: center; }
+    .clip button.speel::before { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgba(0, 0, 0, 0.7)); }
+    .clip button.speel span { position: relative; display: inline-flex; align-items: center; gap: 8px; font-weight: 800; background: rgba(5, 11, 20, 0.75); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 14px; border-radius: 999px; }
+    .clip iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .clip .bron { position: absolute; left: 8px; bottom: 6px; font-size: 12px; font-weight: 700; color: #fff; pointer-events: none; }
+    .clip .weg { position: absolute; right: 6px; top: 6px; z-index: 2; }
+    .geenclip { font-size: 14px; color: var(--dim); }
+    .crewrij { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+    .crewrij input { flex: 1 1 220px; }
+    .zoek { flex: 1 1 200px; max-width: 280px; }
+    .clipkop { font-size: 14px; color: var(--dim); margin-top: 6px; }
+    @media (max-width: 560px) { .death { grid-template-columns: 44px minmax(0, 1fr); } .death .hoofd { width: 44px; height: 44px; } }
+</style>
+</head>
+<body>
+<header class="wrap kop" id="kop"></header>
+<main class="wrap">
+    <section class="titel">
+        <h1>Deaths</h1>
+        <p>Wie er buiten de grace is doodgegaan en daarmee uit Creator Cove Hardcore ligt. Met de clip van het moment, als die er is.</p>
+    </section>
+    <div class="teller" id="teller"></div>
+    <div class="balk">
+        <div class="groep" role="group" aria-label="Weergave"><span>Weergave</span>
+            <button class="schakel" data-zet="view" data-waarde="tijdlijn">Tijdlijn</button>
+            <button class="schakel" data-zet="view" data-waarde="clips">Alle clips</button>
+        </div>
+        <div class="groep" role="group" aria-label="Team"><span>Team</span>
+            <button class="schakel" data-zet="team" data-waarde="alle">Beide</button>
+            <button class="schakel storm" data-zet="team" data-waarde="stormhaven">Stormhaven</button>
+            <button class="schakel zon" data-zet="team" data-waarde="sunspire">Sunspire</button>
+        </div>
+        <input type="search" class="zoek" id="zoek" placeholder="Zoek een speler" aria-label="Zoek een speler">
+    </div>
+    <div id="inhoud"></div>
+</main>
+<footer class="wrap voet">Creator Cove Hardcore. Deaths komen direct van de Survival-server, clips worden door de Crew toegevoegd.</footer>
+
+<script src="cc-hardcore.js"></script>
+<script>
+    CC.kop('deaths');
+    const p = new URLSearchParams(location.search);
+    const staat = { view: p.get('view') || 'tijdlijn', team: p.get('team') || 'alle', zoek: '' };
+    let data = null, crew = null;
+    const ouders = [...new Set([location.hostname || 'gwnlarss.nl', 'gwnlarss.nl', 'www.gwnlarss.nl'])].map(h => 'parent=' + encodeURIComponent(h)).join('&');
+
+    const tijd = t => new Date(t).toLocaleString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' });
+    function embedUrl(c) {
+        if (c.platform === 'youtube') return `https://www.youtube-nocookie.com/embed/${c.id}?autoplay=1${c.start ? '&start=' + c.start : ''}`;
+        if (c.platform === 'twitch-clip') return `https://clips.twitch.tv/embed?clip=${encodeURIComponent(c.id)}&autoplay=true&${ouders}`;
+        return `https://player.twitch.tv/?video=v${encodeURIComponent(c.id)}&time=${c.start || 0}s&autoplay=true&${ouders}`;
+    }
+    const plaatje = c => c.platform === 'youtube' ? `https://i.ytimg.com/vi/${c.id}/hqdefault.jpg` : '';
+    const bron = c => ({ youtube: 'YouTube', 'twitch-clip': 'Twitch-clip', 'twitch-vod': 'Twitch-video' })[c.platform] || '';
+
+    function clipHtml(d, c) {
+        return `<div class="clip">
+            <button class="speel" type="button" data-embed="${CC.esc(embedUrl(c))}" style="${plaatje(c) ? `background-image:url('${plaatje(c)}')` : ''}" aria-label="Bekijk de clip van ${CC.esc(d.naam)}"><span>&#9654; Bekijk de clip</span></button>
+            <span class="bron">${bron(c)}</span>
+            ${crew ? `<button class="knop licht klein weg" type="button" data-clipweg="${CC.esc(d.id)}" data-url="${CC.esc(c.url)}">Weg</button>` : ''}
+          </div>`;
+    }
+
+    function zichtbaar() {
+        const z = staat.zoek.toLowerCase();
+        return data.deaths.filter(d => (staat.team === 'alle' || d.team === staat.team) && (!z || d.naam.toLowerCase().includes(z)));
+    }
+
+    function teken() {
+        document.querySelectorAll('[data-zet]').forEach(b => b.setAttribute('aria-pressed', String(staat[b.dataset.zet] === b.dataset.waarde)));
+        history.replaceState(null, '', '?' + new URLSearchParams({ view: staat.view, team: staat.team }));
+        const inhoud = document.getElementById('inhoud');
+        if (!data) { inhoud.innerHTML = '<div class="leeg"><b>Even laden...</b></div>'; return; }
+        const alle = data.deaths;
+        const metClip = alle.filter(d => d.clips.length).length;
+        document.getElementById('teller').innerHTML = alle.length
+            ? `<span><b>${alle.length}</b> uitgeschakeld</span><span><b>${alle.filter(d => d.team === 'stormhaven').length}</b> Stormhaven</span><span><b>${alle.filter(d => d.team === 'sunspire').length}</b> Sunspire</span><span><b>${metClip}</b> met clip</span>`
+            : '';
+        if (!alle.length) { inhoud.innerHTML = '<div class="leeg"><b>Nog niemand uitgeschakeld</b>Iedereen leeft nog. Wie buiten de grace doodgaat, komt hier te staan.</div>'; return; }
+        const lijst = zichtbaar();
+        if (!lijst.length) { inhoud.innerHTML = '<div class="leeg"><b>Niemand gevonden</b>Met deze filters blijft er niemand over.</div>'; return; }
+
+        if (staat.view === 'clips') {
+            const clips = lijst.flatMap(d => d.clips.map(c => ({ d, c })));
+            inhoud.innerHTML = clips.length
+                ? `<div class="clips" style="margin-top:18px">${clips.map(({ d, c }) => `<div>${clipHtml(d, c)}<div class="clipkop"><strong style="color:var(--tekst)">${CC.esc(d.naam)}</strong>, dag ${d.dag ?? '?'}: ${CC.esc(d.oorzaak)}</div></div>`).join('')}</div>`
+                : '<div class="leeg"><b>Nog geen clips</b>De Crew zet clips bij de deaths zodra ze er zijn.</div>';
+        } else {
+            const perDag = new Map();
+            for (const d of lijst) { const k = d.dag ?? 0; if (!perDag.has(k)) perDag.set(k, []); perDag.get(k).push(d); }
+            inhoud.innerHTML = [...perDag.entries()].map(([dag, ds]) => `
+              <div class="dagkop"><h2>${dag ? 'Dag ' + dag : 'Voor de start'}</h2></div>
+              <div class="deaths">${ds.map(d => `
+                <article class="death ${d.team === 'stormhaven' ? 'storm' : d.team === 'sunspire' ? 'zon' : ''}">
+                  <img class="hoofd" src="${CC.hoofd(d.uuid, 64)}" alt="" loading="lazy" width="64" height="64">
+                  <div class="info">
+                    <h3>${CC.esc(d.naam)} ${d.team ? `<span class="team ${d.team}">${CC.teamNaam(d.team)}</span>` : ''} ${CC.kanalen(d.kanalen)}</h3>
+                    <div class="oorzaak">${CC.esc(d.oorzaak || 'Doodgegaan')}</div>
+                    <div class="meta"><span>${tijd(d.tijd)}</span>${d.speeltijd != null ? `<span>na ${CC.duur(d.speeltijd)} speeltijd</span>` : ''}</div>
+                    ${d.clips.length ? `<div class="clips">${d.clips.map(c => clipHtml(d, c)).join('')}</div>` : (crew ? '' : '<div class="geenclip">Nog geen clip.</div>')}
+                    ${crew ? `<form class="crewrij" data-clip="${CC.esc(d.id)}">
+                        <input type="url" placeholder="Link van een Twitch-clip, Twitch-video of YouTube" aria-label="Clip-link voor ${CC.esc(d.naam)}" required>
+                        <button class="knop" type="submit">Clip toevoegen</button>
+                        <button class="knop licht klein" type="button" data-verberg="${CC.esc(d.id)}">Verbergen</button>
+                        <span class="melding" role="status"></span>
+                      </form>` : ''}
+                  </div>
+                </article>`).join('')}</div>`).join('');
+        }
+        koppel(inhoud);
+    }
+
+    function koppel(inhoud) {
+        inhoud.querySelectorAll('[data-embed]').forEach(b => b.addEventListener('click', () => {
+            const f = document.createElement('iframe');
+            f.src = b.dataset.embed;
+            f.allow = 'autoplay; fullscreen; encrypted-media';
+            f.allowFullscreen = true;
+            f.title = 'Clip';
+            b.replaceWith(f);
+        }));
+        inhoud.querySelectorAll('form[data-clip]').forEach(f => f.addEventListener('submit', async e => {
+            e.preventDefault();
+            const m = f.querySelector('.melding'), url = f.querySelector('input').value.trim();
+            m.className = 'melding'; m.textContent = 'Toevoegen...';
+            const r = await CC.post('clip', { death: f.dataset.clip, url });
+            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
+            laad();
+        }));
+        inhoud.querySelectorAll('[data-clipweg]').forEach(b => b.addEventListener('click', async () => {
+            const r = await CC.post('clip/verwijder', { death: b.dataset.clipweg, url: b.dataset.url });
+            if (r.ok) laad();
+        }));
+        inhoud.querySelectorAll('[data-verberg]').forEach(b => b.addEventListener('click', async () => {
+            if (b.dataset.zeker !== '1') { b.dataset.zeker = '1'; b.textContent = 'Echt verbergen?'; return; }
+            const r = await CC.post('death/verberg', { death: b.dataset.verberg, verborgen: true });
+            if (r.ok) laad();
+        }));
+    }
+
+    document.querySelectorAll('[data-zet]').forEach(b => b.addEventListener('click', () => { staat[b.dataset.zet] = b.dataset.waarde; teken(); }));
+    document.getElementById('zoek').addEventListener('input', e => { staat.zoek = e.target.value; teken(); });
+
+    async function laad() {
+        try { data = await CC.haal('deaths'); }
+        catch { if (!data) document.getElementById('inhoud').innerHTML = '<div class="leeg"><b>Even geen verbinding</b>De deaths konden niet geladen worden. Probeer het zo nog eens.</div>'; return; }
+        teken();
+    }
+    CC.opCrew(s => { crew = s; if (data) teken(); });
+    teken();
+    laad();
+    setInterval(() => { if (!document.querySelector('.clip iframe') && !document.activeElement?.closest('form')) laad(); }, 120000);
+</script>
+</body>
+</html>

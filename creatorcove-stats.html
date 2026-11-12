@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Statistieken · Creator Cove Hardcore</title>
+<meta name="description" content="Wie heeft het langst gespeeld, het verst gelopen en de meeste diamanten gevonden in Creator Cove Hardcore? Per dag en in totaal.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cc-hardcore.css">
+<style>
+    /* Statistieken: links de keuze van de stat (als een logboek), rechts de ranglijst of de grafiek, onderaan de spelers met hun kanalen. */
+    .indeling { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; padding-block: 18px; }
+    .stats { display: grid; gap: 2px; align-content: start; position: sticky; top: 12px; }
+    .stats button { text-align: left; background: transparent; border: 0; border-left: 3px solid transparent; padding: 6px 10px; cursor: pointer; color: var(--dim); font-weight: 700; border-radius: 0 6px 6px 0; }
+    .stats button:hover { color: var(--tekst); background: rgba(255, 255, 255, 0.03); }
+    .stats button[aria-pressed="true"] { color: var(--perkament2); border-left-color: var(--goud); background: var(--diep); }
+    .hoofdvak { min-width: 0; display: grid; gap: 14px; align-content: start; }
+    .statkop { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+    .statkop h2 { margin: 0; font: 400 34px/1.1 var(--kop); color: var(--perkament2); }
+    .statkop span { color: var(--dim); }
+    .dagkiezer { display: flex; align-items: center; gap: 10px; }
+    .dagkiezer input { width: min(260px, 50vw); }
+    .dagkiezer output { font-weight: 800; color: var(--perkament2); min-width: 4.5em; }
+
+    .lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .rij2 { display: grid; grid-template-columns: 34px 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 12px; background: var(--diep); border: 1px solid var(--lijn); border-radius: 10px; position: relative; overflow: hidden; }
+    .rij2 .balkje { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--goud); opacity: 0.75; }
+    .rij2.storm .balkje { background: var(--storm); } .rij2.zon .balkje { background: var(--zon); }
+    .plaats { font: 400 24px/1 var(--kop); color: var(--dim); text-align: center; }
+    .rij2:nth-child(1) .plaats { color: var(--goud2); } .rij2:nth-child(2) .plaats { color: #cfd6e2; } .rij2:nth-child(3) .plaats { color: #d39a6a; }
+    .naam { min-width: 0; display: grid; gap: 1px; }
+    .naam strong { font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .naam .onder { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+    .getal { font-weight: 800; font-size: 19px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+    .rij2.isuit strong { color: var(--dim); text-decoration: line-through; text-decoration-color: var(--rood); }
+
+    .grafiek { background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 12px; overflow-x: auto; }
+    .grafiek svg { display: block; width: 100%; min-width: 560px; height: auto; }
+    .legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 4px 0; font-size: 14px; }
+    .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+    .legenda i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+
+    .spelers h2 { font: 400 34px/1.1 var(--kop); color: var(--perkament2); margin: 34px 0 4px; }
+    .spelers > p { margin: 0 0 14px; color: var(--dim); }
+    .kaarten { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+    .kaart { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center; background: var(--diep); border: 1px solid var(--lijn); border-radius: 10px; padding: 10px 12px; }
+    .kaart .hoofd { width: 40px; height: 40px; }
+    .kaart strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kaart .weg { margin-left: 4px; }
+    @media (max-width: 760px) {
+        .indeling { grid-template-columns: 1fr; }
+        .stats { position: static; grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 6px; }
+        .stats button { border-left: 0; border-bottom: 3px solid transparent; border-radius: 6px 6px 0 0; }
+        .stats button[aria-pressed="true"] { border-bottom-color: var(--goud); }
+        .rij2 { grid-template-columns: 28px 32px minmax(0, 1fr) auto; gap: 8px; }
+        .hoofd { width: 32px; height: 32px; }
+    }
+</style>
+</head>
+<body>
+<header class="wrap kop" id="kop"></header>
+<main class="wrap">
+    <section class="titel">
+        <h1>Statistieken</h1>
+        <p>Speeltijd, afstand, diamanten en meer van iedereen in Creator Cove Hardcore. Elke tien minuten bijgewerkt vanaf de server.</p>
+        <span class="dagchip" id="dagchip" hidden></span>
+    </section>
+
+    <div class="balk" id="balk">
+        <div class="groep" role="group" aria-label="Weergave"><span>Weergave</span>
+            <button class="schakel" data-zet="view" data-waarde="lijst">Ranglijst</button>
+            <button class="schakel" data-zet="view" data-waarde="grafiek">Grafiek</button>
+        </div>
+        <div class="groep" role="group" aria-label="Tellen"><span>Tellen</span>
+            <button class="schakel" data-zet="mode" data-waarde="totaal">Totaal</button>
+            <button class="schakel" data-zet="mode" data-waarde="dag">Per dag</button>
+        </div>
+        <div class="groep" role="group" aria-label="Spelers"><span>Spelers</span>
+            <button class="schakel" data-zet="filter" data-waarde="alle">Iedereen</button>
+            <button class="schakel" data-zet="filter" data-waarde="levend">Nog in leven</button>
+            <button class="schakel" data-zet="filter" data-waarde="uit">Uitgeschakeld</button>
+        </div>
+        <div class="groep" role="group" aria-label="Team"><span>Team</span>
+            <button class="schakel" data-zet="team" data-waarde="alle">Beide</button>
+            <button class="schakel storm" data-zet="team" data-waarde="stormhaven">Stormhaven</button>
+            <button class="schakel zon" data-zet="team" data-waarde="sunspire">Sunspire</button>
+        </div>
+    </div>
+
+    <div id="inhoud"></div>
+
+    <section class="spelers" id="spelers"></section>
+</main>
+<footer class="wrap voet">Creator Cove Hardcore. Gegevens van de Survival-server, de live-status van Twitch en YouTube.</footer>
+
+<script src="cc-hardcore.js"></script>
+<script>
+    CC.kop('stats');
+    const KLEUREN = ['#f2c14e', '#6c9bff', '#7bd88f', '#ff8a65', '#c792ea', '#4dd0e1', '#e5544b', '#d4e157'];
+    const p = new URLSearchParams(location.search);
+    const staat = { stat: p.get('stat') || 'speeltijd', view: p.get('view') || 'lijst', mode: p.get('mode') || 'totaal', filter: p.get('filter') || 'alle', team: p.get('team') || 'alle', dag: Number(p.get('dag')) || null };
+    let data = null, crew = null;
+
+    function bewaar() {
+        const q = new URLSearchParams({ stat: staat.stat, view: staat.view, mode: staat.mode, filter: staat.filter, team: staat.team });
+        if (staat.dag) q.set('dag', staat.dag);
+        history.replaceState(null, '', '?' + q);
+    }
+
+    // waarde van een speler op een dag: de laatste stand op of voor die dag
+    function stand(uuid, dag, key) {
+        for (let d = dag; d >= 0; d--) { const v = data.dagen[d]?.[uuid]?.[key]; if (v !== undefined) return v; }
+        return 0;
+    }
+    const waardeOp = (uuid, dag, key) => staat.mode === 'dag' ? Math.max(0, stand(uuid, dag, key) - stand(uuid, dag - 1, key)) : stand(uuid, dag, key);
+
+    function dagen() {
+        const alle = Object.keys(data.dagen).map(Number).sort((a, b) => a - b);
+        const echt = alle.filter(d => d > 0);
+        return echt.length ? echt : alle;
+    }
+    function spelersGefilterd() {
+        return data.spelers.filter(s => s.team !== 'crew'
+            && (staat.filter === 'alle' || (staat.filter === 'uit') === (s.status === 'uit'))
+            && (staat.team === 'alle' || s.team === staat.team));
+    }
+
+    function tekenBalk() {
+        document.querySelectorAll('[data-zet]').forEach(b => b.setAttribute('aria-pressed', String(staat[b.dataset.zet] === b.dataset.waarde)));
+    }
+
+    function teken() {
+        tekenBalk();
+        const inhoud = document.getElementById('inhoud');
+        if (!data) { inhoud.innerHTML = '<div class="leeg"><b>Even laden...</b></div>'; return; }
+        const ds = dagen();
+        if (!ds.length || !data.spelers.length) {
+            inhoud.innerHTML = '<div class="leeg"><b>Nog geen statistieken</b>Zodra het event begint en er gespeeld wordt, verschijnen hier de eerste cijfers.</div>';
+            return;
+        }
+        const max = ds[ds.length - 1], min = ds[0];
+        if (!staat.dag || staat.dag > max || staat.dag < min) staat.dag = max;
+        const chip = document.getElementById('dagchip');
+        chip.hidden = !(max > 0);
+        chip.textContent = `Dag ${max}`;
+        const stat = data.stats.find(s => s.key === staat.stat) || data.stats[0];
+        staat.stat = stat.key;
+        bewaar();
+
+        const kiezer = data.stats.map(s => `<button type="button" data-stat="${s.key}" aria-pressed="${s.key === stat.key}">${CC.esc(s.label)}</button>`).join('');
+        const dagLabel = () => staat.mode === 'dag' ? `op dag ${staat.dag}` : (staat.dag === max ? 'tot nu toe' : `tot en met dag ${staat.dag}`);
+        inhoud.innerHTML = `
+          <div class="indeling">
+            <nav class="stats" aria-label="Kies een statistiek">${kiezer}</nav>
+            <div class="hoofdvak">
+              <div class="statkop"><h2>${CC.esc(stat.label)}</h2><span id="statsub">${staat.view === 'grafiek' ? (staat.mode === 'dag' ? 'per dag, de top 8' : 'opgeteld, de top 8') : dagLabel()}</span></div>
+              ${staat.view === 'lijst' && ds.length > 1 ? `<div class="dagkiezer"><input type="range" id="dag" min="${min}" max="${max}" value="${staat.dag}" aria-label="Dag"><output for="dag" id="dagout">Dag ${staat.dag}</output></div>` : ''}
+              <div id="vak">${staat.view === 'grafiek' ? grafiek(stat, ds) : lijst(stat)}</div>
+            </div>
+          </div>`;
+        inhoud.querySelectorAll('[data-stat]').forEach(b => b.addEventListener('click', () => { staat.stat = b.dataset.stat; teken(); }));
+        const schuif = document.getElementById('dag');
+        if (schuif) schuif.addEventListener('input', () => {
+            staat.dag = Number(schuif.value);
+            document.getElementById('dagout').textContent = `Dag ${staat.dag}`;
+            document.getElementById('statsub').textContent = dagLabel();
+            document.getElementById('vak').innerHTML = lijst(stat);
+            bewaar();
+        });
+    }
+
+    function lijst(stat) {
+        const rijen = spelersGefilterd().map(s => ({ s, v: waardeOp(s.uuid, staat.dag, stat.key) })).sort((a, b) => b.v - a.v || a.s.naam.localeCompare(b.s.naam));
+        if (!rijen.length) return '<div class="leeg"><b>Niemand gevonden</b>Met deze filters blijft er niemand over.</div>';
+        const top = Math.max(1, rijen[0].v);
+        return `<ol class="lijst">${rijen.map(({ s, v }, i) => `
+            <li class="rij2 ${s.team === 'stormhaven' ? 'storm' : s.team === 'sunspire' ? 'zon' : ''} ${s.status === 'uit' ? 'isuit' : ''}">
+              <span class="plaats">${i + 1}</span>
+              <img class="hoofd" src="${CC.hoofd(s.uuid, 36)}" alt="" loading="lazy" width="36" height="36">
+              <span class="naam"><strong>${CC.esc(s.naam)}</strong>
+                <span class="onder">${s.team ? `<span class="team ${s.team}">${CC.teamNaam(s.team)}</span>` : ''}${s.status === 'uit' ? '<span class="uit">Uitgeschakeld</span>' : ''}${CC.kanalen(s.kanalen)}</span></span>
+              <span class="getal">${CC.waarde(stat, v)}</span>
+              <span class="balkje" style="width:${(100 * v / top).toFixed(1)}%"></span>
+            </li>`).join('')}</ol>`;
+    }
+
+    function grafiek(stat, ds) {
+        const spelers = spelersGefilterd();
+        if (!spelers.length) return '<div class="leeg"><b>Niemand gevonden</b>Met deze filters blijft er niemand over.</div>';
+        if (ds.length < 2) return '<div class="leeg"><b>Nog maar één dag</b>De grafiek verschijnt vanaf de tweede dag. Kijk tot die tijd in de ranglijst.</div>';
+        const max = ds[ds.length - 1];
+        const reeks = spelers.map(s => ({ s, punten: ds.map(d => waardeOp(s.uuid, d, stat.key)) }));
+        const somOf = r => staat.mode === 'dag' ? r.punten.reduce((a, b) => a + b, 0) : r.punten[r.punten.length - 1];
+        const top = reeks.sort((a, b) => somOf(b) - somOf(a)).slice(0, 8);
+        const W = 760, H = 330, L = 64, R = 14, T = 14, B = 34;
+        const hoogste = Math.max(1, ...top.flatMap(r => r.punten));
+        // nette stappen op de y-as
+        const ruw = hoogste / 4, macht = 10 ** Math.floor(Math.log10(ruw)), stap = [1, 2, 2.5, 5, 10].map(f => f * macht).find(s => s >= ruw);
+        const yMax = Math.ceil(hoogste / stap) * stap;
+        const x = i => L + (W - L - R) * (ds.length === 1 ? 0.5 : i / (ds.length - 1));
+        const y = v => T + (H - T - B) * (1 - v / yMax);
+        let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${CC.esc(stat.label)} per dag">`;
+        for (let v = 0; v <= yMax + 1e-9; v += stap) svg += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(233,219,180,0.12)"/><text x="${L - 8}" y="${y(v) + 4}" fill="#9db0c9" font-size="12" text-anchor="end">${CC.esc(CC.waarde(stat, v))}</text>`;
+        const elke = Math.max(1, Math.ceil(ds.length / 12));
+        ds.forEach((d, i) => { if (i % elke === 0 || i === ds.length - 1) svg += `<text x="${x(i)}" y="${H - 12}" fill="#9db0c9" font-size="12" text-anchor="middle">Dag ${d}</text>`; });
+        top.forEach((r, n) => {
+            const kleur = KLEUREN[n % KLEUREN.length];
+            const pad = r.punten.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+            svg += `<path d="${pad}" fill="none" stroke="${kleur}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+            const li = r.punten.length - 1;
+            svg += `<circle cx="${x(li)}" cy="${y(r.punten[li])}" r="4" fill="${kleur}"/>`;
+        });
+        svg += '</svg>';
+        const legenda = top.map((r, n) => `<span><i style="background:${KLEUREN[n % KLEUREN.length]}"></i>${CC.esc(r.s.naam)}: ${CC.waarde(stat, somOf(r))}</span>`).join('');
+        return `<div class="grafiek">${svg}<div class="legenda">${legenda}</div></div>`;
+    }
+
+    function tekenSpelers() {
+        const vak = document.getElementById('spelers');
+        if (!data) { vak.innerHTML = ''; return; }
+        const lijst = data.spelers.filter(s => s.team !== 'crew').sort((a, b) =>
+            (b.kanalen.some(k => k.live) - a.kanalen.some(k => k.live)) || a.naam.localeCompare(b.naam));
+        const beheer = crew ? `
+          <div class="crewpaneel">
+            <h3>Kanaal koppelen</h3>
+            <form class="rij" id="koppel">
+              <input type="text" id="kspeler" list="spelernamen" placeholder="Minecraft-naam" aria-label="Minecraft-naam" required>
+              <select id="kplatform" aria-label="Platform"><option value="twitch">Twitch</option><option value="youtube">YouTube</option></select>
+              <input type="text" id="kinvoer" placeholder="Kanaalnaam of link" aria-label="Kanaalnaam of link" required>
+              <button class="knop" type="submit">Koppelen</button>
+            </form>
+            <datalist id="spelernamen">${data.spelers.map(s => `<option value="${CC.esc(s.naam)}">`).join('')}</datalist>
+            <p class="melding" id="kmelding" role="status">Met een gekoppeld kanaal checkt de server bij "Ben je live?" ook echt of de speler live is.</p>
+          </div>` : '';
+        vak.innerHTML = `<h2>Spelers</h2><p>Wie er meedoet en waar je ze kunt kijken. Wie nu live is, staat bovenaan.</p>${beheer}
+          ${lijst.length ? `<div class="kaarten">${lijst.map(s => `
+            <div class="kaart">
+              <img class="hoofd" src="${CC.hoofd(s.uuid, 40)}" alt="" loading="lazy" width="40" height="40">
+              <div style="min-width:0">
+                <strong>${CC.esc(s.naam)}</strong>
+                <div class="naam"><span class="onder">${s.team ? `<span class="team ${s.team}">${CC.teamNaam(s.team)}</span>` : ''}${s.status === 'uit' ? '<span class="uit">Uitgeschakeld</span>' : ''}</span></div>
+                <div class="onder" style="margin-top:4px">${CC.kanalen(s.kanalen) || '<span class="melding">Nog geen kanaal</span>'}
+                  ${crew ? s.kanalen.map(k => `<button class="knop licht klein weg" data-weg="${s.uuid}" data-platform="${k.platform}">${k.platform === 'twitch' ? 'Twitch' : 'YouTube'} los</button>`).join('') : ''}</div>
+              </div>
+            </div>`).join('')}</div>` : '<div class="leeg"><b>Nog niemand</b>Spelers verschijnen hier zodra ze op Survival zijn geweest of een kanaal hebben gekregen.</div>'}`;
+        const form = document.getElementById('koppel');
+        if (form) form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const m = document.getElementById('kmelding');
+            m.className = 'melding'; m.textContent = 'Kanaal zoeken...';
+            const r = await CC.post('kanaal', { speler: document.getElementById('kspeler').value.trim(), platform: document.getElementById('kplatform').value, invoer: document.getElementById('kinvoer').value.trim() });
+            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
+            m.className = 'melding goed'; m.textContent = `${r.kanaal.naam} gekoppeld aan ${r.speler}.`;
+            laad();
+        });
+        vak.querySelectorAll('[data-weg]').forEach(b => b.addEventListener('click', async () => {
+            const r = await CC.post('kanaal/verwijder', { uuid: b.dataset.weg, platform: b.dataset.platform });
+            if (r.ok) laad();
+        }));
+    }
+
+    document.querySelectorAll('[data-zet]').forEach(b => b.addEventListener('click', () => { staat[b.dataset.zet] = b.dataset.waarde; teken(); }));
+
+    async function laad() {
+        try { data = await CC.haal('stats'); }
+        catch { if (!data) document.getElementById('inhoud').innerHTML = '<div class="leeg"><b>Even geen verbinding</b>De statistieken konden niet geladen worden. Probeer het zo nog eens.</div>'; return; }
+        teken();
+        tekenSpelers();
+    }
+    CC.opCrew(s => { crew = s; tekenSpelers(); });
+    teken();
+    laad();
+    setInterval(laad, 120000);
+</script>
+</body>
+</html>
