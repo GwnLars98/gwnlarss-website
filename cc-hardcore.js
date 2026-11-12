@@ -52,60 +52,27 @@ const CC = (() => {
     }
 
     // ---------- kop met crew-knop en inlogvenster ----------
-    const luisteraars = [];
-    function veranderd() { for (const f of luisteraars) f(sessie()); tekenKnop(); }
-    function opCrew(f) { luisteraars.push(f); f(sessie()); }
-
-    let knop, dialoog;
-    function tekenKnop() {
-        if (!knop) return;
-        const s = sessie();
-        knop.classList.toggle('in', Boolean(s));
-        knop.textContent = s ? `Crew: ${s.naam} (uitloggen)` : 'Crew';
+    // ---------- kop: de openbare pagina's hebben geen crew-knop, beheren gaat op creatorcove-crew ----------
+    let luisteraar = null;
+    function veranderd() { if (luisteraar) luisteraar(sessie()); }
+    function opCrew(f) { luisteraar = f; f(sessie()); }
+    async function login(code) {
+        const r = await fetch(API + 'login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
+            .then(x => x.json()).catch(() => ({ ok: false, fout: 'Geen verbinding met de server.' }));
+        if (r.ok) { zetSessie({ token: r.token, naam: r.naam, tot: Date.now() + 11.5 * 3600000 }); veranderd(); }
+        return r;
     }
+    function uitloggen() { zetSessie(null); veranderd(); }
     function kop(huidig) {
-        const plek = document.getElementById('kop');
-        plek.innerHTML = `
+        document.getElementById('kop').innerHTML = `
           <a class="merk" href="creatorcove-stats"><b>Creator Cove</b><span>Hardcore</span></a>
           <nav class="nav" aria-label="Pagina's">
             <a href="creatorcove-stats" ${huidig === 'stats' ? 'aria-current="page"' : ''}>Statistieken</a>
             <a href="creatorcove-deelnemers" ${huidig === 'deelnemers' ? 'aria-current="page"' : ''}>Deelnemers</a>
             <a href="creatorcove-deaths" ${huidig === 'deaths' ? 'aria-current="page"' : ''}>Deaths</a>
-          </nav>
-          <button type="button" class="crewknop" id="crewknop">Crew</button>`;
-        knop = document.getElementById('crewknop');
-        dialoog = document.createElement('dialog');
-        dialoog.className = 'login';
-        dialoog.innerHTML = `
-          <form method="dialog" id="loginform">
-            <h2>Crew-login</h2>
-            <p>Typ in Minecraft <code>/webcode</code>. Je krijgt dan een code van zes tekens die tien minuten geldig is.</p>
-            <div class="rij"><input type="text" id="logincode" maxlength="10" autocomplete="one-time-code" placeholder="Bijvoorbeeld K7PQ2M" aria-label="Inlogcode">
-            <button class="knop" type="submit" id="loginknop">Inloggen</button></div>
-            <p class="melding" id="loginmelding" role="status"></p>
-            <button type="button" class="knop licht klein" id="loginsluit">Sluiten</button>
-          </form>`;
-        document.body.append(dialoog);
-        knop.addEventListener('click', () => {
-            if (sessie()) { zetSessie(null); veranderd(); return; }
-            dialoog.showModal();
-            dialoog.querySelector('#logincode').focus();
-        });
-        dialoog.querySelector('#loginsluit').addEventListener('click', () => dialoog.close());
-        dialoog.querySelector('#loginform').addEventListener('submit', async e => {
-            e.preventDefault();
-            const melding = dialoog.querySelector('#loginmelding');
-            const code = dialoog.querySelector('#logincode').value.trim();
-            if (!code) return;
-            melding.className = 'melding'; melding.textContent = 'Even kijken...';
-            const r = await fetch(API + 'login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) }).then(x => x.json()).catch(() => ({ ok: false, fout: 'Geen verbinding met de server.' }));
-            if (!r.ok) { melding.className = 'melding fout'; melding.textContent = r.fout || 'Dat lukte niet.'; return; }
-            zetSessie({ token: r.token, naam: r.naam, tot: Date.now() + 11.5 * 3600000 });
-            dialoog.close();
-            veranderd();
-        });
-        tekenKnop();
+            ${huidig === 'crew' ? '<a href="creatorcove-crew" aria-current="page">Crew</a>' : ''}
+          </nav>`;
     }
 
-    return { API, esc, nl, haal, post, sessie, opCrew, kop, hoofd, teamNaam, kanalen, waarde, duur };
+    return { API, esc, nl, haal, post, sessie, opCrew, login, uitloggen, kop, hoofd, teamNaam, kanalen, waarde, duur };
 })();

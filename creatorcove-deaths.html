@@ -35,8 +35,6 @@
     .clip .bron { position: absolute; left: 8px; bottom: 6px; font-size: 12px; font-weight: 700; color: #fff; pointer-events: none; }
     .clip .weg { position: absolute; right: 6px; top: 6px; z-index: 2; }
     .geenclip { font-size: 14px; color: var(--dim); }
-    .crewrij { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
-    .crewrij input { flex: 1 1 220px; }
     .zoek { flex: 1 1 200px; max-width: 280px; }
     .clipkop { font-size: 14px; color: var(--dim); margin-top: 6px; }
     @media (max-width: 560px) { .death { grid-template-columns: 44px minmax(0, 1fr); } .death .hoofd { width: 44px; height: 44px; } }
@@ -72,7 +70,7 @@
     const p = new URLSearchParams(location.search);
     const staat = { view: p.get('view') || 'tijdlijn', team: p.get('team') || 'alle', zoek: p.get('zoek') || '' };
     document.getElementById('zoek').value = staat.zoek;
-    let data = null, crew = null;
+    let data = null;
     const ouders = [...new Set([location.hostname || 'gwnlarss.nl', 'gwnlarss.nl', 'www.gwnlarss.nl'])].map(h => 'parent=' + encodeURIComponent(h)).join('&');
 
     const tijd = t => new Date(t).toLocaleString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' });
@@ -88,7 +86,6 @@
         return `<div class="clip">
             <button class="speel" type="button" data-embed="${CC.esc(embedUrl(c))}" style="${plaatje(c) ? `background-image:url('${plaatje(c)}')` : ''}" aria-label="Bekijk de clip van ${CC.esc(d.naam)}"><span>&#9654; Bekijk de clip</span></button>
             <span class="bron">${bron(c)}</span>
-            ${crew ? `<button class="knop licht klein weg" type="button" data-clipweg="${CC.esc(d.id)}" data-url="${CC.esc(c.url)}">Weg</button>` : ''}
           </div>`;
     }
 
@@ -128,13 +125,7 @@
                     <h3>${CC.esc(d.naam)} ${d.team ? `<span class="team ${d.team}">${CC.teamNaam(d.team)}</span>` : ''} ${CC.kanalen(d.kanalen)}</h3>
                     <div class="oorzaak">${CC.esc(d.oorzaak || 'Doodgegaan')}</div>
                     <div class="meta"><span>${tijd(d.tijd)}</span>${d.speeltijd != null ? `<span>na ${CC.duur(d.speeltijd)} speeltijd</span>` : ''}</div>
-                    ${d.clips.length ? `<div class="clips">${d.clips.map(c => clipHtml(d, c)).join('')}</div>` : (crew ? '' : '<div class="geenclip">Nog geen clip.</div>')}
-                    ${crew ? `<form class="crewrij" data-clip="${CC.esc(d.id)}">
-                        <input type="url" placeholder="Link van een Twitch-clip, Twitch-video of YouTube" aria-label="Clip-link voor ${CC.esc(d.naam)}" required>
-                        <button class="knop" type="submit">Clip toevoegen</button>
-                        <button class="knop licht klein" type="button" data-verberg="${CC.esc(d.id)}">Verbergen</button>
-                        <span class="melding" role="status"></span>
-                      </form>` : ''}
+                    ${d.clips.length ? `<div class="clips">${d.clips.map(c => clipHtml(d, c)).join('')}</div>` : '<div class="geenclip">Nog geen clip.</div>'}
                   </div>
                 </article>`).join('')}</div>`).join('');
         }
@@ -150,23 +141,6 @@
             f.title = 'Clip';
             b.replaceWith(f);
         }));
-        inhoud.querySelectorAll('form[data-clip]').forEach(f => f.addEventListener('submit', async e => {
-            e.preventDefault();
-            const m = f.querySelector('.melding'), url = f.querySelector('input').value.trim();
-            m.className = 'melding'; m.textContent = 'Toevoegen...';
-            const r = await CC.post('clip', { death: f.dataset.clip, url });
-            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
-            laad();
-        }));
-        inhoud.querySelectorAll('[data-clipweg]').forEach(b => b.addEventListener('click', async () => {
-            const r = await CC.post('clip/verwijder', { death: b.dataset.clipweg, url: b.dataset.url });
-            if (r.ok) laad();
-        }));
-        inhoud.querySelectorAll('[data-verberg]').forEach(b => b.addEventListener('click', async () => {
-            if (b.dataset.zeker !== '1') { b.dataset.zeker = '1'; b.textContent = 'Echt verbergen?'; return; }
-            const r = await CC.post('death/verberg', { death: b.dataset.verberg, verborgen: true });
-            if (r.ok) laad();
-        }));
     }
 
     document.querySelectorAll('[data-zet]').forEach(b => b.addEventListener('click', () => { staat[b.dataset.zet] = b.dataset.waarde; teken(); }));
@@ -177,7 +151,6 @@
         catch { if (!data) document.getElementById('inhoud').innerHTML = '<div class="leeg"><b>Even geen verbinding</b>De deaths konden niet geladen worden. Probeer het zo nog eens.</div>'; return; }
         teken();
     }
-    CC.opCrew(s => { crew = s; if (data) teken(); });
     teken();
     laad();
     setInterval(() => { if (!document.querySelector('.clip iframe') && !document.activeElement?.closest('form')) laad(); }, 120000);

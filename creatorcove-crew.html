@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Crew · Creator Cove Hardcore</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cc-hardcore.css">
+<style>
+    /* Crew: niet gelinkt vanaf de openbare pagina's. Inloggen met /webcode, dan kanalen koppelen en clips bij deaths zetten. */
+    .inlog { max-width: 460px; margin: 30px auto; background: var(--diep); border: 1px solid var(--lijn2); border-radius: 14px; padding: 22px; display: grid; gap: 10px; }
+    .inlog h2 { margin: 0; font: 400 32px/1.1 var(--kop); color: var(--perkament2); }
+    .inlog p { margin: 0; color: var(--dim); }
+    .inlog code, .uitleg code { color: var(--goud2); }
+    .ingelogd { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 8px; color: var(--dim); }
+    .ingelogd b { color: var(--goud2); }
+    .blok { margin-top: 28px; }
+    .blok > h2 { margin: 0 0 4px; font: 400 32px/1.1 var(--kop); color: var(--perkament2); }
+    .blok > p { margin: 0 0 12px; color: var(--dim); max-width: 70ch; }
+    .tabel { overflow-x: auto; border: 1px solid var(--lijn); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lijn); vertical-align: middle; }
+    th { font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); background: var(--diep); }
+    tr:last-child td { border-bottom: 0; }
+    td .speler { display: flex; align-items: center; gap: 10px; }
+    td .hoofd { width: 28px; height: 28px; }
+    .death { background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px; }
+    .death.verborgen { opacity: 0.55; border-style: dashed; }
+    .death h3 { margin: 0; font-size: 19px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+    .death .meta { font-size: 14px; color: var(--dim); }
+    .cliplijst { display: grid; gap: 4px; }
+    .cliplijst div { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 15px; }
+    .cliplijst a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: min(520px, 70vw); }
+    .deaths { display: grid; gap: 10px; }
+    .uitleg { background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 14px 16px; color: var(--dim); }
+    .uitleg ul { margin: 6px 0 0; padding-left: 20px; }
+</style>
+</head>
+<body>
+<header class="wrap kop" id="kop"></header>
+<main class="wrap" id="main">
+    <section class="titel">
+        <h1>Crew</h1>
+        <p>Beheer van de websites van Creator Cove Hardcore. Deze pagina staat nergens gelinkt.</p>
+    </section>
+    <div id="inhoud"></div>
+</main>
+<footer class="wrap voet">Alleen voor de Crew. Wat je hier aanpast, staat meteen op de openbare pagina's.</footer>
+
+<script src="cc-hardcore.js"></script>
+<script>
+    CC.kop('crew');
+    let wie = null, stats = null, deaths = null;
+    const inhoud = document.getElementById('inhoud');
+
+    function tekenInlog(fout) {
+        inhoud.innerHTML = `
+          <form class="inlog" id="inlog">
+            <h2>Inloggen</h2>
+            <p>Typ in Minecraft <code>/webcode</code>. Je krijgt een code van zes tekens die tien minuten geldig is.</p>
+            <div class="rij"><input type="text" id="code" maxlength="10" autocomplete="one-time-code" placeholder="Bijvoorbeeld K7PQ2M" aria-label="Inlogcode" required>
+              <button class="knop" type="submit">Inloggen</button></div>
+            <p class="melding ${fout ? 'fout' : ''}" id="inlogmelding" role="status">${fout ? CC.esc(fout) : ''}</p>
+          </form>`;
+        document.getElementById('code').focus();
+        document.getElementById('inlog').addEventListener('submit', async e => {
+            e.preventDefault();
+            const m = document.getElementById('inlogmelding');
+            m.className = 'melding'; m.textContent = 'Even kijken...';
+            const r = await CC.login(document.getElementById('code').value.trim());
+            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; }
+        });
+    }
+
+    async function laad() {
+        const [s, d] = await Promise.all([CC.haal('stats').catch(() => null), CC.post('crew/deaths', {})]);
+        if (!CC.sessie()) return;
+        stats = s;
+        deaths = d && d.ok ? d.deaths : [];
+        teken();
+    }
+
+    function teken() {
+        const spelers = (stats?.spelers ?? []).slice().sort((a, b) => (a.team === 'crew') - (b.team === 'crew') || a.naam.localeCompare(b.naam));
+        inhoud.innerHTML = `
+          <div class="ingelogd">Ingelogd als <b>${CC.esc(wie.naam)}</b><button class="knop licht klein" id="uit" type="button">Uitloggen</button></div>
+
+          <section class="blok">
+            <h2>Kanalen</h2>
+            <p>Koppel aan elke speler zijn Twitch- of YouTube-kanaal. Dan checkt de server bij "Ben je live?" echt of iemand live is, en staat het kanaal op de deelnemerspagina. Een Minecraft-naam die nog niet in de lijst staat kan ook.</p>
+            <div class="crewpaneel">
+              <form class="rij" id="koppel">
+                <input type="text" id="kspeler" list="spelernamen" placeholder="Minecraft-naam" aria-label="Minecraft-naam" required>
+                <select id="kplatform" aria-label="Platform"><option value="twitch">Twitch</option><option value="youtube">YouTube</option></select>
+                <input type="text" id="kinvoer" placeholder="Kanaalnaam of link" aria-label="Kanaalnaam of link" required>
+                <button class="knop" type="submit">Koppelen</button>
+              </form>
+              <datalist id="spelernamen">${spelers.map(s => `<option value="${CC.esc(s.naam)}">`).join('')}</datalist>
+              <p class="melding" id="kmelding" role="status"></p>
+            </div>
+            ${spelers.length ? `<div class="tabel"><table>
+              <thead><tr><th>Speler</th><th>Team</th><th>Kanalen</th><th></th></tr></thead>
+              <tbody>${spelers.map(s => `<tr>
+                <td><span class="speler"><img class="hoofd" src="${CC.hoofd(s.uuid, 28)}" alt="" width="28" height="28" loading="lazy">${CC.esc(s.naam)}</span></td>
+                <td>${s.team ? `<span class="team ${s.team}">${CC.teamNaam(s.team)}</span>` : '<span class="melding">Geen team</span>'}${s.status === 'uit' ? ' <span class="uit">Uit</span>' : ''}</td>
+                <td>${CC.kanalen(s.kanalen) || '<span class="melding">Nog geen kanaal</span>'}</td>
+                <td>${s.kanalen.map(k => `<button class="knop licht klein" type="button" data-weg="${s.uuid}" data-platform="${k.platform}">${k.platform === 'twitch' ? 'Twitch' : 'YouTube'} los</button>`).join(' ')}</td>
+              </tr>`).join('')}</tbody></table></div>` : '<div class="leeg"><b>Nog geen spelers</b>Spelers komen hier zodra ze in een team zitten.</div>'}
+          </section>
+
+          <section class="blok">
+            <h2>Deaths en clips</h2>
+            <p>Plak de link van een Twitch-clip, een Twitch-video (met tijd) of een YouTube-video. Een death die er niet hoort (bijvoorbeeld een test) kun je verbergen; verborgen deaths staan hier gestreept en kun je terugzetten.</p>
+            ${deaths.length ? `<div class="deaths">${deaths.map(d => `
+              <article class="death ${d.verborgen ? 'verborgen' : ''}">
+                <h3>${CC.esc(d.naam)} ${d.team ? `<span class="team ${d.team}">${CC.teamNaam(d.team)}</span>` : ''}${d.verborgen ? ' <span class="uit">Verborgen</span>' : ''}</h3>
+                <div class="meta">${d.dag ? 'Dag ' + d.dag + ', ' : ''}${new Date(d.tijd).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}: ${CC.esc(d.oorzaak || 'Doodgegaan')}</div>
+                ${d.clips.length ? `<div class="cliplijst">${d.clips.map(c => `<div><a href="${CC.esc(c.url)}" target="_blank" rel="noopener">${CC.esc(c.url)}</a><span class="melding">door ${CC.esc(c.door || '?')}</span><button class="knop licht klein" type="button" data-clipweg="${CC.esc(d.id)}" data-url="${CC.esc(c.url)}">Weg</button></div>`).join('')}</div>` : ''}
+                <form class="rij" data-clip="${CC.esc(d.id)}">
+                  <input type="url" placeholder="Link van de clip" aria-label="Clip-link voor ${CC.esc(d.naam)}" required>
+                  <button class="knop" type="submit">Clip toevoegen</button>
+                  <button class="knop licht klein" type="button" data-verberg="${CC.esc(d.id)}" data-nu="${d.verborgen ? '1' : '0'}">${d.verborgen ? 'Terugzetten' : 'Verbergen'}</button>
+                </form>
+                <p class="melding" data-melding="${CC.esc(d.id)}" role="status"></p>
+              </article>`).join('')}</div>` : '<div class="leeg"><b>Nog geen deaths</b>Iedereen leeft nog.</div>'}
+          </section>
+
+          <section class="blok">
+            <h2>In de game</h2>
+            <div class="uitleg">
+              <ul>
+                <li><code>/webcode</code> nieuwe inlogcode voor deze pagina (Crew).</li>
+                <li><code>/livevraag aan</code> of <code>uit</code> zet de vraag "Ben je live?" aan of uit (Crew+).</li>
+                <li><code>/hardcore website wissen [JJJJ-MM-DD] bevestig</code> wist vlak voor de echte start alle teststats, deaths en de startdag; kanalen blijven (alleen Developer).</li>
+              </ul>
+            </div>
+          </section>`;
+
+        document.getElementById('uit').addEventListener('click', () => CC.uitloggen());
+        document.getElementById('koppel').addEventListener('submit', async e => {
+            e.preventDefault();
+            const m = document.getElementById('kmelding');
+            m.className = 'melding'; m.textContent = 'Kanaal zoeken...';
+            const r = await CC.post('kanaal', { speler: document.getElementById('kspeler').value.trim(), platform: document.getElementById('kplatform').value, invoer: document.getElementById('kinvoer').value.trim() });
+            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
+            await laad();
+            const m2 = document.getElementById('kmelding');
+            m2.className = 'melding goed'; m2.textContent = `${r.kanaal.naam} gekoppeld aan ${r.speler}.`;
+        });
+        inhoud.querySelectorAll('[data-weg]').forEach(b => b.addEventListener('click', async () => {
+            if (b.dataset.zeker !== '1') { b.dataset.zeker = '1'; b.textContent = 'Zeker?'; return; }
+            const r = await CC.post('kanaal/verwijder', { uuid: b.dataset.weg, platform: b.dataset.platform });
+            if (r.ok) laad();
+        }));
+        inhoud.querySelectorAll('form[data-clip]').forEach(f => f.addEventListener('submit', async e => {
+            e.preventDefault();
+            const m = inhoud.querySelector(`[data-melding="${CSS.escape(f.dataset.clip)}"]`);
+            m.className = 'melding'; m.textContent = 'Toevoegen...';
+            const r = await CC.post('clip', { death: f.dataset.clip, url: f.querySelector('input').value.trim() });
+            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
+            laad();
+        }));
+        inhoud.querySelectorAll('[data-clipweg]').forEach(b => b.addEventListener('click', async () => {
+            if (b.dataset.zeker !== '1') { b.dataset.zeker = '1'; b.textContent = 'Zeker?'; return; }
+            const r = await CC.post('clip/verwijder', { death: b.dataset.clipweg, url: b.dataset.url });
+            if (r.ok) laad();
+        }));
+        inhoud.querySelectorAll('[data-verberg]').forEach(b => b.addEventListener('click', async () => {
+            const r = await CC.post('death/verberg', { death: b.dataset.verberg, verborgen: b.dataset.nu !== '1' });
+            if (r.ok) laad();
+        }));
+    }
+
+    CC.opCrew(s => {
+        wie = s;
+        if (!s) { tekenInlog(); return; }
+        inhoud.innerHTML = '<div class="leeg"><b>Even laden...</b></div>';
+        laad();
+    });
+</script>
+</body>
+</html>

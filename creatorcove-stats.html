@@ -94,7 +94,7 @@
     const KLEUREN = ['#f2c14e', '#6c9bff', '#7bd88f', '#ff8a65', '#c792ea', '#4dd0e1', '#e5544b', '#d4e157'];
     const p = new URLSearchParams(location.search);
     const staat = { stat: p.get('stat') || 'speeltijd', view: p.get('view') || 'lijst', mode: p.get('mode') || 'totaal', filter: p.get('filter') || 'alle', team: p.get('team') || 'alle', dag: Number(p.get('dag')) || null };
-    let data = null, crew = null;
+    let data = null;
 
     function bewaar() {
         const q = new URLSearchParams({ stat: staat.stat, view: staat.view, mode: staat.mode, filter: staat.filter, team: staat.team });

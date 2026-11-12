@@ -70,16 +70,15 @@
         </div>
         <input type="search" class="zoek" id="zoek" placeholder="Zoek een deelnemer" aria-label="Zoek een deelnemer" style="flex:1 1 200px;max-width:280px">
     </div>
-    <div id="beheer"></div>
     <div id="inhoud"></div>
 </main>
-<footer class="wrap voet">Creator Cove Hardcore. Deelnemers uit de teams op de server, kanalen gekoppeld door de Crew, live-status van Twitch en YouTube.</footer>
+<footer class="wrap voet">Creator Cove Hardcore. Deelnemers uit de teams op de server, live-status van Twitch en YouTube.</footer>
 
 <script src="cc-hardcore.js"></script>
 <script>
     CC.kop('deelnemers');
     const staat = { filter: new URLSearchParams(location.search).get('filter') || 'alle', sorteer: 'live', zoek: '' };
-    let data = null, crew = null, deaths = new Map();
+    let data = null, deaths = new Map();
 
     const isLive = s => s.kanalen.some(k => k.live);
     function laatste(uuid) {
@@ -111,8 +110,7 @@
                 ${s.status === 'uit' ? '<span class="pil uit">Uitgeschakeld</span>' : '<span class="pil levend">Levend</span>'}
                 ${s.online ? '<span class="pil online">Nu op Survival</span>' : gezien ? `<span>Laatst gezien ${gezien}</span>` : st ? '' : '<span>Nog niet gespeeld</span>'}
               </div>
-              <div class="regel">${CC.kanalen(s.kanalen) || 'Nog geen kanaal'}
-                ${crew ? s.kanalen.map(k => `<button class="knop licht klein" data-weg="${s.uuid}" data-platform="${k.platform}">${k.platform === 'twitch' ? 'Twitch' : 'YouTube'} los</button>`).join('') : ''}</div>
+              <div class="regel">${CC.kanalen(s.kanalen) || 'Nog geen kanaal'}</div>
               ${s.status === 'uit' && deaths.has(s.uuid) ? (d => `<div class="doodsoorzaak"><a href="creatorcove-deaths?zoek=${encodeURIComponent(s.naam)}">${d.dag ? `<b>Dag ${d.dag}</b> ` : ''}${CC.esc(d.oorzaak || 'Doodgegaan')}</a></div>`)(deaths.get(s.uuid)) : ''}
               ${cijfers}
             </div>
@@ -159,37 +157,6 @@
         const zonder = lijst.filter(s => s.team !== 'stormhaven' && s.team !== 'sunspire');
         inhoud.innerHTML = `<div class="teams">${kolom('stormhaven', 'Stormhaven', '', 'storm')}${kolom('sunspire', 'Sunspire', '', 'zon')}</div>
             ${zonder.length ? `<section class="geenteam"><h2>Nog zonder team</h2><div class="lijst">${zonder.map(kaart).join('')}</div></section>` : ''}`;
-        inhoud.querySelectorAll('[data-weg]').forEach(b => b.addEventListener('click', async () => {
-            const r = await CC.post('kanaal/verwijder', { uuid: b.dataset.weg, platform: b.dataset.platform });
-            if (r.ok) laad();
-        }));
-    }
-
-    function tekenBeheer() {
-        const vak = document.getElementById('beheer');
-        if (!crew || !data) { vak.innerHTML = ''; return; }
-        vak.innerHTML = `
-          <div class="crewpaneel">
-            <h3>Kanaal koppelen</h3>
-            <form class="rij" id="koppel">
-              <input type="text" id="kspeler" list="spelernamen" placeholder="Minecraft-naam" aria-label="Minecraft-naam" required>
-              <select id="kplatform" aria-label="Platform"><option value="twitch">Twitch</option><option value="youtube">YouTube</option></select>
-              <input type="text" id="kinvoer" placeholder="Kanaalnaam of link" aria-label="Kanaalnaam of link" required>
-              <button class="knop" type="submit">Koppelen</button>
-            </form>
-            <datalist id="spelernamen">${data.spelers.map(s => `<option value="${CC.esc(s.naam)}">`).join('')}</datalist>
-            <p class="melding" id="kmelding" role="status">Met een gekoppeld kanaal checkt de server bij "Ben je live?" ook echt of iemand live is. Een Minecraft-naam die hier nog niet staat kan ook.</p>
-          </div>`;
-        document.getElementById('koppel').addEventListener('submit', async e => {
-            e.preventDefault();
-            const m = document.getElementById('kmelding');
-            m.className = 'melding'; m.textContent = 'Kanaal zoeken...';
-            const r = await CC.post('kanaal', { speler: document.getElementById('kspeler').value.trim(), platform: document.getElementById('kplatform').value, invoer: document.getElementById('kinvoer').value.trim() });
-            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
-            m.className = 'melding goed'; m.textContent = `${r.kanaal.naam} gekoppeld aan ${r.speler}.`;
-            document.getElementById('kinvoer').value = '';
-            laad();
-        });
     }
 
     document.querySelectorAll('[data-zet]').forEach(b => b.addEventListener('click', () => { staat[b.dataset.zet] = b.dataset.waarde; teken(); }));
@@ -204,9 +171,7 @@
         }
         catch { if (!data) document.getElementById('inhoud').innerHTML = '<div class="leeg"><b>Even geen verbinding</b>De deelnemers konden niet geladen worden. Probeer het zo nog eens.</div>'; return; }
         teken();
-        if (crew && !document.getElementById('koppel')) tekenBeheer();
     }
-    CC.opCrew(s => { crew = s; tekenBeheer(); if (data) teken(); });
     teken();
     laad();
     setInterval(() => { if (!document.activeElement?.closest('form')) laad(); }, 120000);
