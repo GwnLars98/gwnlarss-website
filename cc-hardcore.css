@@ -15,7 +15,7 @@ body {
     background: radial-gradient(1200px 500px at 50% -120px, #18365c 0%, transparent 70%), var(--zee);
 }
 a { color: var(--goud2); }
-button, input, select { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--goud2); outline-offset: 2px; }
 .wrap { max-width: 1120px; margin: 0 auto; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
 
@@ -44,10 +44,11 @@ button, input, select { font: inherit; color: inherit; }
 .schakel[aria-pressed="true"] { background: var(--perkament); border-color: var(--perkament); color: var(--inkt); }
 .schakel.storm[aria-pressed="true"] { background: var(--storm); border-color: var(--storm); color: #071530; }
 .schakel.zon[aria-pressed="true"] { background: var(--zon); border-color: var(--zon); color: #2b2100; }
-select, input[type="text"], input[type="url"], input[type="search"] {
+select, textarea, input[type="text"], input[type="url"], input[type="search"] {
     background: var(--diep); border: 1px solid var(--lijn2); border-radius: 7px; padding: 6px 10px; min-width: 0;
 }
 input[type="range"] { accent-color: var(--goud); }
+textarea { resize: vertical; line-height: 1.45; }
 
 /* ---------- algemeen ---------- */
 .leeg { padding: 48px 20px; text-align: center; color: var(--dim); border: 1px dashed var(--lijn2); border-radius: 12px; margin-block: 24px; }

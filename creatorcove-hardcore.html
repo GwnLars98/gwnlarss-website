@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Creator Cove Hardcore</title>
+<meta name="description" content="Creator Cove Hardcore: twee eilanden, twee teams, één leven. De stand, wie er live is en het laatste nieuws.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cc-hardcore.css?v=4">
+<style>
+    /* Homepage van Creator Cove Hardcore: de twee schilden tegenover elkaar, de stand uit de server,
+       wie er nu live is, aankondigingen (geplaatst vanaf de crewpagina) en de partner. */
+    .held { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px 34px; padding-block: 34px 26px; }
+    .held .schild { width: 120px; height: 120px; image-rendering: pixelated; }
+    .held .midden { text-align: center; display: grid; gap: 10px; justify-items: center; }
+    .held h1 { margin: 0; font: 400 clamp(46px, 8vw, 92px)/0.95 var(--kop); color: var(--perkament2); text-shadow: 4px 4px 0 var(--inkt); }
+    .held .ondertitel { margin: 0; font-size: 19px; color: var(--dim); max-width: 46ch; }
+    .held .ondertitel b { font-weight: 800; } .held .ondertitel .s { color: var(--storm); } .held .ondertitel .z { color: var(--zon); }
+    .datum { font-weight: 800; letter-spacing: 0.06em; color: var(--inkt); background: var(--perkament); border-radius: 6px; padding: 5px 14px; font-size: 17px; }
+    .knoppen { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+    .knoppen a { text-decoration: none; }
+    .knop.discord { background: #5865f2; border-color: #5865f2; color: #fff; display: inline-flex; align-items: center; gap: 7px; }
+    .knop.discord svg { width: 18px; height: 18px; fill: currentColor; }
+
+    .kopje2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 34px 0 12px; }
+    .kopje2 h2 { margin: 0; font: 400 36px/1 var(--kop); color: var(--perkament2); }
+    .kopje2 a { font-weight: 700; text-decoration: none; margin-left: auto; }
+
+    .stand { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+    .tegel { background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 14px 16px; display: grid; gap: 2px; text-decoration: none; color: inherit; }
+    a.tegel:hover { border-color: var(--lijn2); }
+    .tegel span { font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+    .tegel b { font: 400 44px/1.05 var(--kop); color: var(--perkament2); font-variant-numeric: tabular-nums; }
+    .tegel small { color: var(--dim); font-size: 14px; }
+    .tegel.storm b { color: var(--storm); } .tegel.zon b { color: var(--zon); } .tegel.live b { color: var(--rood); }
+    .balans { height: 10px; border-radius: 5px; overflow: hidden; display: flex; background: var(--diep2); margin-top: 10px; }
+    .balans i { display: block; height: 100%; }
+    .balans .s { background: var(--storm); } .balans .z { background: var(--zon); }
+
+    .twee { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
+    .lijst { display: grid; gap: 8px; }
+    .regelkaart { display: flex; align-items: center; gap: 12px; background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 9px 12px; min-width: 0; }
+    .regelkaart .info { min-width: 0; display: grid; gap: 1px; }
+    .regelkaart strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .regelkaart .klein { font-size: 14px; color: var(--dim); }
+    .regelkaart .rechts { margin-left: auto; flex: none; }
+    .regelkaart.dood strong { text-decoration: line-through; text-decoration-color: var(--rood); }
+    .regelkaart.dood .hoofd { filter: grayscale(1); }
+    .regelkaart a.oorzaak { color: var(--perkament); text-decoration: none; font-size: 15px; }
+    .stil { color: var(--dim); background: var(--diep); border: 1px dashed var(--lijn2); border-radius: 12px; padding: 16px; }
+
+    .nieuws { display: grid; gap: 12px; }
+    .bericht { background: var(--perkament); color: var(--inkt); border-radius: 12px; padding: 18px 20px; display: grid; gap: 8px; box-shadow: 0 4px 0 #b9a676; }
+    .bericht time { font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #8a6a3a; }
+    .bericht h3 { margin: 0; font: 400 32px/1.05 var(--kop); color: var(--inkt); }
+    .bericht p { margin: 0; white-space: pre-line; font-size: 17px; }
+    .bericht .knop { justify-self: start; text-decoration: none; background: var(--inkt); border-color: var(--inkt); color: var(--perkament2); }
+    .meer { justify-self: start; }
+
+    .partners { display: flex; flex-wrap: wrap; gap: 14px; }
+    .partner { display: grid; gap: 10px; justify-items: center; text-decoration: none; background: var(--diep); border: 1px solid var(--lijn); border-radius: 14px; padding: 18px 26px 14px; }
+    .partner:hover { border-color: var(--lijn2); }
+    .partner img { height: 74px; width: auto; }
+    .partner span { font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+
+    @media (max-width: 760px) {
+        .held { grid-template-columns: 1fr 1fr; }
+        .held .midden { grid-column: 1 / -1; grid-row: 1; }
+        .held .schild { width: 72px; height: 72px; justify-self: end; }
+        .held .schild + .midden + .schild, .held .schild:last-child { justify-self: start; }
+        .twee { grid-template-columns: 1fr; }
+        .partner img { height: 56px; }
+    }
+</style>
+</head>
+<body>
+<header class="wrap kop" id="kop"></header>
+<main class="wrap">
+    <section class="held">
+        <img class="schild" src="minecraft/schild-stormhaven.png" alt="Schild van Stormhaven" width="120" height="120">
+        <div class="midden">
+            <h1>Creator Cove Hardcore</h1>
+            <p class="ondertitel">Twee eilanden, twee teams, één leven. <b class="s">Stormhaven</b> in het noorden tegen <b class="z">Sunspire</b> in het zuiden. Wie doodgaat, ligt eruit.</p>
+            <span class="datum" id="datum">Binnenkort</span>
+            <div class="knoppen" id="knoppen">
+                <a class="knop" href="creatorcove-deelnemers">Bekijk de deelnemers</a>
+                <a class="knop licht" href="creatorcove-stats">Statistieken</a>
+            </div>
+        </div>
+        <img class="schild" src="minecraft/schild-sunspire.png" alt="Schild van Sunspire" width="120" height="120">
+    </section>
+
+    <div class="kopje2"><h2 id="standkop">De stand</h2><a href="creatorcove-deelnemers">Alle deelnemers</a></div>
+    <div id="stand"><div class="stil">Even laden...</div></div>
+
+    <div class="twee">
+        <section>
+            <div class="kopje2"><h2>Nu live</h2><a href="creatorcove-deelnemers?filter=live">Iedereen die live is</a></div>
+            <div id="live"><div class="stil">Even laden...</div></div>
+        </section>
+        <section>
+            <div class="kopje2"><h2>Laatste deaths</h2><a href="creatorcove-deaths">Alle deaths</a></div>
+            <div id="deaths"><div class="stil">Even laden...</div></div>
+        </section>
+    </div>
+
+    <div class="kopje2"><h2>Aankondigingen</h2></div>
+    <div id="nieuws"><div class="stil">Even laden...</div></div>
+
+    <div class="kopje2"><h2>Partner</h2></div>
+    <div class="partners">
+        <a class="partner" href="https://gwnlarss.nl" target="_blank" rel="noopener">
+            <img src="gwnlarss-studio.png" alt="GwnLarss Studio" width="212" height="74">
+            <span>Partner</span>
+        </a>
+    </div>
+</main>
+<footer class="wrap voet" id="voet">Creator Cove Hardcore. De stand komt elke 10 minuten van de server, live-status van Twitch en YouTube.</footer>
+
+<script src="cc-hardcore.js?v=4"></script>
+<script>
+    CC.kop('home');
+    const $ = id => document.getElementById(id);
+    const DISCORD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.3 18.3 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.4C.6 9-.3 13.6.1 18.1A19.9 19.9 0 0 0 6.2 21l1.3-2.1a12.9 12.9 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.8 19.8 0 0 0 6-3c.5-5.2-.8-9.7-3.5-13.6ZM8 15.4c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.6 8 10.6s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>';
+    let stats = null, deaths = null, home = null;
+
+    const isLive = s => s.kanalen.some(k => k.live);
+    function dagNu() {
+        if (!stats?.start) return null;
+        const start = new Date(stats.start + 'T00:00:00');
+        const vandaag = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Amsterdam' }) + 'T00:00:00');
+        const d = Math.floor((vandaag - start) / 86400000) + 1;
+        return d >= 1 ? d : null;
+    }
+    function geleden(t) {
+        const m = Math.round((Date.now() - t) / 60000);
+        if (m < 2) return 'zojuist';
+        if (m < 60) return `${m} min geleden`;
+        const u = Math.round(m / 60);
+        if (u < 24) return `${u} uur geleden`;
+        const d = Math.round(u / 24);
+        return d === 1 ? 'gisteren' : `${d} dagen geleden`;
+    }
+
+    function tekenStand() {
+        if (!stats) { $('stand').innerHTML = '<div class="stil">De stand is nu niet te laden. Probeer het zo nog eens.</div>'; return; }
+        const alle = stats.spelers.filter(s => s.team === 'stormhaven' || s.team === 'sunspire');
+        const levend = t => alle.filter(s => s.team === t && s.status !== 'uit').length;
+        const totaal = t => alle.filter(s => s.team === t).length;
+        const dag = dagNu();
+        $('standkop').textContent = dag ? `De stand op dag ${dag}` : 'De stand';
+        if (!alle.length) { $('stand').innerHTML = '<div class="stil">De teams zijn nog niet bekend.</div>'; return; }
+        const s = levend('stormhaven'), z = levend('sunspire');
+        $('stand').innerHTML = `<div class="stand">
+            <a class="tegel" href="creatorcove-deelnemers?filter=levend"><span>Nog in het spel</span><b>${s + z}</b><small>van de ${alle.length} deelnemers</small>
+              <div class="balans" title="Stormhaven ${s}, Sunspire ${z}">${s + z ? `<i class="s" style="width:${(s / (s + z) * 100).toFixed(1)}%"></i><i class="z" style="width:${(z / (s + z) * 100).toFixed(1)}%"></i>` : ''}</div></a>
+            <a class="tegel storm" href="creatorcove-deelnemers"><span>Stormhaven</span><b>${s}</b><small>van de ${totaal('stormhaven')} nog in leven</small></a>
+            <a class="tegel zon" href="creatorcove-deelnemers"><span>Sunspire</span><b>${z}</b><small>van de ${totaal('sunspire')} nog in leven</small></a>
+            <a class="tegel live" href="creatorcove-deelnemers?filter=live"><span>Nu live</span><b>${alle.filter(isLive).length}</b><small>${alle.filter(x => x.online).length} nu op de server</small></a>
+          </div>`;
+    }
+
+    function tekenLive() {
+        if (!stats) { $('live').innerHTML = '<div class="stil">Niet te laden.</div>'; return; }
+        const live = stats.spelers.filter(s => s.team !== 'crew' && isLive(s)).sort((a, b) => a.naam.localeCompare(b.naam));
+        $('live').innerHTML = live.length ? `<div class="lijst">${live.slice(0, 8).map(s => `
+            <div class="regelkaart">
+              <img class="hoofd" src="${CC.hoofd(s.uuid, 36)}" alt="" width="36" height="36" loading="lazy">
+              <div class="info"><strong>${CC.esc(s.naam)}</strong>${s.team ? `<span class="team ${s.team}">${CC.teamNaam(s.team)}</span>` : ''}</div>
+              <div class="rechts">${CC.kanalen(s.kanalen.filter(k => k.live))}</div>
+            </div>`).join('')}</div>${live.length > 8 ? `<p><a href="creatorcove-deelnemers?filter=live">En nog ${live.length - 8} meer</a></p>` : ''}`
+            : '<div class="stil">Op dit moment is niemand live.</div>';
+    }
+
+    function tekenDeaths() {
+        if (!deaths) { $('deaths').innerHTML = '<div class="stil">Niet te laden.</div>'; return; }
+        const lijst = deaths.deaths.slice(0, 4);
+        $('deaths').innerHTML = lijst.length ? `<div class="lijst">${lijst.map(d => `
+            <div class="regelkaart dood">
+              <img class="hoofd" src="${CC.hoofd(d.uuid, 36)}" alt="" width="36" height="36" loading="lazy">
+              <div class="info"><strong>${CC.esc(d.naam)}</strong>
+                <a class="oorzaak" href="creatorcove-deaths?zoek=${encodeURIComponent(d.naam)}">${CC.esc(d.oorzaak || 'Doodgegaan')}</a></div>
+              <div class="rechts klein">${d.dag ? `Dag ${d.dag}<br>` : ''}${geleden(d.tijd)}</div>
+            </div>`).join('')}</div>`
+            : '<div class="stil">Nog niemand is doodgegaan.</div>';
+    }
+
+    let alleNieuws = false;
+    function tekenNieuws() {
+        if (!home) { $('nieuws').innerHTML = '<div class="stil">De aankondigingen zijn nu niet te laden.</div>'; return; }
+        const a = home.aankondigingen;
+        if (!a.length) { $('nieuws').innerHTML = '<div class="stil">Nog geen aankondigingen. Het eerste nieuws staat hier.</div>'; return; }
+        const zichtbaar = alleNieuws ? a : a.slice(0, 3);
+        $('nieuws').innerHTML = `<div class="nieuws">${zichtbaar.map(x => `
+            <article class="bericht">
+              <time datetime="${new Date(x.op).toISOString()}">${new Date(x.op).toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam', day: 'numeric', month: 'long', year: 'numeric' })}</time>
+              <h3>${CC.esc(x.titel)}</h3>
+              <p>${CC.esc(x.tekst)}</p>
+              ${x.knop ? `<a class="knop" href="${CC.esc(x.knop.url)}" target="_blank" rel="noopener">${CC.esc(x.knop.tekst)}</a>` : ''}
+            </article>`).join('')}
+            ${a.length > 3 && !alleNieuws ? `<button class="knop licht meer" type="button" id="meer">Oudere aankondigingen (${a.length - 3})</button>` : ''}</div>`;
+        $('meer')?.addEventListener('click', () => { alleNieuws = true; tekenNieuws(); });
+    }
+
+    function tekenHome() {
+        if (!home) return;
+        $('datum').textContent = home.datum || 'Binnenkort';
+        $('knoppen').querySelector('.discord')?.remove();
+        if (home.discord) $('knoppen').insertAdjacentHTML('beforeend', `<a class="knop discord" href="${CC.esc(home.discord)}" target="_blank" rel="noopener">${DISCORD}Join de community</a>`);
+    }
+
+    async function laad() {
+        const [s, d, h] = await Promise.all(['stats', 'deaths', 'home'].map(p => CC.haal(p).catch(() => null)));
+        stats = s; deaths = d; home = h;
+        tekenHome(); tekenStand(); tekenLive(); tekenDeaths(); tekenNieuws();
+    }
+    laad();
+    setInterval(() => { if (!document.hidden) laad(); }, 60000);
+</script>
+</body>
+</html>

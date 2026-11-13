@@ -1,4 +1,4 @@
-// Creator Cove Hardcore: gedeeld script van creatorcove-stats.html en creatorcove-deaths.html.
+// Creator Cove Hardcore: gedeeld script van de creatorcove-pagina's (home, stats, deelnemers, deaths, crew).
 // Gegevens van api.gwnlarss.nl/api/creatorcove (utils/creatorCove.js in de bot). Crew logt in met een code die
 // ze in de game krijgen met /webcode; de sessie (12 uur) staat alleen in deze browser.
 const CC = (() => {
@@ -65,8 +65,9 @@ const CC = (() => {
     function uitloggen() { zetSessie(null); veranderd(); }
     function kop(huidig) {
         document.getElementById('kop').innerHTML = `
-          <a class="merk" href="creatorcove-stats"><b>Creator Cove</b><span>Hardcore</span></a>
+          <a class="merk" href="creatorcove-hardcore"><b>Creator Cove</b><span>Hardcore</span></a>
           <nav class="nav" aria-label="Pagina's">
+            <a href="creatorcove-hardcore" ${huidig === 'home' ? 'aria-current="page"' : ''}>Home</a>
             <a href="creatorcove-stats" ${huidig === 'stats' ? 'aria-current="page"' : ''}>Statistieken</a>
             <a href="creatorcove-deelnemers" ${huidig === 'deelnemers' ? 'aria-current="page"' : ''}>Deelnemers</a>
             <a href="creatorcove-deaths" ${huidig === 'deaths' ? 'aria-current="page"' : ''}>Deaths</a>

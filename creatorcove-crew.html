@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="cc-hardcore.css?v=3">
+<link rel="stylesheet" href="cc-hardcore.css?v=4">
 <style>
     /* Crew: niet gelinkt vanaf de openbare pagina's. Inloggen met /webcode, dan kanalen koppelen en clips bij deaths zetten. */
     .inlog { max-width: 460px; margin: 30px auto; background: var(--diep); border: 1px solid var(--lijn2); border-radius: 14px; padding: 22px; display: grid; gap: 10px; }
@@ -38,6 +38,13 @@
     .deaths { display: grid; gap: 10px; }
     .uitleg { background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 14px 16px; color: var(--dim); }
     .uitleg ul { margin: 6px 0 0; padding-left: 20px; }
+    .veld { display: grid; gap: 4px; font-size: 14px; font-weight: 700; color: var(--dim); }
+    .velden { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 14px; }
+    .aank { background: var(--diep); border: 1px solid var(--lijn); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; }
+    .aank h3 { margin: 0; font-size: 19px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+    .aank h3 small { font-size: 13px; font-weight: 500; color: var(--dim); }
+    .aank p { margin: 0; color: var(--perkament); white-space: pre-line; }
+    .aanklijst { display: grid; gap: 10px; margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -51,10 +58,10 @@
 </main>
 <footer class="wrap voet">Alleen voor de Crew. Wat je hier aanpast, staat meteen op de openbare pagina's.</footer>
 
-<script src="cc-hardcore.js?v=3"></script>
+<script src="cc-hardcore.js?v=4"></script>
 <script>
     CC.kop('crew');
-    let wie = null, stats = null, deaths = null;
+    let wie = null, stats = null, deaths = null, home = null;
     const inhoud = document.getElementById('inhoud');
 
     function tekenInlog(fout) {
@@ -77,9 +84,10 @@
     }
 
     async function laad() {
-        const [s, d] = await Promise.all([CC.haal('stats').catch(() => null), CC.post('crew/deaths', {})]);
+        const [s, d, h] = await Promise.all([CC.haal('stats').catch(() => null), CC.post('crew/deaths', {}), CC.haal('home').catch(() => null)]);
         if (!CC.sessie()) return;
         stats = s;
+        home = h ?? { datum: '', discord: '', aankondigingen: [] };
         deaths = d && d.ok ? d.deaths : [];
         teken();
     }
@@ -88,6 +96,39 @@
         const spelers = (stats?.spelers ?? []).slice().sort((a, b) => (a.team === 'crew') - (b.team === 'crew') || a.naam.localeCompare(b.naam));
         inhoud.innerHTML = `
           <div class="ingelogd">Ingelogd als <b>${CC.esc(wie.naam)}</b><button class="knop licht klein" id="uit" type="button">Uitloggen</button></div>
+
+          <section class="blok">
+            <h2>Homepage</h2>
+            <p>Wat er op <a href="creatorcove-hardcore" target="_blank" rel="noopener">de homepage</a> staat. Laat je de datum leeg, dan staat er "Binnenkort". Zonder Discord-link staat er geen Discord-knop.</p>
+            <div class="crewpaneel">
+              <form id="homeform" class="velden">
+                <label class="veld">Datum bovenaan<input type="text" id="hdatum" maxlength="80" placeholder="Binnenkort" value="${CC.esc(home.datum)}"></label>
+                <label class="veld">Discord-uitnodiging<input type="url" id="hdiscord" placeholder="https://discord.gg/..." value="${CC.esc(home.discord)}"></label>
+                <div class="rij"><button class="knop" type="submit">Opslaan</button></div>
+              </form>
+              <p class="melding" id="hmelding" role="status"></p>
+            </div>
+            <div class="crewpaneel">
+              <h3>Nieuwe aankondiging</h3>
+              <form id="aankform" style="display:grid;gap:10px">
+                <label class="veld">Titel<input type="text" id="atitel" maxlength="100" required placeholder="Bijvoorbeeld: De teams zijn bekend!"></label>
+                <label class="veld">Tekst<textarea id="atekst" maxlength="2000" rows="4" required placeholder="Wat wil je vertellen?"></textarea></label>
+                <div class="velden">
+                  <label class="veld">Knop (mag leeg)<input type="text" id="aknoptekst" maxlength="40" placeholder="Bijvoorbeeld: Bekijk de trailer"></label>
+                  <label class="veld">Link van de knop<input type="url" id="aknopurl" placeholder="https://..."></label>
+                </div>
+                <div class="rij"><button class="knop" type="submit">Plaatsen</button></div>
+              </form>
+              <p class="melding" id="amelding" role="status"></p>
+            </div>
+            ${home.aankondigingen.length ? `<div class="aanklijst">${home.aankondigingen.map(a => `
+              <article class="aank">
+                <h3>${CC.esc(a.titel)} <small>${new Date(a.op).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</small></h3>
+                <p>${CC.esc(a.tekst)}</p>
+                ${a.knop ? `<div class="melding">Knop: <a href="${CC.esc(a.knop.url)}" target="_blank" rel="noopener">${CC.esc(a.knop.tekst)}</a></div>` : ''}
+                <div class="rij"><button class="knop licht klein" type="button" data-aankweg="${CC.esc(a.id)}">Verwijderen</button></div>
+              </article>`).join('')}</div>` : '<div class="melding">Nog geen aankondigingen.</div>'}
+          </section>
 
           <section class="blok">
             <h2>Kanalen</h2>
@@ -141,6 +182,31 @@
           </section>`;
 
         document.getElementById('uit').addEventListener('click', () => CC.uitloggen());
+        document.getElementById('homeform').addEventListener('submit', async e => {
+            e.preventDefault();
+            const m = document.getElementById('hmelding');
+            m.className = 'melding'; m.textContent = 'Opslaan...';
+            const r = await CC.post('home', { datum: document.getElementById('hdatum').value, discord: document.getElementById('hdiscord').value });
+            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
+            await laad();
+            const m2 = document.getElementById('hmelding');
+            m2.className = 'melding goed'; m2.textContent = 'Opgeslagen, staat nu op de homepage.';
+        });
+        document.getElementById('aankform').addEventListener('submit', async e => {
+            e.preventDefault();
+            const m = document.getElementById('amelding');
+            m.className = 'melding'; m.textContent = 'Plaatsen...';
+            const r = await CC.post('aankondiging', { titel: document.getElementById('atitel').value, tekst: document.getElementById('atekst').value, knopTekst: document.getElementById('aknoptekst').value, knopUrl: document.getElementById('aknopurl').value });
+            if (!r.ok) { m.className = 'melding fout'; m.textContent = r.fout || 'Dat lukte niet.'; return; }
+            await laad();
+            const m2 = document.getElementById('amelding');
+            m2.className = 'melding goed'; m2.textContent = 'Geplaatst, staat nu op de homepage.';
+        });
+        inhoud.querySelectorAll('[data-aankweg]').forEach(b => b.addEventListener('click', async () => {
+            if (b.dataset.zeker !== '1') { b.dataset.zeker = '1'; b.textContent = 'Zeker?'; return; }
+            const r = await CC.post('aankondiging/verwijder', { id: b.dataset.aankweg });
+            if (r.ok) laad();
+        }));
         document.getElementById('koppel').addEventListener('submit', async e => {
             e.preventDefault();
             const m = document.getElementById('kmelding');
