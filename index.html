@@ -63,6 +63,12 @@
   .tool b { font-family: var(--display); font-size: 1.3rem; }
   .tool span:last-child { color: var(--dim); font-size: 0.92rem; }
 
+  .studio-logo { display: block; width: min(330px, 70vw); height: auto; margin: 6px 0 18px; }
+  .geheim b, .geheim span:last-child { filter: blur(7px); user-select: none; }
+  .geheim:hover { transform: none; }
+  .studio-kop { margin: 38px 0 0; font-family: var(--display); font-size: 1.45rem; font-weight: 800; }
+  .studio-rij { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 14px; max-width: 900px; }
+
   .socials { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 28px; max-width: 760px; }
   .social { display: grid; gap: 6px; padding: 28px; border-radius: 26px; background: var(--glas); text-decoration: none; transition: transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1); }
   a.social:hover { transform: translateY(-4px); }
@@ -75,6 +81,7 @@
     .speler { transform: none; padding: 8px; }
     .speler-info .knop { display: none; }
     .tools-rij { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .studio-rij { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -88,6 +95,7 @@
   <div class="nav-links">
     <a class="verberg-mobiel" href="#live">Live</a>
     <a class="verberg-mobiel" href="#over">Over mij</a>
+    <a class="verberg-mobiel" href="#studios">Studio's</a>
     <a href="tools.html">Tools</a>
     <a class="knop knop--klein" id="nav-twitch" href="https://twitch.tv/gwnlarss" target="_blank" rel="noopener">Twitch</a>
   </div>
@@ -127,6 +135,25 @@
         <div class="chips"><span class="chip">Regelneef</span><span class="chip">Levensgenieter</span><span class="chip">Noob in elke game</span></div>
         <div class="contact"><span class="adres" id="mail">gwnlarssinfo@gmail.com</span><button class="kopieer" id="kopieer" type="button">Kopieer</button></div>
       </div>
+    </div>
+  </section>
+
+  <section class="blok" id="studios" data-vorm="studio">
+    <p class="label">Wat ik maak</p>
+    <h2><img class="studio-logo" src="gwnlarss-studio.png" alt="GwnLarss Studio's" width="330" height="115"></h2>
+    <p class="intro">Onder de naam GwnLarss Studio's bouw ik websites, game-servers en overlays. Voor mijn eigen stream en voor andere streamers.</p>
+    <h3 class="studio-kop">Lopende projecten</h3>
+    <div class="studio-rij">
+      <a class="tool rand" href="#over"><span class="tag">op maat</span><b>Overlays en alerts</b><span>Pakketten voor vijf streamers, elk in een eigen stijl. Ook iets nodig? Mail me.</span></a>
+      <a class="tool rand" href="tools.html"><span class="tag">gratis</span><b>Tools voor streamers</b><span>Widgets en chatcommando's die elke streamer zelf kan instellen.</span></a>
+    </div>
+    <h3 class="studio-kop">Afgelopen projecten</h3>
+    <div class="studio-rij">
+      <a class="tool rand" href="https://streamersmeteenhart.nl" target="_blank" rel="noopener"><span class="tag">goed doel</span><b>Streamers met een Hart</b><span>Website en live-alerts voor een inzamelingsactie.</span></a>
+    </div>
+    <h3 class="studio-kop">Aankomende projecten</h3>
+    <div class="studio-rij">
+      <div class="tool rand geheim" role="img" aria-label="Binnenkort: een nieuw project, nog geheim"><span class="tag">binnenkort</span><b aria-hidden="true">Brakeln Somp Yertolin</b><span aria-hidden="true">Velkorn-masp tre dun eigen olvert, eigen wurples en dun eigen trobsel.</span></div>
     </div>
   </section>
 
@@ -236,6 +263,7 @@
     controller: () => (klein() ? { x: 0, y: 2.6, alpha: 0.45 } : { x: 4.2, y: 0, alpha: 1 }),
     bubbel: () => (klein() ? { x: 0, y: 2.6, alpha: 0.4 } : { x: 4.4, y: 2.2, alpha: 0.75 }),
     hart: () => (klein() ? { x: 0, y: 2.4, alpha: 0.5 } : { x: 3.6, y: 0, alpha: 1 }),
+    studio: () => (klein() ? { x: 0, y: 2.6, alpha: 0.4 } : { x: 4.3, y: 0.3, alpha: 0.85 }),
   };
   await deeltjesVeld(document.getElementById('veld'), {
     stof: { geo: VORM.stof(), breedte: 22 },
@@ -243,6 +271,7 @@
     controller: { geo: VORM.controller(), breedte: 4.6 },
     bubbel: { geo: VORM.bubbel(), breedte: 3.6 },
     hart: { geo: VORM.hart(), breedte: 4 },
+    studio: { geo: VORM.klapper(), breedte: 3.2 },
   }, tijd => {
     const midden = innerHeight / 2;
     const centra = secties.map(s => { const r = s.getBoundingClientRect(); return r.top + r.height / 2 - midden; });

@@ -1,5 +1,5 @@
 // Het deeltjesveld van gwnlarss.nl: duizenden lichtdeeltjes die samen een 3D-vorm vormen
-// (je naam, een controller, een scherm, een hart, de tool-icoontjes) en daartussen
+// (je naam, een controller, een scherm, een filmklapper, een hart, de tool-icoontjes) en daartussen
 // overvloeien. Ze wijken uit voor de muis, ademen zacht en krijgen om de 12 s een schokgolf.
 import * as THREE from 'three';
 import { Font } from 'three/addons/loaders/FontLoader.js';
@@ -49,6 +49,21 @@ export const VORM = {
         const play = new THREE.Shape();
         play.moveTo(-0.35, 0.55); play.lineTo(0.55, 0.1); play.lineTo(-0.35, -0.35);
         return new THREE.ExtrudeGeometry([buiten, voet, play], EXTR);
+    },
+    klapper() {
+        // filmklapper voor GwnLarss Studio's: blok, gestreepte lat erop en een tweede lat die openstaat
+        const lat = (y, hoek) => {
+            const draai = ([x, yy]) => { const dx = x + 1.6, dy = yy - y; return [-1.6 + dx * Math.cos(hoek) - dy * Math.sin(hoek), y + dx * Math.sin(hoek) + dy * Math.cos(hoek)]; };
+            const pad = (vorm, punten) => { const p = punten.map(draai); vorm.moveTo(...p[0]); p.slice(1).forEach(q => vorm.lineTo(...q)); return vorm; };
+            const s = pad(new THREE.Shape(), [[-1.6, y], [1.6, y], [1.6, y + 0.42], [-1.6, y + 0.42]]);
+            [-1.3, -0.5, 0.3, 1.1].forEach(x => s.holes.push(pad(new THREE.Path(), [[x - 0.2, y + 0.06], [x + 0.16, y + 0.06], [x + 0.4, y + 0.36], [x + 0.04, y + 0.36]])));
+            return s;
+        };
+        const blok = new THREE.Shape();
+        blok.moveTo(-1.6, -1.25); blok.lineTo(1.6, -1.25); blok.lineTo(1.6, 0.35); blok.lineTo(-1.6, 0.35); blok.lineTo(-1.6, -1.25);
+        // twee regels op het bord
+        [[-1.3, -0.3, 1.3, -0.12], [-1.3, -0.82, 0.3, -0.64]].forEach(([a, b, c, d]) => { const h = new THREE.Path(); h.moveTo(a, b); h.lineTo(c, b); h.lineTo(c, d); h.lineTo(a, d); h.lineTo(a, b); blok.holes.push(h); });
+        return new THREE.ExtrudeGeometry([blok, lat(0.45, 0), lat(0.97, 0.26)], EXTR);
     },
     bubbel() {
         const s = new THREE.Shape();
