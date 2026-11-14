@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>Deelnemers · Creator Cove Hardcore</title>
-<meta name="description" content="Wie er meedoet aan Creator Cove Hardcore, per team, met hun Twitch- en YouTube-kanaal en wie er nu live is.">
+<meta name="description" content="Wie er meedoet aan Creator Cove Hardcore, per team, met hun Twitch- en YouTube-kanaal.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,6 @@
     /* Deelnemers: twee bemanningen naast elkaar, elk onder zijn eigen schild. Live bovenaan, uitgeschakeld vervaagd. */
     .teller { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-block: 6px 2px; color: var(--dim); }
     .teller b { color: var(--perkament2); font-size: 20px; }
-    .teller .live b { color: var(--rood); }
     .teams { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding-block: 18px; }
     .team-kolom { min-width: 0; display: grid; gap: 10px; align-content: start; }
     .team-kop { display: flex; align-items: center; gap: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--lijn2); }
@@ -51,7 +50,7 @@
 <main class="wrap">
     <section class="titel">
         <h1>Deelnemers</h1>
-        <p>Wie er meedoet aan Creator Cove Hardcore, per team, en waar je ze kunt kijken. Wie nu live is, staat bovenaan.</p>
+        <p>Wie er meedoet aan Creator Cove Hardcore, per team, en waar je ze kunt kijken.</p>
     </section>
     <div class="teller" id="teller"></div>
     <div class="balk">
@@ -59,11 +58,10 @@
             <button class="schakel" data-zet="filter" data-waarde="alle">Iedereen</button>
             <button class="schakel" data-zet="filter" data-waarde="levend">Nog in leven</button>
             <button class="schakel" data-zet="filter" data-waarde="uit">Uitgeschakeld</button>
-            <button class="schakel" data-zet="filter" data-waarde="live">Nu live</button>
         </div>
         <div class="groep"><span>Sorteren</span>
             <select id="sorteer" aria-label="Sorteren">
-                <option value="live">Live eerst</option>
+                <option value="live">Standaard</option>
                 <option value="naam">Naam</option>
                 <option value="gezien">Laatst gezien</option>
                 <option value="speeltijd">Speeltijd</option>
@@ -78,7 +76,9 @@
 <script src="cc-hardcore.js?v=4"></script>
 <script>
     CC.kop('deelnemers');
-    const staat = { filter: new URLSearchParams(location.search).get('filter') || 'alle', sorteer: 'live', zoek: '' };
+    // oude links met ?filter=live tonen gewoon iedereen (live heeft geen eigen filter meer)
+    const gevraagd = new URLSearchParams(location.search).get('filter');
+    const staat = { filter: ['levend', 'uit'].includes(gevraagd) ? gevraagd : 'alle', sorteer: 'live', zoek: '' };
     let data = null, deaths = new Map();
 
     const isLive = s => s.kanalen.some(k => k.live);
@@ -121,7 +121,7 @@
     function gefilterd() {
         const z = staat.zoek.toLowerCase();
         const lijst = data.spelers.filter(s => s.team !== 'crew'
-            && (staat.filter === 'alle' || (staat.filter === 'live' ? isLive(s) : (staat.filter === 'uit') === (s.status === 'uit')))
+            && (staat.filter === 'alle' || (staat.filter === 'uit') === (s.status === 'uit'))
             && (!z || s.naam.toLowerCase().includes(z)));
         const speeltijd = s => laatste(s.uuid)?.speeltijd ?? -1;
         const sort = {
@@ -143,7 +143,6 @@
             <span><b>${alle.length}</b> deelnemers</span>
             <span><b>${alle.filter(s => s.team === 'stormhaven').length}</b> Stormhaven</span>
             <span><b>${alle.filter(s => s.team === 'sunspire').length}</b> Sunspire</span>
-            <span class="live"><b>${alle.filter(isLive).length}</b> nu live</span>
             <span><b>${alle.filter(s => s.online).length}</b> op Survival</span>
             <span><b>${alle.filter(s => s.status === 'uit').length}</b> uitgeschakeld</span>` : '';
         if (!alle.length) { inhoud.innerHTML = '<div class="leeg"><b>Nog geen deelnemers</b>Zodra de Crew spelers in een team zet, staan ze hier.</div>'; return; }
