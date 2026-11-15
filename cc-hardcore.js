@@ -72,7 +72,74 @@ const CC = (() => {
             <a href="creatorcove-deelnemers" ${huidig === 'deelnemers' ? 'aria-current="page"' : ''}>Deelnemers</a>
             <a href="creatorcove-deaths" ${huidig === 'deaths' ? 'aria-current="page"' : ''}>Deaths</a>
             ${huidig === 'crew' ? '<a href="creatorcove-crew" aria-current="page">Crew</a>' : ''}
-          </nav>`;
+          </nav>
+          <button class="geluidknop" id="geluidknop" type="button" title="Speelt een geluid af als er iemand uitgeschakeld wordt"></button>`;
+        const knop = document.getElementById('geluidknop');
+        // stond het geluid nog aan van een vorig bezoek, dan mag de browser het pas afspelen na een klik op de pagina
+        if (geluidAan && navigator.userActivation && !navigator.userActivation.hasBeenActive) geblokkeerd = true;
+        knop.addEventListener('click', () => {
+            // stond het al aan en wachtte het alleen op een klik, dan blijft het aan: deze klik is die toestemming
+            if (!(geluidAan && geblokkeerd)) geluidAan = !geluidAan;
+            geblokkeerd = false;
+            try { localStorage.setItem(GELUID_SLEUTEL, geluidAan ? '1' : '0'); } catch { /* geen opslag */ }
+            if (geluidAan) speel(laatsteGeluid); // zo klinkt het; de klik zelf geeft de browser ook toestemming voor geluid
+            tekenGeluidknop();
+            zetWachter();
+        });
+        tekenGeluidknop();
+        zetWachter();
+    }
+
+    // ---------- geluid bij een nieuwe death ----------
+    // Bezoekers zetten het zelf aan met de knop in de kop; het staat standaard uit en de keuze blijft in deze browser
+    // bewaard. Staat het aan, dan kijkt de pagina elke 30 seconden of er een death bij is gekomen en speelt dan het
+    // geluid dat ook in de game klonk (death.geluid, gekozen met /hardcore geluid). Alleen de eigen geluiden uit het
+    // resourcepack staan hier als mp3; bij een Minecraft-geluid of een death zonder geluid klinkt de scheepshoorn.
+    // Daarna krijgt de pagina 'cc:death', zodat de lijsten meteen verversen. Een browser speelt pas geluid af nadat
+    // de bezoeker iets op de pagina heeft gedaan; tot die tijd staat dat op de knop.
+    const GELUID_SLEUTEL = 'cc_geluid';
+    const GELUIDEN = { 'creatorcove:scheepshoorn': 'minecraft/geluid-scheepshoorn.mp3', 'creatorcove:death_bong': 'minecraft/geluid-death-bong.mp3' };
+    const STANDAARD_GELUID = 'creatorcove:scheepshoorn';
+    const LUIDSPREKER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3Z"/><path class="golf" d="M15.5 8.5a5 5 0 0 1 0 7l-1.2-1.2a3.3 3.3 0 0 0 0-4.6l1.2-1.2Zm2.6-2.6a8.7 8.7 0 0 1 0 12.2l-1.2-1.2a7 7 0 0 0 0-9.8l1.2-1.2Z"/><path class="kruis" d="m15.2 9.4 1.2-1.2 2.1 2.1 2.1-2.1 1.2 1.2-2.1 2.1 2.1 2.1-1.2 1.2-2.1-2.1-2.1 2.1-1.2-1.2 2.1-2.1-2.1-2.1Z"/></svg>';
+    let geluidAan = false, geblokkeerd = false, laatsteDeath = null, laatsteGeluid = null, wachter = null;
+    try { geluidAan = localStorage.getItem(GELUID_SLEUTEL) === '1'; } catch { /* geen opslag */ }
+
+    function speel(naam) {
+        const geluid = new Audio(GELUIDEN[naam] || GELUIDEN[STANDAARD_GELUID]);
+        geluid.volume = 0.7;
+        geluid.play().then(() => { if (geblokkeerd) { geblokkeerd = false; tekenGeluidknop(); } })
+            .catch(() => { geblokkeerd = true; tekenGeluidknop(); });
+    }
+    function tekenGeluidknop() {
+        const knop = document.getElementById('geluidknop');
+        if (!knop) return;
+        knop.setAttribute('aria-pressed', String(geluidAan));
+        knop.classList.toggle('blok', geluidAan && geblokkeerd);
+        knop.innerHTML = `${LUIDSPREKER}<span>${!geluidAan ? 'Geluid uit' : geblokkeerd ? 'Geluid: klik op de pagina' : 'Geluid aan'}</span>`;
+    }
+    async function kijkDeaths() {
+        let d;
+        try { d = await haal('deaths'); } catch { return; }
+        const nieuwste = d.deaths[0]; // de lijst komt met de nieuwste death eerst
+        const tijd = nieuwste?.tijd ?? 0;
+        if (nieuwste) laatsteGeluid = nieuwste.geluid;
+        if (laatsteDeath !== null && tijd > laatsteDeath) {
+            if (geluidAan) speel(nieuwste.geluid);
+            document.dispatchEvent(new CustomEvent('cc:death', { detail: nieuwste }));
+        }
+        laatsteDeath = Math.max(laatsteDeath ?? 0, tijd);
+    }
+    function zetWachter() {
+        clearInterval(wachter);
+        wachter = null;
+        laatsteDeath = null;
+        if (!geluidAan) return;
+        kijkDeaths();
+        wachter = setInterval(kijkDeaths, 30000);
+    }
+    // na de eerste klik of toets op de pagina mag de browser geluid afspelen: dan klopt de tekst op de knop weer
+    for (const soort of ['pointerdown', 'keydown']) {
+        document.addEventListener(soort, e => { if (geblokkeerd && !e.target.closest?.('#geluidknop')) { geblokkeerd = false; tekenGeluidknop(); } }, { passive: true });
     }
 
     return { API, esc, nl, haal, post, sessie, opCrew, login, uitloggen, kop, hoofd, teamNaam, kanalen, waarde, duur };

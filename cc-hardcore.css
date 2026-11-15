@@ -30,6 +30,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .nav a[aria-current="page"] { color: var(--perkament2); border-color: var(--lijn2); background: var(--diep); }
 .crewknop { border: 1px solid var(--lijn2); background: transparent; border-radius: 8px; padding: 7px 12px; cursor: pointer; color: var(--dim); font-weight: 700; }
 .crewknop.in { color: var(--goud2); border-color: rgba(224, 161, 27, 0.5); }
+/* geluid bij een nieuwe death aan of uit (cc-hardcore.js); golfjes als het aan staat, een kruisje als het uit staat */
+.geluidknop { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--lijn2); background: transparent; border-radius: 8px; padding: 7px 12px; cursor: pointer; color: var(--dim); font-weight: 700; }
+.geluidknop:hover { color: var(--tekst); }
+.geluidknop svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
+.geluidknop .golf { display: none; }
+.geluidknop[aria-pressed="true"] { color: var(--goud2); border-color: rgba(224, 161, 27, 0.5); }
+.geluidknop[aria-pressed="true"] .golf { display: inline; }
+.geluidknop[aria-pressed="true"] .kruis { display: none; }
+.geluidknop.blok { color: var(--perkament); border-style: dashed; }
 
 .titel { padding-block: 18px 6px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 22px; }
 .titel h1 { margin: 0; font: 400 clamp(38px, 6vw, 56px)/1 var(--kop); color: var(--perkament2); text-shadow: 3px 3px 0 var(--inkt); }

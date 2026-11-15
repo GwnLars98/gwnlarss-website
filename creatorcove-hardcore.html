@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="cc-hardcore.css?v=4">
+<link rel="stylesheet" href="cc-hardcore.css?v=5">
 <style>
     /* Homepage van Creator Cove Hardcore: de twee schilden tegenover elkaar, de stand uit de server,
        de laatste deaths, aankondigingen (geplaatst vanaf de crewpagina) en de partner. Geen live-blok:
@@ -112,7 +112,7 @@
 </main>
 <footer class="wrap voet" id="voet">Creator Cove Hardcore. De stand komt elke 10 minuten van de server.</footer>
 
-<script src="cc-hardcore.js?v=4"></script>
+<script src="cc-hardcore.js?v=5"></script>
 <script>
     CC.kop('home');
     const $ = id => document.getElementById(id);
@@ -197,6 +197,7 @@
     }
     laad();
     setInterval(() => { if (!document.hidden) laad(); }, 60000);
+    document.addEventListener('cc:death', laad); // nieuwe death gezien door cc-hardcore.js (geluid aan): meteen verversen
 </script>
 </body>
 </html>
