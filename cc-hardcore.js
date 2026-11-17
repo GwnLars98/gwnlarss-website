@@ -84,19 +84,21 @@ const CC = (() => {
             try { localStorage.setItem(GELUID_SLEUTEL, geluidAan ? '1' : '0'); } catch { /* geen opslag */ }
             if (geluidAan) speel(laatsteGeluid); // zo klinkt het; de klik zelf geeft de browser ook toestemming voor geluid
             tekenGeluidknop();
-            zetWachter();
         });
         tekenGeluidknop();
-        zetWachter();
+        startWachter();
     }
 
-    // ---------- geluid bij een nieuwe death ----------
-    // Bezoekers zetten het zelf aan met de knop in de kop; het staat standaard uit en de keuze blijft in deze browser
-    // bewaard. Staat het aan, dan kijkt de pagina elke 30 seconden of er een death bij is gekomen en speelt dan het
-    // geluid dat ook in de game klonk (death.geluid, gekozen met /hardcore geluid). Alleen de eigen geluiden uit het
-    // resourcepack staan hier als mp3; bij een Minecraft-geluid of een death zonder geluid klinkt de scheepshoorn.
-    // Daarna krijgt de pagina 'cc:death', zodat de lijsten meteen verversen. Een browser speelt pas geluid af nadat
-    // de bezoeker iets op de pagina heeft gedaan; tot die tijd staat dat op de knop.
+    // ---------- een nieuwe death: perkament rechtsonder en, als het aan staat, het geluid ----------
+    // Elke pagina kijkt elke 30 seconden of er een death bij is gekomen. Per nieuwe death schuift rechtsonder een
+    // perkament in beeld (hooguit drie tegelijk, 12 seconden, blijft staan zolang de muis erop staat). Bij een verborgen
+    // tabblad wordt alleen gekeken als het geluid aan staat (zo hoor je deaths met het tabblad op de achtergrond);
+    // anders wordt er weer gekeken zodra het tabblad terugkomt, en verschijnen de gemiste deaths dan alsnog.
+    // Het geluid zetten bezoekers zelf aan met de knop in de kop; het staat standaard uit en de keuze blijft in deze
+    // browser bewaard. Het is het geluid dat ook in de game klonk (death.geluid, gekozen met /hardcore geluid). Alleen
+    // de eigen geluiden uit het resourcepack staan hier als mp3; bij een Minecraft-geluid of een death zonder geluid
+    // klinkt de scheepshoorn. Daarna krijgt de pagina 'cc:death', zodat de lijsten meteen verversen. Een browser speelt
+    // pas geluid af nadat de bezoeker iets op de pagina heeft gedaan; tot die tijd staat dat op de knop.
     const GELUID_SLEUTEL = 'cc_geluid';
     const GELUIDEN = { 'creatorcove:scheepshoorn': 'minecraft/geluid-scheepshoorn.mp3', 'creatorcove:death_bong': 'minecraft/geluid-death-bong.mp3' };
     const STANDAARD_GELUID = 'creatorcove:scheepshoorn';
@@ -117,25 +119,62 @@ const CC = (() => {
         knop.classList.toggle('blok', geluidAan && geblokkeerd);
         knop.innerHTML = `${LUIDSPREKER}<span>${!geluidAan ? 'Geluid uit' : geblokkeerd ? 'Geluid: klik op de pagina' : 'Geluid aan'}</span>`;
     }
+    function perkament(d) {
+        let vak = document.getElementById('cc-meldingen');
+        if (!vak) {
+            vak = document.createElement('div');
+            vak.id = 'cc-meldingen';
+            vak.className = 'meldingen';
+            vak.setAttribute('aria-live', 'polite');
+            document.body.append(vak);
+        }
+        const el = document.createElement('div');
+        el.className = 'deathmelding';
+        el.innerHTML = `
+          <img class="hoofd" src="${hoofd(d.uuid, 48)}" alt="" width="48" height="48">
+          <div class="tekst">
+            <span class="label">Uitgeschakeld${d.dag ? ` · Dag ${d.dag}` : ''}</span>
+            <b>${esc(d.naam)}</b>
+            <span class="oorzaak">${esc(d.oorzaak || 'Doodgegaan')}</span>
+            <a href="creatorcove-deaths?zoek=${encodeURIComponent(d.naam)}">Bekijk de death</a>
+          </div>
+          <button type="button" class="sluit" aria-label="Melding sluiten">&times;</button>`;
+        let klok = null;
+        const weg = () => {
+            clearTimeout(klok);
+            el.classList.add('weg');
+            setTimeout(() => el.remove(), 300);
+        };
+        const wacht = ms => { clearTimeout(klok); klok = setTimeout(weg, ms); };
+        el.querySelector('.sluit').addEventListener('click', weg);
+        el.addEventListener('mouseenter', () => clearTimeout(klok));
+        el.addEventListener('mouseleave', () => wacht(4000));
+        el.addEventListener('focusin', () => clearTimeout(klok));
+        vak.append(el);
+        while (vak.children.length > 3) vak.firstElementChild.remove();
+        wacht(12000);
+    }
     async function kijkDeaths() {
+        if (document.hidden && !geluidAan) return;
         let d;
         try { d = await haal('deaths'); } catch { return; }
         const nieuwste = d.deaths[0]; // de lijst komt met de nieuwste death eerst
-        const tijd = nieuwste?.tijd ?? 0;
         if (nieuwste) laatsteGeluid = nieuwste.geluid;
-        if (laatsteDeath !== null && tijd > laatsteDeath) {
-            if (geluidAan) speel(nieuwste.geluid);
-            document.dispatchEvent(new CustomEvent('cc:death', { detail: nieuwste }));
+        if (laatsteDeath !== null) {
+            const nieuw = d.deaths.filter(x => x.tijd > laatsteDeath).reverse(); // oudste eerst, zoals ze gebeurden
+            if (nieuw.length) {
+                nieuw.slice(-3).forEach(perkament);
+                if (geluidAan) speel(nieuwste.geluid);
+                document.dispatchEvent(new CustomEvent('cc:death', { detail: nieuwste }));
+            }
         }
-        laatsteDeath = Math.max(laatsteDeath ?? 0, tijd);
+        laatsteDeath = Math.max(laatsteDeath ?? 0, nieuwste?.tijd ?? 0);
     }
-    function zetWachter() {
-        clearInterval(wachter);
-        wachter = null;
-        laatsteDeath = null;
-        if (!geluidAan) return;
+    function startWachter() {
+        if (wachter) return;
         kijkDeaths();
         wachter = setInterval(kijkDeaths, 30000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) kijkDeaths(); });
     }
     // na de eerste klik of toets op de pagina mag de browser geluid afspelen: dan klopt de tekst op de knop weer
     for (const soort of ['pointerdown', 'keydown']) {
